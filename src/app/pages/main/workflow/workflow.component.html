@@ -1,1 +1,66 @@
-<p>workflow works!</p>
+<!-- <nz-divider nzType="vertical"></nz-divider> -->
+<nz-layout class="main-layout">
+    <nz-header>Header</nz-header>
+    <nz-layout>
+        <nz-sider>Sider</nz-sider>
+        <nz-content>
+            <div style="height: 30%;">
+                <nz-steps [nzCurrent]="1">
+                    <nz-step nzTitle="Finished" nzDescription="This is a description."></nz-step>
+                    <nz-step nzTitle="In Progress" nzSubtitle="Left 00:00:08"
+                        nzDescription="This is a description."></nz-step>
+                    <nz-step nzTitle="Waiting" nzDescription="This is a description."></nz-step>
+                </nz-steps>
+            </div>
+            <div style="height: 70%;">
+                <nz-table #basicTable [nzData]="listOfData">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Age</th>
+                            <th>Address</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (data of basicTable.data; track data) {
+                        <tr>
+                            <td>{{ data.name }}</td>
+                            <td>{{ data.age }}</td>
+                            <td>{{ data.address }}</td>
+                            <td>
+                                <a>Action 一 {{ data.name }}</a>
+                                <nz-divider nzType="vertical"></nz-divider>
+                                <a>Delete</a>
+                            </td>
+                        </tr>
+                        }
+                    </tbody>
+                </nz-table>
+            </div>
+
+        </nz-content>
+    </nz-layout>
+    <nz-footer>Footer</nz-footer>
+</nz-layout>
+<!-- <form nz-form [nzLayout]="'inline'" [formGroup]="validateForm" (ngSubmit)="submitForm()">
+                <nz-form-item>
+                    <nz-form-control nzErrorTip="Please input  name!">
+                        <nz-input-group nzPrefixIcon="user">
+                            <input formControlName="name" nz-input placeholder="name" />
+                        </nz-input-group>
+                    </nz-form-control>
+                </nz-form-item>
+                <nz-form-item>
+                    <nz-form-control nzErrorTip="Please input  title!">
+                        <nz-input-group nzPrefixIcon="lock">
+                            <input formControlName="title" nz-input placeholder="title" />
+                        </nz-input-group>
+                    </nz-form-control>
+                </nz-form-item>
+                <nz-form-item>
+                    <nz-form-control>
+                        <button nz-button nzType="primary" [disabled]="!validateForm.valid">Log in</button>
+                    </nz-form-control>
+                </nz-form-item>
+            </form> -->
