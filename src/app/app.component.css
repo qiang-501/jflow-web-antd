@@ -7,13 +7,26 @@
 
 .app-layout {
   height: 100vh;
+
 }
 
 .menu-sidebar {
   position: relative;
-  z-index: 10;
-  min-height: 100vh;
-  box-shadow: 2px 0 6px rgba(0, 21, 41, 0.35);
+}
+
+.menu-sidebar nz-footer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  padding: 6px 0;
+  background: #001529;
+  color: #fff;
+  text-align: center;
+
+  p {
+    margin-bottom: 0px;
+  }
 }
 
 .header-trigger {
@@ -69,9 +82,7 @@ nz-header {
   box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
 }
 
-nz-content {
-  margin: 5px;
-}
+
 
 .inner-content {
   padding: 5px;

@@ -9,9 +9,25 @@ import en from '@angular/common/locales/en';
 import { FormsModule } from '@angular/forms';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideHttpClient } from '@angular/common/http';
+import { provideStore } from '@ngrx/store';
+import { provideEffects } from '@ngrx/effects';
+import { provideRouterStore } from '@ngrx/router-store';
+// import { AppReducerModule } from './app.reducer';
+import { provideReducer } from './app.reducer';
 
 registerLocaleData(en);
 
 export const appConfig: ApplicationConfig = {
-  providers: [provideRouter(routes), provideNzIcons(), provideNzI18n(en_US), importProvidersFrom(FormsModule), provideAnimationsAsync(), provideHttpClient()]
+  providers: [
+    provideRouter(routes),
+    provideNzIcons(),
+    provideNzI18n(en_US),
+    importProvidersFrom(FormsModule),
+    provideAnimationsAsync(),
+    provideHttpClient(),
+    provideStore(),
+    provideEffects(),
+    provideRouterStore(),
+    provideReducer(),
+  ],
 };

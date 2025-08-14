@@ -1,12 +1,12 @@
 import { Component } from '@angular/core';
-import { NzMenuModule } from 'ng-zorro-antd/menu';
+import { RouterOutlet } from '@angular/router';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
-import { RouterOutlet } from '@angular/router';
+import { NzMenuModule } from 'ng-zorro-antd/menu';
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [NzMenuModule, NzIconModule, NzLayoutModule, RouterOutlet],
+  imports: [RouterOutlet, NzIconModule, NzLayoutModule, NzMenuModule],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.css',
 })

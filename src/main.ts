@@ -1,6 +1,8 @@
 import { bootstrapApplication } from '@angular/platform-browser';
 import { appConfig } from './app/app.config';
 import { AppComponent } from './app/app.component';
+import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
+// import { AppReducerModule } from './app/app.reducer';
 
-bootstrapApplication(AppComponent, appConfig)
-  .catch((err) => console.error(err));
+ModuleRegistry.registerModules([AllCommunityModule]);
+bootstrapApplication(AppComponent, appConfig).catch((e) => console.error(e));
