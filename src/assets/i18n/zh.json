@@ -1,0 +1,9 @@
+{
+  "addBtn": "新增",
+  "saveBtn": "保存",
+  "deleteBtn": "删除",
+  "serial": "序列号",
+  "tag": "标签",
+  "model": "模型",
+  "device_type": "设备类型"
+}

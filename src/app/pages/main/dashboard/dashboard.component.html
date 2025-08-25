@@ -1,58 +1,109 @@
 <div class="example-wrapper">
-    <div class="action-btn-group">
-        <button nz-button nzType="primary" nzShape="round" (click)="onAdd()">
-            <span nz-icon nzType="plus"></span> 新增
-        </button>
-        <button nz-button nzType="default" nzShape="round" (click)="onSave()">
-            <span nz-icon nzType="save"></span> 保存
-        </button>
-        <button nz-button nzType="default" nzDanger nzShape="round" (click)="onDelete()">
-            <span nz-icon nzType="delete"></span> 删除
-        </button>
-    </div>
-    <ag-grid-angular style="width: 100%; height: calc(100% - 45px);" [invalidEditValueMode]="invalidEditValueMode"
-        [columnDefs]="columnDefs" [defaultColDef]="defaultColDef" [editType]="editType" [rowData]="rowData"
-        (cellValueChanged)="onCellValueChanged($event)" (rowValueChanged)="onRowValueChanged($event)"
-        (gridReady)="onGridReady($event)" />
+  <div class="action-btn-group">
+    <button nz-button nzType="primary" nzShape="round" (click)="onAdd()">
+      <span nz-icon nzType="plus"></span> {{ "addBtn" | translate }}
+    </button>
+    <button nz-button nzType="default" nzShape="round" (click)="onSave()">
+      <span nz-icon nzType="save"></span> {{ "saveBtn" | translate }}
+    </button>
+    <button
+      nz-button
+      nzType="default"
+      nzDanger
+      nzShape="round"
+      (click)="onDelete()"
+    >
+      <span nz-icon nzType="delete"></span> {{ "deleteBtn" | translate }}
+    </button>
+  </div>
+  <ag-grid-angular
+    style="height: calc(100% - 45px)"
+    [invalidEditValueMode]="invalidEditValueMode"
+    [columnDefs]="columnDefs"
+    [gridOptions]="gridOptions"
+    [defaultColDef]="defaultColDef"
+    [rowModelType]="rowModelType"
+    [cacheBlockSize]="10000"
+    pagination="true"
+    [paginationPageSize]="paginationPageSize"
+    [paginationPageSizeSelector]="[100, 1000, 10000]"
+    (gridReady)="onGridReady($event)"
+  />
 
-    <ng-template #addUserModal>
-      <form [formGroup]="addUserForm" class="add-user-form">
-        <div nz-form-item nz-row>
-          <div nz-form-label nz-col nzSpan="6">
-            <label for="name">姓名</label>
-          </div>
-          <div nz-form-control nz-col nzSpan="16">
-            <input nz-input id="name" formControlName="name" placeholder="请输入姓名" />
-            <div class="error" *ngIf="addUserForm.get('name')?.invalid && addUserForm.get('name')?.touched">
-              姓名为必填项
-            </div>
+  <ng-template #addUserModal>
+    <form [formGroup]="addUserForm" class="add-user-form">
+      <div nz-form-item nz-row>
+        <div nz-form-label nz-col nzSpan="6">
+          <label for="name">姓名</label>
+        </div>
+        <div nz-form-control nz-col nzSpan="16">
+          <input
+            nz-input
+            id="name"
+            formControlName="name"
+            placeholder="请输入姓名"
+          />
+          <div
+            class="error"
+            *ngIf="
+              addUserForm.get('name')?.invalid &&
+              addUserForm.get('name')?.touched
+            "
+          >
+            姓名为必填项
           </div>
         </div>
-        <div nz-form-item nz-row>
-          <div nz-form-label nz-col nzSpan="6">
-            <label for="email">邮箱</label>
-          </div>
-          <div nz-form-control nz-col nzSpan="16">
-            <input nz-input id="email" formControlName="email" placeholder="请输入邮箱" />
-            <div class="error" *ngIf="addUserForm.get('email')?.invalid && addUserForm.get('email')?.touched">
-              请输入有效邮箱
-            </div>
+      </div>
+      <div nz-form-item nz-row>
+        <div nz-form-label nz-col nzSpan="6">
+          <label for="email">邮箱</label>
+        </div>
+        <div nz-form-control nz-col nzSpan="16">
+          <input
+            nz-input
+            id="email"
+            formControlName="email"
+            placeholder="请输入邮箱"
+          />
+          <div
+            class="error"
+            *ngIf="
+              addUserForm.get('email')?.invalid &&
+              addUserForm.get('email')?.touched
+            "
+          >
+            请输入有效邮箱
           </div>
         </div>
-        <div nz-form-item nz-row>
-          <div nz-form-label nz-col nzSpan="6">
-            <label for="password">密码</label>
-          </div>
-          <div nz-form-control nz-col nzSpan="16">
-            <input nz-input id="password" type="password" formControlName="password" placeholder="请输入密码" />
-            <div class="error" *ngIf="addUserForm.get('password')?.invalid && addUserForm.get('password')?.touched">
-              密码至少6位
-            </div>
+      </div>
+      <div nz-form-item nz-row>
+        <div nz-form-label nz-col nzSpan="6">
+          <label for="password">密码</label>
+        </div>
+        <div nz-form-control nz-col nzSpan="16">
+          <input
+            nz-input
+            id="password"
+            type="password"
+            formControlName="password"
+            placeholder="请输入密码"
+          />
+          <div
+            class="error"
+            *ngIf="
+              addUserForm.get('password')?.invalid &&
+              addUserForm.get('password')?.touched
+            "
+          >
+            密码至少6位
           </div>
         </div>
-        <div style="text-align:right;margin-top:16px;">
-          <button nz-button nzType="primary" [disabled]="addUserForm.invalid">提交</button>
-        </div>
-      </form>
-    </ng-template>
+      </div>
+      <div style="text-align: right; margin-top: 16px">
+        <button nz-button nzType="primary" [disabled]="addUserForm.invalid">
+          提交
+        </button>
+      </div>
+    </form>
+  </ng-template>
 </div>

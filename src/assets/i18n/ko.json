@@ -1,0 +1,9 @@
+{
+  "addBtn": "추가",
+  "saveBtn": "저장",
+  "deleteBtn": "삭제",
+  "serial": "일련 번호",
+  "tag": "태그",
+  "model": "모델",
+  "device_type": "장치 유형"
+}

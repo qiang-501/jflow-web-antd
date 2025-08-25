@@ -1,0 +1,9 @@
+{
+  "addBtn": "Add",
+  "saveBtn": "Save",
+  "deleteBtn": "Delete",
+  "serial": "Serial No.",
+  "tag": "Tag No.",
+  "model": "Model No.",
+  "device_type": "Device Type"
+}

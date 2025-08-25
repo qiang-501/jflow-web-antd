@@ -1,0 +1,160 @@
+{
+  "/restcall": {
+    "target": "http://localhost:8084",
+    "secure": false
+  },
+  "/binarycall": {
+    "target": "http://localhost:8084",
+    "secure": false
+  },
+  "/formcall": {
+    "target": "http://localhost:8084",
+    "secure": false
+  },
+  "/app-store-proxy": {
+    "target": "http://localhost:8084",
+    "secure": false
+  },
+  "/widget-store-proxy": {
+    "target": "http://localhost:8084",
+    "secure": false
+  },
+  "/query-server": {
+    "target": "http://localhost:8030",
+    "secure": false
+  },
+  "/ui-query-exec": {
+    "target": "http://localhost:8084",
+    "secure": false
+  },
+  "/client-query-exec/execute": {
+    "target": "http://localhost:8084",
+    "secure": false
+  },
+  "/asset-fake-search": {
+    "target": "https://valvcentral-dev.vlm.npazeus1.bakerhughes.com/valves-search",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/asset-fake-search": ""
+    },
+    "logLevel": "debug",
+    "headers": {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    }
+  },
+  "/asset_gateway_URL": {
+    "target": "https://valvcentral-dev.vlm.npazeus1.bakerhughes.com/valves-asset360-gateway",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/asset_gateway_URL": ""
+    },
+    "logLevel": "debug",
+    "headers": {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    }
+  },
+  "/vlm_proxy_URL": {
+    "target": "https://valvcentral-dev.vlm.npazeus1.bakerhughes.com/vlm-proxy",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/vlm_proxy_URL": ""
+    },
+    "logLevel": "debug",
+    "headers": {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    }
+  },
+  "/asset_report_URL": {
+    "target": "https://valvcentral-dev.vlm.npazeus1.bakerhughes.com/valves-assetmanagement-reports",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/asset_report_URL": ""
+    },
+    "logLevel": "debug",
+    "headers": {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    }
+  },
+  "/asset-fake-upload-image": {
+    "target": "https://valvcentral-dev.vlm.npazeus1.bakerhughes.com/objectstorage",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/asset-fake-upload-image": ""
+    },
+    "logLevel": "debug",
+    "headers": {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    }
+  },
+  "/asset-vlm-master": {
+    "target": "https://valvcentral-dev.vlm.npazeus1.bakerhughes.com/vlm-master",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/asset-vlm-master": ""
+    },
+    "logLevel": "debug",
+    "headers": {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    }
+  },
+  "/asset-vlm-user-managementapi": {
+    "target": "https://valvcentral-dev.vlm.npazeus1.bakerhughes.com/valves/vlm-vk-asset-management",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/asset-vlm-user-managementapi": ""
+    },
+    "logLevel": "debug",
+    "headers": {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    }
+  },
+  "/asset-cart-service": {
+    "target": "https://valvcentral-dev.vlm.npazeus1.bakerhughes.com/cart-service",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/asset-cart-service": ""
+    },
+    "logLevel": "debug",
+    "headers": {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    }
+  },
+   "/asset-ocr-service": {
+    "target": "https://valvcentral-dev.vlm.npazeus1.bakerhughes.com/vlm-ocr-service",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/asset-ocr-service": ""
+    },
+    "logLevel": "debug",
+    "headers": {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    }
+  }
+}

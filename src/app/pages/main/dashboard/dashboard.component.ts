@@ -1,4 +1,4 @@
-import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { Component, TemplateRef, ViewChild, OnInit } from '@angular/core';
 import { AgGridAngular } from 'ag-grid-angular'; // Angular Data Grid Component
 import {
   CellValueChangedEvent,
@@ -17,11 +17,14 @@ import {
   ValidationModule,
   EditValidationCommitType,
   IErrorValidationParams,
+  IServerSideDatasource,
+  RowModelType,
 } from 'ag-grid-community';
 import {
   ColumnMenuModule,
   ColumnsToolPanelModule,
   ContextMenuModule,
+  ServerSideRowModelModule,
 } from 'ag-grid-enterprise';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -33,6 +36,7 @@ import { NzModalService } from 'ng-zorro-antd/modal';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NzModalModule } from 'ng-zorro-antd/modal';
 import { Store } from '@ngrx/store';
+import { HttpClient } from '@angular/common/http';
 import {
   updateWorkFlowAction,
   addWorkFlowsAction,
@@ -41,7 +45,8 @@ import {
   selectWorkFlowsCollection,
   selectWorkFlows,
 } from '../../../services/work-flow.selectors';
-
+import { allColumns, allGridColumns } from './allGridColumns';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 ModuleRegistry.registerModules([
   ClientSideRowModelModule,
   ColumnsToolPanelModule,
@@ -51,6 +56,7 @@ ModuleRegistry.registerModules([
   TextEditorModule,
   CustomEditorModule,
   ValidationModule,
+  ServerSideRowModelModule,
 ]);
 // import { NumericCellEditor } from "./numeric-cell-editor.component";
 // Column Definition Type Interface
@@ -65,55 +71,27 @@ ModuleRegistry.registerModules([
     NzFormModule,
     NzInputModule,
     NzModalModule,
+    TranslateModule,
     AgGridAngular,
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
   private gridApi!: GridApi;
 
-  columnDefs: ColDef[] = [
-    {
-      field: 'make',
-      cellEditorParams: {
-        getValidationErrors: (params: IErrorValidationParams) => {
-          const { value } = params;
-          if (!value || value.length < 1) {
-            return ['The value has to be at least 3 characters long.'];
-          }
-          return [];
-        },
-      },
-    },
-    { field: 'model' },
-    {
-      field: 'price',
-      // cellEditorParams: {
-      //   getValidationErrors: (params: IErrorValidationParams) => {
-      //     const { value } = params;
-      //     if (!value || value < 1 || value > 999) {
-      //       return ["The value has to be at least 3 characters long."];
-      //     }
-      //     return [];
-      //   },
-      // },
-    },
-    {
-      headerName: 'Suppress Navigable',
-      field: 'field5',
-      suppressNavigable: true,
-      minWidth: 200,
-    },
-  ];
-  defaultColDef: ColDef = {
-    flex: 1,
-    editable: true,
-    cellDataType: false,
+  columnDefs: ColDef[] = [];
+  customGermanLocale = {
+    model_number: '123',
+    resetColumns: '重置',
+    // customise the locale here
   };
-  editType: EditStrategyType = 'fullRow';
+  gridOptions = {
+    localeText: this.customGermanLocale,
+  };
   invalidEditValueMode: EditValidationCommitType = 'block';
-  rowData: any[] | null = getRowData();
+  rowModelType: RowModelType = 'serverSide';
+  paginationPageSize: number = 10000;
 
   @ViewChild('addUserModal', { static: false }) addUserModal!: TemplateRef<any>;
   addUserForm!: FormGroup;
@@ -121,50 +99,54 @@ export class DashboardComponent {
   constructor(
     private modal: NzModalService,
     private fb: FormBuilder,
-    private store: Store
+    private store: Store<any>,
+    private http: HttpClient,
+    private translate: TranslateService
   ) {
     this.addUserForm = this.fb.group({
       name: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
     });
-  }
 
-  onCellValueChanged(event: CellValueChangedEvent) {
-    console.log(
-      'onCellValueChanged: ' + event.colDef.field + ' = ' + event.newValue
-    );
+    this.translate.use('ko');
   }
-
-  onRowValueChanged(event: RowValueChangedEvent) {
-    const data = event.data;
-    console.log(
-      'onRowValueChanged: (' +
-        data.make +
-        ', ' +
-        data.model +
-        ', ' +
-        data.price +
-        ', ' +
-        data.field5 +
-        ')'
-    );
+  async ngOnInit(): Promise<void> {
+    this.columnDefs = await allColumns(this.translate);
   }
-
-  onBtStopEditing() {
-    this.gridApi.stopEditing();
-  }
-
-  onBtStartEditing() {
-    this.gridApi.setFocusedCell(1, 'make');
-    this.gridApi.startEditingCell({
-      rowIndex: 1,
-      colKey: 'make',
-    });
-  }
+  public defaultColDef: ColDef = {
+    minWidth: 150,
+    sortable: false,
+    wrapHeaderText: true,
+    autoHeaderHeight: true,
+    cellStyle: {
+      'line-height': '32px',
+    },
+    filterParams: {
+      filterOptions: ['contains'],
+    },
+  };
 
   onGridReady(params: GridReadyEvent) {
     this.gridApi = params.api;
+    const datasource = this.createServerSideDatasource();
+    params.api!.setGridOption('serverSideDatasource', datasource);
+  }
+  createServerSideDatasource(): IServerSideDatasource {
+    return {
+      getRows: async (params) => {
+        console.log('[Datasource] - rows requested by grid: ', params.request);
+        // get data for request from our fake server
+        const response: any = await this.getRowData();
+        // simulating real server call with a 500ms delay
+        if (response.valves) {
+          // supply rows for requested block to grid
+          params.success({ rowData: response.valves.data });
+        } else {
+          params.fail();
+        }
+      },
+    };
   }
 
   onAdd() {
@@ -206,35 +188,54 @@ export class DashboardComponent {
     // TODO: 实现删除逻辑
     console.log('删除按钮点击');
   }
-}
+  getRowData() {
+    var request = {
+      search_parameters: [
+        {
+          search_type: 'valves',
+          operators: [
+            {
+              field: 'tenant_id',
+              type: 'and',
+              value: ['a03e630b-1df0-4088-900a-7270e9c9fc11'],
+              match_type: 'match_phrase',
+            },
+            {
+              field: 'status_flag.keyword',
+              type: 'and',
+              value: 'ACTIVE',
+              match_type: 'match_phrase',
+              filter_type: 1,
+            },
+            {
+              field: 'serial_number.keyword',
+              type: 'and',
+              value: '1',
+              match_type: 'wildcard',
+              filter_type: 1,
+            },
+          ],
+          range_operations: [],
+          sort: [
+            {
+              field: 'valve_ship_date',
+              order: 'desc',
+            },
+          ],
+        },
+      ],
+      size: 10,
+      start: 0,
+    };
+    var tokenStr = localStorage.getItem('token')
+      ? localStorage.getItem('token')
+      : '';
+    var authCode = 'Bearer ' + tokenStr;
 
-function getRowData() {
-  const rowData = [];
-  for (let i = 0; i < 10; i++) {
-    rowData.push({
-      make: 'Toyota',
-      model: 'Celica',
-      price: 35000 + i * 1000,
-      field4: 'Sample XX',
-      field5: 'Sample 22',
-      field6: 'Sample 23',
-    });
-    rowData.push({
-      make: 'Ford',
-      model: 'Mondeo',
-      price: 32000 + i * 1000,
-      field4: 'Sample YY',
-      field5: 'Sample 24',
-      field6: 'Sample 25',
-    });
-    rowData.push({
-      make: 'Porsche',
-      model: 'Boxster',
-      price: 72000 + i * 1000,
-      field4: 'Sample ZZ',
-      field5: 'Sample 26',
-      field6: 'Sample 27',
-    });
+    return this.http
+      .post('asset-fake-search' + 'apia/v1/valves/search', request, {
+        headers: { Authorization: authCode },
+      })
+      .toPromise();
   }
-  return rowData;
 }

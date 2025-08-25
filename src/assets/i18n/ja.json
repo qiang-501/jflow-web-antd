@@ -1,0 +1,9 @@
+{
+  "addBtn": "追加",
+  "saveBtn": "保存",
+  "deleteBtn": "削除",
+  "serial": "シリアル番号",
+  "tag": "タグ",
+  "model": "モデル",
+  "device_type": "デバイスタイプ"
+}
