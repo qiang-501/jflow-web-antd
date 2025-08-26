@@ -10,12 +10,27 @@
       "sourceRoot": "src",
       "prefix": "app",
       "i18n": {
-        "sourceLocale": "en-US"
+        "sourceLocale": "en-US",
+        "locales": {
+          "zh": {
+            "translation": "src/assets/xlf/messages.zh.xlf"
+          },
+          "en": {
+            "translation": "src/assets/xlf/messages.en.xlf"
+          },
+          "ja": {
+            "translation": "src/assets/xlf/messages.ja.xlf"
+          },
+          "ko": {
+            "translation": "src/assets/xlf/messages.ko.xlf"
+          }
+        }
       },
       "architect": {
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
+            "localize": ["en-US", "zh", "ja", "ko"],
             "outputPath": "dist/jflow-web-antd",
             "index": "src/index.html",
             "browser": "src/main.ts",
@@ -33,8 +48,8 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kb",
-                  "maximumError": "1mb"
+                  "maximumWarning": "5000kb",
+                  "maximumError": "10mb"
                 },
                 {
                   "type": "anyComponentStyle",
@@ -48,6 +63,15 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "ja": {
+              "localize": ["ja"]
+            },
+            "ko": {
+              "localize": ["ko"]
+            },
+            "zh": {
+              "localize": ["zh"]
             }
           },
           "defaultConfiguration": "production"
@@ -60,6 +84,15 @@
             },
             "development": {
               "buildTarget": "jflow-web-antd:build:development"
+            },
+            "ja": {
+              "buildTarget": "jflow-web-antd:build:development,ja"
+            },
+            "ko": {
+              "buildTarget": "jflow-web-antd:build:development,ko"
+            },
+            "zh": {
+              "buildTarget": "jflow-web-antd:build:development,zh"
             }
           },
           "defaultConfiguration": "development",

@@ -14,7 +14,7 @@ import { provideEffects } from '@ngrx/effects';
 import { provideRouterStore } from '@ngrx/router-store';
 // import { AppReducerModule } from './app.reducer';
 import { provideReducer } from './app.reducer';
-
+import { ValveEffects } from './services/effects/valve.effects';
 registerLocaleData(en);
 
 export const appConfig: ApplicationConfig = {
@@ -26,7 +26,7 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     provideHttpClient(),
     provideStore(),
-    provideEffects(),
+    provideEffects(ValveEffects),
     provideRouterStore(),
     provideReducer(),
   ],

@@ -47,6 +47,7 @@ import {
 } from '../../../services/work-flow.selectors';
 import { allColumns, allGridColumns } from './allGridColumns';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
+import { Valve } from '../../../services/models/valves';
 ModuleRegistry.registerModules([
   ClientSideRowModelModule,
   ColumnsToolPanelModule,
@@ -95,13 +96,14 @@ export class DashboardComponent implements OnInit {
 
   @ViewChild('addUserModal', { static: false }) addUserModal!: TemplateRef<any>;
   addUserForm!: FormGroup;
-
+  protected valves$ = this.valveStore.select((state) => state.valves);
   constructor(
     private modal: NzModalService,
     private fb: FormBuilder,
     private store: Store<any>,
     private http: HttpClient,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private valveStore: Store<{ valves: Valve[] }>
   ) {
     this.addUserForm = this.fb.group({
       name: ['', [Validators.required]],
@@ -113,6 +115,10 @@ export class DashboardComponent implements OnInit {
   }
   async ngOnInit(): Promise<void> {
     this.columnDefs = await allColumns(this.translate);
+    this.valveStore.dispatch({ type: '[Valves Page] Load Valves' });
+    this.valves$.subscribe((res) => {
+      console.log(res);
+    });
   }
   public defaultColDef: ColDef = {
     minWidth: 150,
@@ -137,7 +143,8 @@ export class DashboardComponent implements OnInit {
       getRows: async (params) => {
         console.log('[Datasource] - rows requested by grid: ', params.request);
         // get data for request from our fake server
-        const response: any = await this.getRowData();
+        // const response: any = await this.getRowData();
+        const response: any = await this.valves$.toPromise();
         // simulating real server call with a 500ms delay
         if (response.valves) {
           // supply rows for requested block to grid
@@ -167,7 +174,7 @@ export class DashboardComponent implements OnInit {
     );
 
     this.modal.create({
-      nzTitle: '新增用户',
+      nzTitle: $localize`:@@addModel:新增项目`,
       nzContent: this.addUserModal,
       nzFooter: null,
       nzWidth: 400,
@@ -233,7 +240,7 @@ export class DashboardComponent implements OnInit {
     var authCode = 'Bearer ' + tokenStr;
 
     return this.http
-      .post('asset-fake-search' + 'apia/v1/valves/search', request, {
+      .post('asset-fake-search' + 'api/v1/valves/search', request, {
         headers: { Authorization: authCode },
       })
       .toPromise();

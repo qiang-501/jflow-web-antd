@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+  <file source-language="en-US" datatype="plaintext" original="ng2.template">
+    <body>
+      <trans-unit id="7419080677613818373" datatype="html">
+        <source>名前</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/main/dashboard/dashboard.component.html</context>
+          <context context-type="linenumber">37,38</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="9115505226015911600" datatype="html">
+        <source>メール</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/main/dashboard/dashboard.component.html</context>
+          <context context-type="linenumber">60,61</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="6971624281171557374" datatype="html">
+        <source>パスワード</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/main/dashboard/dashboard.component.html</context>
+          <context context-type="linenumber">83,84</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="addModel" datatype="html">
+        <source>新規プロジェクト</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/main/dashboard/dashboard.component.html</context>
+          <context context-type="linenumber">10,11</context>
+        </context-group>
+      </trans-unit>
+       <trans-unit id="submit" datatype="html">
+        <source>送信</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/main/dashboard/dashboard.component.html</context>
+          <context context-type="linenumber">10,11</context>
+        </context-group>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

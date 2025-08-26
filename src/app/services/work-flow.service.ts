@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { WorkFlow } from '../models/work-flow';
 import { createReducer, on } from '@ngrx/store';
 import { createAction, props, createActionGroup } from '@ngrx/store';
+import { Valve } from './models/valves';
 @Injectable({
   providedIn: 'root',
 })
@@ -37,12 +38,14 @@ let workFlow: WorkFlow = {
   created_on: '',
 };
 let workFlows: Array<WorkFlow> = [];
+let valves: Array<Valve> = [];
 export const workFlowsReducer = createReducer(
   workFlows,
   on(addWorkFlowsAction, (state, { workflow }) => {
     return [...state, workflow];
   })
 );
+
 export const workFlowReducer = createReducer(
   workFlow,
   on(updateWorkFlowAction, (state, { status, important, due_date }) => {

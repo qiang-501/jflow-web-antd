@@ -34,12 +34,13 @@
     <form [formGroup]="addUserForm" class="add-user-form">
       <div nz-form-item nz-row>
         <div nz-form-label nz-col nzSpan="6">
-          <label for="name">姓名</label>
+          <label i18n for="name">姓名</label>
         </div>
         <div nz-form-control nz-col nzSpan="16">
           <input
             nz-input
             id="name"
+            i18n
             formControlName="name"
             placeholder="请输入姓名"
           />
@@ -56,7 +57,7 @@
       </div>
       <div nz-form-item nz-row>
         <div nz-form-label nz-col nzSpan="6">
-          <label for="email">邮箱</label>
+          <label i18n for="email">邮箱</label>
         </div>
         <div nz-form-control nz-col nzSpan="16">
           <input
@@ -78,7 +79,7 @@
       </div>
       <div nz-form-item nz-row>
         <div nz-form-label nz-col nzSpan="6">
-          <label for="password">密码</label>
+          <label i18n for="password">密码</label>
         </div>
         <div nz-form-control nz-col nzSpan="16">
           <input
@@ -100,7 +101,12 @@
         </div>
       </div>
       <div style="text-align: right; margin-top: 16px">
-        <button nz-button nzType="primary" [disabled]="addUserForm.invalid">
+        <button
+          i18n="@@submit"
+          nz-button
+          nzType="primary"
+          [disabled]="addUserForm.invalid"
+        >
           提交
         </button>
       </div>
