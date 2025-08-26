@@ -38,7 +38,7 @@ let workFlow: WorkFlow = {
   created_on: '',
 };
 let workFlows: Array<WorkFlow> = [];
-let valves: Array<Valve> = [];
+
 export const workFlowsReducer = createReducer(
   workFlows,
   on(addWorkFlowsAction, (state, { workflow }) => {

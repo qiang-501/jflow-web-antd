@@ -55,19 +55,19 @@ export class ValveEffects {
     var authCode = 'Bearer ' + tokenStr;
     return this.actions$.pipe(
       ofType('LoadValves'),
-      exhaustMap(() =>
-        this.http
+      exhaustMap((action) => {
+        return this.http
           .post('asset-fake-search' + 'api/v1/valves/search', request, {
             headers: { Authorization: authCode },
           })
           .pipe(
             map((valves) => ({
-              type: 'Valves Loaded Success',
+              type: 'ValvesLoadedSuccess',
               payload: valves,
             })),
-            catchError(() => of({ type: 'Valves Loaded Error' }))
-          )
-      )
+            catchError(() => of({ type: 'ValvesLoadedError' }))
+          );
+      })
     );
   });
 }

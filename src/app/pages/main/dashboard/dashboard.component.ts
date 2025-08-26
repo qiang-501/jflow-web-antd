@@ -37,6 +37,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NzModalModule } from 'ng-zorro-antd/modal';
 import { Store } from '@ngrx/store';
 import { HttpClient } from '@angular/common/http';
+
 import {
   updateWorkFlowAction,
   addWorkFlowsAction,
@@ -44,10 +45,12 @@ import {
 import {
   selectWorkFlowsCollection,
   selectWorkFlows,
+  selectValves,
 } from '../../../services/work-flow.selectors';
 import { allColumns, allGridColumns } from './allGridColumns';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { Valve } from '../../../services/models/valves';
+import { take, lastValueFrom } from 'rxjs';
 ModuleRegistry.registerModules([
   ClientSideRowModelModule,
   ColumnsToolPanelModule,
@@ -92,11 +95,11 @@ export class DashboardComponent implements OnInit {
   };
   invalidEditValueMode: EditValidationCommitType = 'block';
   rowModelType: RowModelType = 'serverSide';
-  paginationPageSize: number = 10000;
+  paginationPageSize: number = 10;
 
   @ViewChild('addUserModal', { static: false }) addUserModal!: TemplateRef<any>;
   addUserForm!: FormGroup;
-  protected valves$ = this.valveStore.select((state) => state.valves);
+
   constructor(
     private modal: NzModalService,
     private fb: FormBuilder,
@@ -113,12 +116,13 @@ export class DashboardComponent implements OnInit {
 
     this.translate.use('ko');
   }
+
   async ngOnInit(): Promise<void> {
     this.columnDefs = await allColumns(this.translate);
-    this.valveStore.dispatch({ type: '[Valves Page] Load Valves' });
-    this.valves$.subscribe((res) => {
-      console.log(res);
-    });
+
+    // this.valves$.subscribe((res) => {
+    //   console.log(res);
+    // });
   }
   public defaultColDef: ColDef = {
     minWidth: 150,
@@ -141,17 +145,31 @@ export class DashboardComponent implements OnInit {
   createServerSideDatasource(): IServerSideDatasource {
     return {
       getRows: async (params) => {
-        console.log('[Datasource] - rows requested by grid: ', params.request);
-        // get data for request from our fake server
-        // const response: any = await this.getRowData();
-        const response: any = await this.valves$.toPromise();
-        // simulating real server call with a 500ms delay
-        if (response.valves) {
-          // supply rows for requested block to grid
-          params.success({ rowData: response.valves.data });
-        } else {
-          params.fail();
-        }
+        // const response: any = await lastValueFrom(
+        //   this.valveStore.select(selectValves)
+        // );
+        // params.success({
+        //   rowData: response.valves.valves.data,
+        //   rowCount: response.valves.valves.meta.totalElements,
+        // });
+
+        this.valveStore.dispatch({
+          type: 'LoadValves',
+          payload: params.request,
+        });
+        this.valveStore.select(selectValves).subscribe((response: any) => {
+          if (response.valves) {
+            params.success({
+              rowData: response.valves.valves.data,
+              rowCount: response.valves.valves.meta.totalElements,
+            });
+          } else {
+            params.success({
+              rowData: [],
+              rowCount: 0,
+            });
+          }
+        });
       },
     };
   }

@@ -23,10 +23,10 @@
     [gridOptions]="gridOptions"
     [defaultColDef]="defaultColDef"
     [rowModelType]="rowModelType"
-    [cacheBlockSize]="10000"
+    [cacheBlockSize]="10"
     pagination="true"
     [paginationPageSize]="paginationPageSize"
-    [paginationPageSizeSelector]="[100, 1000, 10000]"
+    [paginationPageSizeSelector]="[10, 100, 1000, 10000]"
     (gridReady)="onGridReady($event)"
   />
 
