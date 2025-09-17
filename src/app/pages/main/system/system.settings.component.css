@@ -1,0 +1,51 @@
+.example-wrapper {
+  height: 100%;
+}
+
+.action-btn-group {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.action-btn-group button {
+  min-width: 80px;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.action-btn-group [nz-icon] {
+  margin-right: 4px;
+}
+.add-user-form {
+  padding: 20px 0 0 0;
+}
+.add-user-form .ant-form-item {
+  margin-bottom: 32px !important;
+}
+.add-user-form input[nz-input] {
+  width: 100%;
+  min-width: 180px;
+  font-size: 15px;
+  border-radius: 4px;
+}
+.add-user-form .error {
+  color: #ff4d4f;
+  font-size: 12px;
+  margin-top: 2px;
+  min-height: 18px;
+}
+.add-user-form button[nz-button] {
+  min-width: 90px;
+  font-size: 15px;
+  border-radius: 4px;
+}
+.add-user-form [nz-form-label] label {
+  font-weight: 500;
+  font-size: 15px;
+}
+.add-user-form [nz-form-control] {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}

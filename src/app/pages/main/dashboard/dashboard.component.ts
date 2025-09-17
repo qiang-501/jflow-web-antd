@@ -49,7 +49,7 @@ import {
 } from '../../../services/work-flow.selectors';
 import { allColumns, allGridColumns } from './allGridColumns';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
-import { Valve } from '../../../services/models/valves';
+import { Valve } from '../../../models/valves';
 import { take, lastValueFrom } from 'rxjs';
 ModuleRegistry.registerModules([
   ClientSideRowModelModule,
@@ -95,7 +95,7 @@ export class DashboardComponent implements OnInit {
   };
   invalidEditValueMode: EditValidationCommitType = 'block';
   rowModelType: RowModelType = 'serverSide';
-  paginationPageSize: number = 10;
+  paginationPageSize: number = 100;
 
   @ViewChild('addUserModal', { static: false }) addUserModal!: TemplateRef<any>;
   addUserForm!: FormGroup;
@@ -114,7 +114,7 @@ export class DashboardComponent implements OnInit {
       password: ['', [Validators.required, Validators.minLength(6)]],
     });
 
-    this.translate.use('ko');
+    this.translate.use('ja');
   }
 
   async ngOnInit(): Promise<void> {
@@ -137,36 +137,30 @@ export class DashboardComponent implements OnInit {
     },
   };
 
-  onGridReady(params: GridReadyEvent) {
+  onGridReady(params: GridReadyEvent<any>) {
     this.gridApi = params.api;
     const datasource = this.createServerSideDatasource();
     params.api!.setGridOption('serverSideDatasource', datasource);
+    this.valveStore.select(selectValves).subscribe((response: any) => {
+      console.log('222' + response.loading);
+    });
   }
   createServerSideDatasource(): IServerSideDatasource {
     return {
       getRows: async (params) => {
-        // const response: any = await lastValueFrom(
-        //   this.valveStore.select(selectValves)
-        // );
-        // params.success({
-        //   rowData: response.valves.valves.data,
-        //   rowCount: response.valves.valves.meta.totalElements,
-        // });
-
         this.valveStore.dispatch({
           type: 'LoadValves',
           payload: params.request,
         });
         this.valveStore.select(selectValves).subscribe((response: any) => {
-          if (response.valves) {
+          console.log(response.loading);
+          if (response.error) {
+            console.error('Error loading valves:', response.error);
+            params.fail();
+          } else if (response.valves && !response.loading) {
             params.success({
               rowData: response.valves.valves.data,
               rowCount: response.valves.valves.meta.totalElements,
-            });
-          } else {
-            params.success({
-              rowData: [],
-              rowCount: 0,
             });
           }
         });
@@ -212,55 +206,5 @@ export class DashboardComponent implements OnInit {
   onDelete() {
     // TODO: 实现删除逻辑
     console.log('删除按钮点击');
-  }
-  getRowData() {
-    var request = {
-      search_parameters: [
-        {
-          search_type: 'valves',
-          operators: [
-            {
-              field: 'tenant_id',
-              type: 'and',
-              value: ['a03e630b-1df0-4088-900a-7270e9c9fc11'],
-              match_type: 'match_phrase',
-            },
-            {
-              field: 'status_flag.keyword',
-              type: 'and',
-              value: 'ACTIVE',
-              match_type: 'match_phrase',
-              filter_type: 1,
-            },
-            {
-              field: 'serial_number.keyword',
-              type: 'and',
-              value: '1',
-              match_type: 'wildcard',
-              filter_type: 1,
-            },
-          ],
-          range_operations: [],
-          sort: [
-            {
-              field: 'valve_ship_date',
-              order: 'desc',
-            },
-          ],
-        },
-      ],
-      size: 10,
-      start: 0,
-    };
-    var tokenStr = localStorage.getItem('token')
-      ? localStorage.getItem('token')
-      : '';
-    var authCode = 'Bearer ' + tokenStr;
-
-    return this.http
-      .post('asset-fake-search' + 'api/v1/valves/search', request, {
-        headers: { Authorization: authCode },
-      })
-      .toPromise();
   }
 }

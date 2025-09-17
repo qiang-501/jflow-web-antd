@@ -1,9 +1,9 @@
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: '/dashboard' },
+  { path: '', pathMatch: 'full', redirectTo: '/main' },
   {
-    path: 'dashboard',
+    path: 'main',
     loadChildren: () =>
       import('./pages/main/main.routes').then((m) => m.MAIN_ROUTES),
   },

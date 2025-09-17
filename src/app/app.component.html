@@ -1,28 +1,38 @@
 <nz-layout class="app-layout">
-
-  <nz-sider class="menu-sidebar" nzCollapsible nzWidth="256px" nzBreakpoint="md" [(nzCollapsed)]="isCollapsed"
-    [nzTrigger]="null">
+  <nz-sider
+    class="menu-sidebar"
+    nzCollapsible
+    nzWidth="256px"
+    nzBreakpoint="md"
+    [(nzCollapsed)]="isCollapsed"
+    [nzTrigger]="null"
+  >
     <div class="sidebar-logo">
-      <a href="https://ng.ant.design/" target="_blank">
-        <img src="https://ng.ant.design/assets/img/logo.svg" alt="logo">
-        <h1>Ant Design Of Angular</h1>
+      <a target="_blank">
+        <img src="../assets/img/logo.svg" alt="logo" />
+        <!-- <h1>VKAM</h1> -->
       </a>
     </div>
-    <ul nz-menu nzTheme="dark" nzMode="inline" [nzInlineCollapsed]="isCollapsed">
+    <!-- <ul nz-menu nzTheme="dark" nzMode="inline" [nzInlineCollapsed]="isCollapsed">
       <app-sidenav></app-sidenav>
-    </ul>
-    <nz-footer>
+    </ul> -->
+    <app-sidenav></app-sidenav>
+    <!-- <nz-footer>
       <div>
         <p>© 2023 All rights reserved.</p>
       </div>
-    </nz-footer>
+    </nz-footer> -->
   </nz-sider>
   <nz-layout>
     <!-- <app-shell ></app-shell> -->
     <nz-header>
       <div class="app-header">
         <span class="header-trigger" (click)="isCollapsed = !isCollapsed">
-          <span class="trigger" nz-icon [nzType]="isCollapsed ? 'menu-unfold' : 'menu-fold'"></span>
+          <span
+            class="trigger"
+            nz-icon
+            [nzType]="isCollapsed ? 'menu-unfold' : 'menu-fold'"
+          ></span>
         </span>
       </div>
     </nz-header>
@@ -32,6 +42,4 @@
       </div>
     </nz-content>
   </nz-layout>
-
-
 </nz-layout>

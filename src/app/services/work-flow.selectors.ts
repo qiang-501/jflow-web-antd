@@ -1,6 +1,6 @@
 import { createSelector, createFeatureSelector } from '@ngrx/store';
 import { WorkFlow } from '../models/work-flow';
-import { Valve } from './models/valves';
+import { Valve } from '../models/valves';
 
 export const selectWorkFlow =
   createFeatureSelector<ReadonlyArray<WorkFlow>>('workflow');

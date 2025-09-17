@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { of } from 'rxjs';
-import { map, exhaustMap, catchError } from 'rxjs/operators';
+import { map, exhaustMap, catchError, mergeMap } from 'rxjs/operators';
 
 import { HttpClient } from '@angular/common/http';
 
@@ -55,7 +55,9 @@ export class ValveEffects {
     var authCode = 'Bearer ' + tokenStr;
     return this.actions$.pipe(
       ofType('LoadValves'),
-      exhaustMap((action) => {
+      mergeMap((action) => {
+        request.start = action.payload.startRow;
+        request.size = action.payload.endRow - action.payload.startRow;
         return this.http
           .post('asset-fake-search' + 'api/v1/valves/search', request, {
             headers: { Authorization: authCode },
@@ -65,7 +67,7 @@ export class ValveEffects {
               type: 'ValvesLoadedSuccess',
               payload: valves,
             })),
-            catchError(() => of({ type: 'ValvesLoadedError' }))
+            catchError((e) => of({ type: 'ValvesLoadedError', payload: e }))
           );
       })
     );

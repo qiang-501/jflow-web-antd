@@ -67,3 +67,10 @@ nz-content {
   background: #fff;
   height: 100%;
 }
+.menu {
+  height: calc(100% - 69px);
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  overflow: hidden;
+  border-bottom: 1px solid #f0f0f0;
+}

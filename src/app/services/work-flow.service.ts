@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { WorkFlow } from '../models/work-flow';
 import { createReducer, on } from '@ngrx/store';
 import { createAction, props, createActionGroup } from '@ngrx/store';
-import { Valve } from './models/valves';
+import { Valve } from '../models/valves';
 @Injectable({
   providedIn: 'root',
 })

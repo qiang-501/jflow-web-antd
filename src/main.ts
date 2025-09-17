@@ -8,6 +8,7 @@ import { importProvidersFrom } from '@angular/core';
 import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
 import { HttpClientModule, HttpClient } from '@angular/common/http';
 import { TranslationService } from './app/services/translation/translationService';
+import { FakeBackendInterceptor } from './app/fakes/fake-backend';
 ModuleRegistry.registerModules([AllCommunityModule]);
 bootstrapApplication(AppComponent, {
   ...appConfig,
@@ -23,5 +24,6 @@ bootstrapApplication(AppComponent, {
         },
       })
     ),
+    importProvidersFrom(FakeBackendInterceptor),
   ],
 }).catch((e) => console.error(e));

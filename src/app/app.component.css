@@ -7,11 +7,11 @@
 
 .app-layout {
   height: 100vh;
-
 }
 
 .menu-sidebar {
   position: relative;
+  background-color: #fff;
 }
 
 .menu-sidebar nz-footer {
@@ -20,7 +20,7 @@
   bottom: 0;
   width: 100%;
   padding: 6px 0;
-  background: #001529;
+
   color: #fff;
   text-align: center;
 
@@ -53,8 +53,7 @@
 
 .sidebar-logo img {
   display: inline-block;
-  height: 32px;
-  width: 32px;
+
   vertical-align: middle;
 }
 
@@ -81,8 +80,6 @@ nz-header {
   background: #fff;
   box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
 }
-
-
 
 .inner-content {
   padding: 5px;

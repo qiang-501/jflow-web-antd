@@ -1,20 +1,73 @@
-<li nz-submenu nzOpen nzTitle="Dashboard" nzIcon="dashboard">
-    <ul>
-        <li nz-menu-item nzMatchRouter>
-            <a routerLink="/dashbaord">Welcome</a>
+<!-- <ul class="menu" nz-menu nzMode="inline" [nzInlineCollapsed]="isCollapsed">
+  <ng-container *ngFor="let item of filteredMenu">
+    <li
+      [nzPaddingLeft]="1 * 24"
+      nz-menu-item
+      *ngIf="!item.children"
+      title="{{ item.title }}"
+    >
+      <span *ngIf="item.icon" nz-icon [nzType]="item.icon"></span>
+      <span>{{ item.title }}</span>
+    </li>
+    <li [nzPaddingLeft]="2 * 24" nz-submenu *ngIf="item.children">
+      <span title>
+        <span *ngIf="item.icon" nz-icon [nzType]="item.icon"></span>
+        <span>{{ item.title }}</span>
+      </span>
+      <ul>
+        <ng-container *ngFor="let child of item.children">
+          <li nz-menu-item nzMatchRouter>
+            <a routerLink="{{ child.link }}" rel="noopener noreferrer">
+              <span>{{ child.title }}</span></a
+            >
+          </li>
+        </ng-container>
+      </ul>
+    </li>
+  </ng-container>
+</ul> -->
+<ul class="menu" nz-menu [nzMode]="'inline'">
+  <ng-container *ngFor="let item of menus">
+    <ng-template #recursiveList let-menu>
+      <ng-container *ngFor="let node of menu">
+        <li
+          [nzPaddingLeft]="node.level * 12"
+          *ngIf="!node.children"
+          nz-menu-item
+          nzMatchRouter
+        >
+          <a
+            *ngIf="node.link"
+            [routerLink]="node.link"
+            rel="noopener noreferrer"
+          >
+            <span *ngIf="node.icon" nz-icon [nzType]="node.icon"></span>
+            <span>{{ node.title }}</span>
+          </a>
+          <span *ngIf="!node.link">
+            <span *ngIf="node.icon" nz-icon [nzType]="node.icon"></span>
+            <span>{{ node.title }}</span>
+          </span>
         </li>
-        <li nz-menu-item nzMatchRouter>
-            <a routerLink="/workflow">Workflow</a>
+        <li
+          [nzPaddingLeft]="node.level * 12"
+          *ngIf="node.children"
+          nz-submenu
+          [nzTitle]="node.title"
+        >
+          <ul>
+            <ng-container
+              *ngTemplateOutlet="
+                recursiveList;
+                context: { $implicit: node.children }
+              "
+            ></ng-container>
+          </ul>
         </li>
-        <li nz-menu-item nzMatchRouter>
-            <a>Workplace</a>
-        </li>
-    </ul>
-</li>
-<li nz-submenu nzOpen nzTitle="Form" nzIcon="form">
-    <ul>
-        <li nz-menu-item nzMatchRouter>
-            <a>Basic Form</a>
-        </li>
-    </ul>
-</li>
+      </ng-container>
+    </ng-template>
+    <ng-container
+      *ngTemplateOutlet="recursiveList; context: { $implicit: [item] }"
+    ></ng-container>
+  </ng-container>
+</ul>
