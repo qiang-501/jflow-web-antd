@@ -7,7 +7,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { MenuState } from '../../../services/reducers/menu.reducer';
-
+import { selectMenus } from '../../../services/selectors/menu.selectors';
 @Component({
   selector: 'app-sidenav',
   standalone: true,
@@ -29,12 +29,12 @@ export class SidenavComponent implements OnInit {
     this.menuStore.dispatch({
       type: 'LoadMenus',
     });
-    this.menuStore.select('menus').subscribe((menus) => {
+    this.menuStore.select(selectMenus).subscribe((menus) => {
       this.menus = this.buildMenuTree(menus.menus);
     });
   }
 
-  buildMenuTree(menu: Array<MenuNode>): MenuItem[] {
+  buildMenuTree(menu: readonly MenuNode[]): MenuItem[] {
     const map = new Map<string, MenuItem & { parent_id?: string }>();
     const roots: MenuItem[] = [];
     for (const item of menu) {

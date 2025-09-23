@@ -27,6 +27,9 @@ import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzModalModule } from 'ng-zorro-antd/modal';
 import { getData } from './data';
 import { TranslateModule } from '@ngx-translate/core';
+import { selectMenus } from '../../../services/selectors/menu.selectors';
+import { MenuState } from '../../../services/reducers/menu.reducer';
+import { Store } from '@ngrx/store';
 ModuleRegistry.registerModules([
   ClientSideRowModelModule,
   ColumnsToolPanelModule,
@@ -57,7 +60,7 @@ ModuleRegistry.registerModules([
 })
 export class SystemSettingsComponent implements OnInit {
   private gridApi!: GridApi;
-
+  constructor(private menuStore: Store<{ menus: MenuState }>) {}
   columnDefs: ColDef[] = [
     { field: 'created', editable: true },
     { field: 'modified' },
@@ -103,5 +106,11 @@ export class SystemSettingsComponent implements OnInit {
   getDataPath: GetDataPath = (data) => data.path;
   onGridReady(params: GridReadyEvent<any>) {
     this.gridApi = params.api;
+    this.menuStore.dispatch({
+      type: 'LoadMenuActions',
+    });
+    this.menuStore.select(selectMenus).subscribe((menus) => {
+      debugger;
+    });
   }
 }

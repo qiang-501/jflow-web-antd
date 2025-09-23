@@ -1,15 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { of } from 'rxjs';
-import { map, exhaustMap, catchError, mergeMap } from 'rxjs/operators';
-
+import { map, catchError, mergeMap } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
-
 @Injectable()
 export class ValveEffects {
   private actions$ = inject(Actions);
   private http = inject(HttpClient);
-
   loadValves$ = createEffect(() => {
     var request = {
       search_parameters: [

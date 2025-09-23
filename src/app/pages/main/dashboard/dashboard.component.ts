@@ -51,6 +51,7 @@ import { allColumns, allGridColumns } from './allGridColumns';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { Valve } from '../../../models/valves';
 import { take, lastValueFrom } from 'rxjs';
+import { MenuActions } from '../../../services/reducers/menu.reducer';
 ModuleRegistry.registerModules([
   ClientSideRowModelModule,
   ColumnsToolPanelModule,
@@ -114,7 +115,7 @@ export class DashboardComponent implements OnInit {
       password: ['', [Validators.required, Validators.minLength(6)]],
     });
 
-    this.translate.use('ja');
+    this.translate.use('de');
   }
 
   async ngOnInit(): Promise<void> {
@@ -184,9 +185,21 @@ export class DashboardComponent implements OnInit {
         },
       })
     );
+    this.store.dispatch(
+      MenuActions.addMenu({
+        menu: {
+          id: '6',
+          title: 'abc',
+          icon: 'user',
+          level: 2,
+          parent_id: '3',
+          link: 'main/workflow1',
+        },
+      })
+    );
 
     this.modal.create({
-      nzTitle: $localize`:@@addModel:新增项目`,
+      nzTitle: $localize`:@@7419080677613818373:新增项目`,
       nzContent: this.addUserModal,
       nzFooter: null,
       nzWidth: 400,

@@ -1,0 +1,14 @@
+[
+  {
+    "path": ["Dashboard", "main"],
+    "permission": "View"
+  },
+  {
+    "path": ["User Management", "Settings"],
+    "permission": "add,edit,delete"
+  },
+  {
+    "path": ["User Management", "WorkFlows"],
+    "permission": "add,edit,delete"
+  }
+]

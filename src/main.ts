@@ -9,6 +9,7 @@ import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
 import { HttpClientModule, HttpClient } from '@angular/common/http';
 import { TranslationService } from './app/services/translation/translationService';
 import { FakeBackendInterceptor } from './app/fakes/fake-backend';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 ModuleRegistry.registerModules([AllCommunityModule]);
 bootstrapApplication(AppComponent, {
   ...appConfig,
@@ -24,6 +25,6 @@ bootstrapApplication(AppComponent, {
         },
       })
     ),
-    importProvidersFrom(FakeBackendInterceptor),
+    provideHttpClient(withInterceptors([FakeBackendInterceptor])),
   ],
 }).catch((e) => console.error(e));

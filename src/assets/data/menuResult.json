@@ -4,7 +4,8 @@
     "title": "Dashboard",
     "icon": "dashboard",
     "level": 1,
-    "parent_id": ""
+    "parent_id": "",
+    "permission": "view"
   },
   {
     "id": "2",
@@ -12,14 +13,16 @@
     "icon": "user",
     "level": 2,
     "parent_id": "1",
-    "link": "main"
+    "link": "main",
+    "permission": "view"
   },
   {
     "id": "3",
     "title": "User Management",
     "icon": "user",
     "level": 1,
-    "parent_id": ""
+    "parent_id": "",
+    "permission": "view"
   },
   {
     "id": "4",
@@ -27,7 +30,8 @@
     "icon": "user",
     "level": 2,
     "parent_id": "3",
-    "link": "main/settings"
+    "link": "main/settings",
+    "permission": "view"
   },
   {
     "id": "5",
@@ -35,6 +39,7 @@
     "icon": "user",
     "level": 2,
     "parent_id": "3",
-    "link": "main/workflow"
+    "link": "main/workflow",
+    "permission": "view"
   }
 ]

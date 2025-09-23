@@ -21,4 +21,18 @@ export class MenuEffects {
       })
     );
   });
+  loadMenuActions$ = createEffect(() => {
+    return this.actions$.pipe(
+      ofType('LoadMenuActions'),
+      mergeMap((action) => {
+        return this.http.get('api/menu/actions').pipe(
+          map((menus) => ({
+            type: 'MenuActionsLoadedSuccess',
+            payload: menus,
+          })),
+          catchError((e) => of({ type: 'MenuActionsLoadedError', payload: e }))
+        );
+      })
+    );
+  });
 }
