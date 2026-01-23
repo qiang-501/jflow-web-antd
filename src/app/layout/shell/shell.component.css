@@ -1,3 +1,8 @@
+.app-layout {
+  min-height: 100vh;
+  height: 100%;
+}
+
 .menu-sidebar {
   position: relative;
   z-index: 10;
@@ -10,7 +15,9 @@
   padding: 20px 24px;
   font-size: 20px;
   cursor: pointer;
-  transition: all 0.3s, padding 0s;
+  transition:
+    all 0.3s,
+    padding 0s;
 }
 
 .trigger:hover {
@@ -40,7 +47,12 @@
   color: #fff;
   font-weight: 600;
   font-size: 14px;
-  font-family: Avenir, Helvetica Neue, Arial, Helvetica, sans-serif;
+  font-family:
+    Avenir,
+    Helvetica Neue,
+    Arial,
+    Helvetica,
+    sans-serif;
   vertical-align: middle;
 }
 

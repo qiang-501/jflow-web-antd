@@ -17,14 +17,11 @@ import {
   ValidationModule,
   EditValidationCommitType,
   IErrorValidationParams,
-  IServerSideDatasource,
-  RowModelType,
 } from 'ag-grid-community';
 import {
   ColumnMenuModule,
   ColumnsToolPanelModule,
   ContextMenuModule,
-  ServerSideRowModelModule,
 } from 'ag-grid-enterprise';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -39,6 +36,7 @@ import { Store } from '@ngrx/store';
 import { HttpClient } from '@angular/common/http';
 
 import { WorkFlowActions } from '../../store/actions/workflow.actions';
+import { ValveActions } from '../../store/actions/valve.actions';
 import { selectAllWorkFlows } from '../../store/selectors';
 import {
   selectAllValves,
@@ -47,7 +45,6 @@ import {
 import { allColumns, allGridColumns } from './allGridColumns';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { Valve } from '../../models/valves';
-import { take, lastValueFrom } from 'rxjs';
 import { MenuActions } from '../../store/actions/menu.actions';
 ModuleRegistry.registerModules([
   ClientSideRowModelModule,
@@ -58,7 +55,6 @@ ModuleRegistry.registerModules([
   TextEditorModule,
   CustomEditorModule,
   ValidationModule,
-  ServerSideRowModelModule,
 ]);
 // import { NumericCellEditor } from "./numeric-cell-editor.component";
 // Column Definition Type Interface
@@ -83,16 +79,17 @@ export class DashboardComponent implements OnInit {
   private gridApi!: GridApi;
 
   columnDefs: ColDef[] = [];
+  rowData: any[] = [];
+  loading: boolean = false;
+
   customGermanLocale = {
     model_number: '123',
     resetColumns: '重置',
-    // customise the locale here
   };
   gridOptions = {
     localeText: this.customGermanLocale,
   };
   invalidEditValueMode: EditValidationCommitType = 'block';
-  rowModelType: RowModelType = 'serverSide';
   paginationPageSize: number = 100;
 
   @ViewChild('addUserModal', { static: false }) addUserModal!: TemplateRef<any>;
@@ -112,15 +109,47 @@ export class DashboardComponent implements OnInit {
       password: ['', [Validators.required, Validators.minLength(6)]],
     });
 
-    this.translate.use('de');
+    this.translate.use('zh');
   }
 
   async ngOnInit(): Promise<void> {
     this.columnDefs = await allColumns(this.translate);
 
-    // this.valves$.subscribe((res) => {
-    //   console.log(res);
-    // });
+    // 订阅valve state变化
+    this.valveStore.select(selectValveState).subscribe((state: any) => {
+      console.log('ValveState changed:', state);
+      this.loading = state.loading;
+
+      if (state.error) {
+        console.error('Error loading valves:', state.error);
+        return;
+      }
+
+      if (state.valves && !state.loading) {
+        console.log('Raw valves data:', state.valves);
+
+        // 提取实际数据 - 支持多种可能的数据结构
+        let data = [];
+
+        if (Array.isArray(state.valves)) {
+          // 如果valves本身就是数组
+          data = state.valves;
+        } else if (state.valves.data) {
+          // 如果valves是对象且有data属性
+          data = state.valves.data;
+        } else if (state.valves.valves && state.valves.valves.data) {
+          // 如果是嵌套结构
+          data = state.valves.valves.data;
+        }
+
+        this.rowData = data;
+        console.log('Grid rowData set to:', this.rowData.length, 'rows');
+        console.log('First row sample:', this.rowData[0]);
+      }
+    });
+
+    // 初始加载数据
+    this.loadData();
   }
   public defaultColDef: ColDef = {
     minWidth: 150,
@@ -137,32 +166,18 @@ export class DashboardComponent implements OnInit {
 
   onGridReady(params: GridReadyEvent<any>) {
     this.gridApi = params.api;
-    const datasource = this.createServerSideDatasource();
-    params.api!.setGridOption('serverSideDatasource', datasource);
-    this.valveStore.select(selectValveState).subscribe((response: any) => {
-      console.log('222' + response.loading);
-    });
   }
-  createServerSideDatasource(): IServerSideDatasource {
-    return {
-      getRows: async (params) => {
-        this.valveStore.dispatch({
-          type: 'LoadValves',
-          payload: params.request,
-        });
-        this.valveStore.select(selectValveState).subscribe((state: any) => {
-          if (state.error) {
-            console.error('Error loading valves:', state.error);
-            params.fail();
-          } else if (state.valves && !state.loading) {
-            params.success({
-              rowData: state.valves.valves.data,
-              rowCount: state.valves.valves.meta.totalElements,
-            });
-          }
-        });
-      },
-    };
+
+  loadData() {
+    console.log('Loading valve data...');
+    // 派发加载valve数据的action
+    this.valveStore.dispatch(
+      ValveActions.loadValves({ payload: { startRow: 0, endRow: 100 } }),
+    );
+  }
+
+  refreshData() {
+    this.loadData();
   }
 
   onAdd() {

@@ -6,6 +6,9 @@
     <button nz-button nzType="default" nzShape="round" (click)="onSave()">
       <span nz-icon nzType="save"></span> {{ "save" | translate }}
     </button>
+    <button nz-button nzType="default" nzShape="round" (click)="refreshData()">
+      <span nz-icon nzType="reload"></span> {{ "refresh" | translate }}
+    </button>
     <button
       nz-button
       nzType="default"
@@ -18,13 +21,13 @@
   </div>
   <ag-grid-angular
     style="height: calc(100% - 45px)"
+    [loading]="loading"
     [invalidEditValueMode]="invalidEditValueMode"
     [columnDefs]="columnDefs"
+    [rowData]="rowData"
     [gridOptions]="gridOptions"
     [defaultColDef]="defaultColDef"
-    [rowModelType]="rowModelType"
-    [cacheBlockSize]="100"
-    pagination="true"
+    [pagination]="true"
     [paginationPageSize]="paginationPageSize"
     [paginationPageSizeSelector]="[10, 100, 1000, 10000]"
     (gridReady)="onGridReady($event)"

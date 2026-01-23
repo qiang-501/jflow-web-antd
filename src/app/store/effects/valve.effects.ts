@@ -61,17 +61,25 @@ export class ValveEffects {
           ? action.payload.endRow - action.payload.startRow
           : 10;
 
+        console.log('Valve effect - sending request:', {
+          url: 'asset-fake-search/api/v1/valves/search',
+          start: request.start,
+          size: request.size,
+        });
+
         return this.http
-          .post('asset-fake-search' + 'api/v1/valves/search', request, {
+          .post('asset-fake-search/api/v1/valves/search', request, {
             headers: { Authorization: authCode },
           })
           .pipe(
-            map((valves) =>
-              ValveActions.valvesLoadedSuccess({ payload: valves }),
-            ),
-            catchError((error) =>
-              of(ValveActions.valvesLoadedError({ payload: error })),
-            ),
+            map((valves) => {
+              console.log('Valve effect - received response:', valves);
+              return ValveActions.valvesLoadedSuccess({ payload: valves });
+            }),
+            catchError((error) => {
+              console.error('Valve effect - error:', error);
+              return of(ValveActions.valvesLoadedError({ payload: error }));
+            }),
           );
       }),
     );
