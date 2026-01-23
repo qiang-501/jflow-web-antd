@@ -1,10 +1,4 @@
-import {
-  HttpEvent,
-  HttpRequest,
-  HttpResponse,
-  HttpHandlerFn,
-  HttpEventType,
-} from '@angular/common/http';
+import { HttpEvent, HttpRequest, HttpResponse, HttpHandlerFn, HttpEventType } from '@angular/common/http';
 import { Observable, of, tap } from 'rxjs';
 import { delay, mergeMap, materialize, dematerialize } from 'rxjs/operators';
 import * as MENU from '../../assets/data/menuResult.json';

@@ -6,7 +6,7 @@ import { AppComponent } from './app/app.component';
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import { importProvidersFrom } from '@angular/core';
 import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
-import { HttpClientModule, HttpClient } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { TranslationService } from './app/services/translation/translationService';
 import { FakeBackendInterceptor } from './app/fakes/fake-backend';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
