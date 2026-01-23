@@ -15,7 +15,7 @@ bootstrapApplication(AppComponent, {
   ...appConfig,
   providers: [
     ...(appConfig.providers || []),
-    importProvidersFrom(HttpClientModule),
+    provideHttpClient(withInterceptors([FakeBackendInterceptor])),
     importProvidersFrom(
       TranslateModule.forRoot({
         loader: {
@@ -23,8 +23,7 @@ bootstrapApplication(AppComponent, {
           useClass: TranslationService,
           deps: [HttpClient],
         },
-      })
+      }),
     ),
-    provideHttpClient(withInterceptors([FakeBackendInterceptor])),
   ],
-}).catch((e) => console.error(e));
+}).catch((e: Error) => console.error(e));
