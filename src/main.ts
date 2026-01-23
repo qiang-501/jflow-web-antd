@@ -7,10 +7,12 @@ import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import { importProvidersFrom } from '@angular/core';
 import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
 import { HttpClient } from '@angular/common/http';
-import { TranslationService } from './app/services/translation/translationService';
-import { FakeBackendInterceptor } from './app/fakes/fake-backend';
+import { TranslationService } from './app/core/services';
+import { FakeBackendInterceptor } from './app/core/interceptors';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
+
 ModuleRegistry.registerModules([AllCommunityModule]);
+
 bootstrapApplication(AppComponent, {
   ...appConfig,
   providers: [

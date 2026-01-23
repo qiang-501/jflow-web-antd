@@ -4,7 +4,14 @@ export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: '/main' },
   {
     path: 'main',
-    loadChildren: () =>
-      import('./pages/main/main.routes').then((m) => m.MAIN_ROUTES),
+    loadComponent: () =>
+      import('./layout/shell/shell.component').then((m) => m.ShellComponent),
+    children: [
+      {
+        path: '',
+        loadChildren: () =>
+          import('./features/main.routes').then((m) => m.MAIN_ROUTES),
+      },
+    ],
   },
 ];

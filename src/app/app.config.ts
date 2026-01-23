@@ -12,10 +12,9 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
 import { provideRouterStore } from '@ngrx/router-store';
-// import { AppReducerModule } from './app.reducer';
 import { provideReducer } from './app.reducer';
-import { ValveEffects } from './services/effects/valve.effects';
-import { MenuEffects } from './services/effects/menu.effects';
+import { ValveEffects, MenuEffects, WorkFlowEffects } from './store';
+
 registerLocaleData(en);
 
 export const appConfig: ApplicationConfig = {
@@ -27,7 +26,7 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     provideHttpClient(),
     provideStore(),
-    provideEffects(ValveEffects, MenuEffects),
+    provideEffects(ValveEffects, MenuEffects, WorkFlowEffects),
     provideRouterStore(),
     provideReducer(),
   ],
