@@ -1,0 +1,162 @@
+<!-- permission-management.component.html -->
+<div class="permission-management-container">
+  <h2>菜单-操作权限管理</h2>
+
+  <div class="content-layout">
+    <!-- 左侧菜单树 -->
+    <nz-card nzTitle="菜单树" class="menu-tree-card">
+      <nz-tree
+        [nzData]="treeNodes"
+        nzShowLine
+        nzShowIcon
+        (nzClick)="onTreeClick($event)"
+      ></nz-tree>
+    </nz-card>
+
+    <!-- 右侧操作权限列表 -->
+    <nz-card class="action-list-card">
+      <div class="action-header">
+        <div class="menu-info" *ngIf="selectedMenu">
+          <h3>{{ selectedMenu.menuName }}</h3>
+          <p>
+            <nz-tag nzColor="blue">{{ selectedMenu.path }}</nz-tag>
+            <nz-tag *ngIf="selectedMenu.icon" nzColor="purple">
+              <span nz-icon [nzType]="selectedMenu.icon"></span>
+              {{ selectedMenu.icon }}
+            </nz-tag>
+          </p>
+        </div>
+        <button
+          nz-button
+          nzType="primary"
+          (click)="showAddActionModal()"
+          [disabled]="!selectedMenu"
+        >
+          <span nz-icon nzType="plus"></span>
+          新增操作权限
+        </button>
+      </div>
+
+      <div *ngIf="!selectedMenu" class="empty-state">
+        <nz-empty nzNotFoundContent="请从左侧选择一个菜单"></nz-empty>
+      </div>
+
+      <nz-table
+        *ngIf="selectedMenu"
+        [nzData]="selectedMenu.actions"
+        [nzPageSize]="10"
+        [nzShowPagination]="true"
+      >
+        <thead>
+          <tr>
+            <th>操作名称</th>
+            <th>操作编码</th>
+            <th>描述</th>
+            <th nzWidth="150px">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let action of selectedMenu.actions">
+            <td>{{ action.name }}</td>
+            <td>
+              <nz-tag [nzColor]="getActionTypeColor(action.code)">
+                {{ action.code }}
+              </nz-tag>
+            </td>
+            <td>{{ action.description || "-" }}</td>
+            <td>
+              <nz-space>
+                <button
+                  *nzSpaceItem
+                  nz-button
+                  nzType="link"
+                  nzSize="small"
+                  (click)="showEditActionModal(action)"
+                >
+                  <span nz-icon nzType="edit"></span>
+                  编辑
+                </button>
+                <button
+                  *nzSpaceItem
+                  nz-button
+                  nzType="link"
+                  nzSize="small"
+                  nzDanger
+                  nz-popconfirm
+                  nzPopconfirmTitle="确定要删除此操作权限吗?"
+                  (nzOnConfirm)="deleteAction(action)"
+                >
+                  <span nz-icon nzType="delete"></span>
+                  删除
+                </button>
+              </nz-space>
+            </td>
+          </tr>
+        </tbody>
+      </nz-table>
+    </nz-card>
+  </div>
+
+  <!-- 添加/编辑操作权限模态框 -->
+  <nz-modal
+    [(nzVisible)]="isActionModalVisible"
+    [nzTitle]="isEditMode ? '编辑操作权限' : '新增操作权限'"
+    (nzOnCancel)="handleActionCancel()"
+    (nzOnOk)="handleActionSubmit()"
+    [nzOkLoading]="(loading$ | async) || false"
+  >
+    <ng-container *nzModalContent>
+      <div class="modal-menu-info" *ngIf="selectedMenu">
+        <p><strong>菜单：</strong>{{ selectedMenu.menuName }}</p>
+      </div>
+
+      <form nz-form [formGroup]="actionForm" nzLayout="vertical">
+        <nz-form-item>
+          <nz-form-label nzRequired>操作名称</nz-form-label>
+          <nz-form-control nzErrorTip="请输入操作名称">
+            <input
+              nz-input
+              formControlName="name"
+              placeholder="例如：新增、编辑、删除"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label nzRequired>操作编码</nz-form-label>
+          <nz-form-control nzErrorTip="请输入操作编码">
+            <input
+              nz-input
+              formControlName="code"
+              placeholder="例如：add、edit、delete"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label>描述</nz-form-label>
+          <nz-form-control>
+            <textarea
+              nz-input
+              formControlName="description"
+              placeholder="请输入操作描述"
+              [nzAutosize]="{ minRows: 2, maxRows: 4 }"
+            ></textarea>
+          </nz-form-control>
+        </nz-form-item>
+      </form>
+
+      <div class="common-actions-hint">
+        <p><strong>常用操作编码示例：</strong></p>
+        <nz-space nzSize="small">
+          <nz-tag *nzSpaceItem nzColor="green">add / create - 新增</nz-tag>
+          <nz-tag *nzSpaceItem nzColor="blue">edit / update - 编辑</nz-tag>
+          <nz-tag *nzSpaceItem nzColor="red">delete / remove - 删除</nz-tag>
+          <nz-tag *nzSpaceItem nzColor="default">view / query - 查看</nz-tag>
+          <nz-tag *nzSpaceItem nzColor="orange">export - 导出</nz-tag>
+          <nz-tag *nzSpaceItem nzColor="purple">import - 导入</nz-tag>
+        </nz-space>
+      </div>
+    </ng-container>
+  </nz-modal>
+</div>

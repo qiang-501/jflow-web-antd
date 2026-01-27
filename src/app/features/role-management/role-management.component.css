@@ -1,0 +1,30 @@
+.role-management-container {
+  padding: 24px;
+  background: #fff;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.toolbar h2 {
+  margin: 0;
+}
+
+.permission-info {
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.permission-info p {
+  margin: 4px 0;
+}
+
+.inheritance-info {
+  margin-top: 16px;
+}

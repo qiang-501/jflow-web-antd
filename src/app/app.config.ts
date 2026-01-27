@@ -14,6 +14,9 @@ import { provideEffects } from '@ngrx/effects';
 import { provideRouterStore } from '@ngrx/router-store';
 import { provideReducer } from './app.reducer';
 import { ValveEffects, MenuEffects, WorkFlowEffects } from './store';
+import { UserEffects } from './store/effects/user.effects';
+import { RoleEffects } from './store/effects/role.effects';
+import { PermissionEffects } from './store/effects/permission.effects';
 
 registerLocaleData(en);
 
@@ -26,7 +29,14 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     provideHttpClient(),
     provideStore(),
-    provideEffects(ValveEffects, MenuEffects, WorkFlowEffects),
+    provideEffects(
+      ValveEffects,
+      MenuEffects,
+      WorkFlowEffects,
+      UserEffects,
+      RoleEffects,
+      PermissionEffects,
+    ),
     provideRouterStore(),
     provideReducer(),
   ],

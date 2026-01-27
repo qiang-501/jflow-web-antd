@@ -1,0 +1,193 @@
+<!-- user-management.component.html -->
+<div class="user-management-container">
+  <div class="toolbar">
+    <h2>用户管理</h2>
+    <button nz-button nzType="primary" (click)="showAddModal()">
+      <span nz-icon nzType="plus"></span>
+      新增用户
+    </button>
+  </div>
+
+  <nz-table
+    #userTable
+    [nzData]="(users$ | async) || []"
+    [nzLoading]="(loading$ | async) || false"
+    [nzPageSize]="10"
+    [nzShowPagination]="true"
+  >
+    <thead>
+      <tr>
+        <th>用户名</th>
+        <th>姓名</th>
+        <th>邮箱</th>
+        <th>电话</th>
+        <th>角色</th>
+        <th>状态</th>
+        <th>最后登录</th>
+        <th nzWidth="200px">操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let user of userTable.data">
+        <td>{{ user.username }}</td>
+        <td>{{ user.fullName }}</td>
+        <td>{{ user.email }}</td>
+        <td>{{ user.phone || "-" }}</td>
+        <td>
+          <nz-tag *ngFor="let roleId of user.roleIds" nzColor="blue">
+            {{ roleId }}
+          </nz-tag>
+        </td>
+        <td>
+          <nz-tag [nzColor]="getStatusColor(user.status)">
+            {{ user.status }}
+          </nz-tag>
+        </td>
+        <td>
+          {{ user.lastLoginAt ? (user.lastLoginAt | date: "short") : "-" }}
+        </td>
+        <td>
+          <nz-space>
+            <button
+              *nzSpaceItem
+              nz-button
+              nzType="link"
+              nzSize="small"
+              (click)="showEditModal(user)"
+            >
+              <span nz-icon nzType="edit"></span>
+              编辑
+            </button>
+            <button
+              *nzSpaceItem
+              nz-button
+              nzType="link"
+              nzSize="small"
+              (click)="resetPassword(user)"
+            >
+              <span nz-icon nzType="key"></span>
+              重置密码
+            </button>
+            <button
+              *nzSpaceItem
+              nz-button
+              nzType="link"
+              nzSize="small"
+              nzDanger
+              nz-popconfirm
+              nzPopconfirmTitle="确定要删除此用户吗?"
+              (nzOnConfirm)="deleteUser(user.id)"
+            >
+              <span nz-icon nzType="delete"></span>
+              删除
+            </button>
+          </nz-space>
+        </td>
+      </tr>
+    </tbody>
+  </nz-table>
+
+  <!-- 添加/编辑用户模态框 -->
+  <nz-modal
+    [(nzVisible)]="isModalVisible"
+    [nzTitle]="isEditMode ? '编辑用户' : '新增用户'"
+    (nzOnCancel)="handleCancel()"
+    (nzOnOk)="handleSubmit()"
+    [nzOkLoading]="(loading$ | async) || false"
+  >
+    <ng-container *nzModalContent>
+      <form nz-form [formGroup]="userForm" nzLayout="vertical">
+        <nz-form-item>
+          <nz-form-label nzRequired>用户名</nz-form-label>
+          <nz-form-control nzErrorTip="请输入至少3个字符的用户名">
+            <input
+              nz-input
+              formControlName="username"
+              placeholder="请输入用户名"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label nzRequired>姓名</nz-form-label>
+          <nz-form-control nzErrorTip="请输入姓名">
+            <input
+              nz-input
+              formControlName="fullName"
+              placeholder="请输入姓名"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label nzRequired>邮箱</nz-form-label>
+          <nz-form-control nzErrorTip="请输入有效的邮箱地址">
+            <input
+              nz-input
+              formControlName="email"
+              type="email"
+              placeholder="请输入邮箱"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item *ngIf="!isEditMode">
+          <nz-form-label nzRequired>密码</nz-form-label>
+          <nz-form-control nzErrorTip="请输入至少6个字符的密码">
+            <input
+              nz-input
+              formControlName="password"
+              type="password"
+              placeholder="请输入密码"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label>电话</nz-form-label>
+          <nz-form-control>
+            <input nz-input formControlName="phone" placeholder="请输入电话" />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label nzRequired>角色</nz-form-label>
+          <nz-form-control nzErrorTip="请选择至少一个角色">
+            <nz-select
+              formControlName="roleIds"
+              nzMode="multiple"
+              nzPlaceHolder="请选择角色"
+              nzShowSearch
+            >
+              <nz-option
+                *ngFor="let role of roles$ | async"
+                [nzLabel]="role.name"
+                [nzValue]="role.id"
+              ></nz-option>
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item *ngIf="isEditMode">
+          <nz-form-label>状态</nz-form-label>
+          <nz-form-control>
+            <nz-select formControlName="status" nzPlaceHolder="请选择状态">
+              <nz-option
+                [nzLabel]="'激活'"
+                [nzValue]="UserStatus.Active"
+              ></nz-option>
+              <nz-option
+                [nzLabel]="'未激活'"
+                [nzValue]="UserStatus.Inactive"
+              ></nz-option>
+              <nz-option
+                [nzLabel]="'锁定'"
+                [nzValue]="UserStatus.Locked"
+              ></nz-option>
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+      </form>
+    </ng-container>
+  </nz-modal>
+</div>

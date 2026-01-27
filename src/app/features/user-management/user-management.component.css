@@ -1,0 +1,15 @@
+.user-management-container {
+  padding: 24px;
+  background: #fff;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.toolbar h2 {
+  margin: 0;
+}
