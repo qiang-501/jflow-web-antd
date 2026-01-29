@@ -1,66 +1,395 @@
-<!-- <nz-divider nzType="vertical"></nz-divider> -->
-<nz-layout class="main-layout">
-    <nz-header>Header</nz-header>
-    <nz-layout>
-        <nz-sider>Sider</nz-sider>
-        <nz-content>
-            <div style="height: 30%;">
-                <nz-steps [nzCurrent]="1">
-                    <nz-step nzTitle="Finished" nzDescription="This is a description."></nz-step>
-                    <nz-step nzTitle="In Progress" nzSubtitle="Left 00:00:08"
-                        nzDescription="This is a description."></nz-step>
-                    <nz-step nzTitle="Waiting" nzDescription="This is a description."></nz-step>
-                </nz-steps>
-            </div>
-            <div style="height: 70%;">
-                <nz-table #basicTable [nzData]="listOfData">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Age</th>
-                            <th>Address</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (data of basicTable.data; track data) {
-                        <tr>
-                            <td>{{ data.name }}</td>
-                            <td>{{ data.age }}</td>
-                            <td>{{ data.address }}</td>
-                            <td>
-                                <a>Action 一 {{ data.name }}</a>
-                                <nz-divider nzType="vertical"></nz-divider>
-                                <a>Delete</a>
-                            </td>
-                        </tr>
-                        }
-                    </tbody>
-                </nz-table>
-            </div>
+<div class="workflow-container">
+  <div class="header">
+    <h2>工作流管理</h2>
+    <button
+      nz-button
+      nzType="primary"
+      (click)="showCreateModal()"
+      [disabled]="!canCreate"
+    >
+      <span nz-icon nzType="plus"></span>
+      创建工作流
+    </button>
+  </div>
 
-        </nz-content>
-    </nz-layout>
-    <nz-footer>Footer</nz-footer>
-</nz-layout>
-<!-- <form nz-form [nzLayout]="'inline'" [formGroup]="validateForm" (ngSubmit)="submitForm()">
-                <nz-form-item>
-                    <nz-form-control nzErrorTip="Please input  name!">
-                        <nz-input-group nzPrefixIcon="user">
-                            <input formControlName="name" nz-input placeholder="name" />
-                        </nz-input-group>
-                    </nz-form-control>
-                </nz-form-item>
-                <nz-form-item>
-                    <nz-form-control nzErrorTip="Please input  title!">
-                        <nz-input-group nzPrefixIcon="lock">
-                            <input formControlName="title" nz-input placeholder="title" />
-                        </nz-input-group>
-                    </nz-form-control>
-                </nz-form-item>
-                <nz-form-item>
-                    <nz-form-control>
-                        <button nz-button nzType="primary" [disabled]="!validateForm.valid">Log in</button>
-                    </nz-form-control>
-                </nz-form-item>
-            </form> -->
+  <nz-table
+    #workflowTable
+    [nzData]="filteredWorkflows"
+    [nzLoading]="loading"
+    [nzPageSize]="pageSize"
+    [nzPageIndex]="pageIndex"
+    [nzTotal]="total"
+    [nzShowSizeChanger]="true"
+    [nzPageSizeOptions]="[10, 20, 50]"
+    nzShowPagination
+  >
+    <thead>
+      <tr>
+        <th>工作流ID</th>
+        <th>名称</th>
+        <th>状态</th>
+        <th>优先级</th>
+        <th>负责人</th>
+        <th>截止日期</th>
+        <th>创建时间</th>
+        <th nzWidth="280px">操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let workflow of workflowTable.data">
+        <td>{{ workflow.d_workflow_id }}</td>
+        <td>
+          <div class="workflow-info">
+            <div class="workflow-name">{{ workflow.name }}</div>
+            <div class="workflow-desc" *ngIf="workflow.description">
+              {{ workflow.description }}
+            </div>
+          </div>
+        </td>
+        <td>
+          <nz-tag [nzColor]="getStatusConfig(workflow.status).color">
+            {{ getStatusConfig(workflow.status).label }}
+          </nz-tag>
+        </td>
+        <td>
+          <nz-badge
+            [nzColor]="getPriorityConfig(workflow.priority).color"
+            [nzText]="getPriorityConfig(workflow.priority).label"
+          >
+          </nz-badge>
+        </td>
+        <td>{{ workflow.assignee || "-" }}</td>
+        <td>{{ workflow.due_date | date: "yyyy-MM-dd" }}</td>
+        <td>{{ workflow.created_on | date: "yyyy-MM-dd HH:mm" }}</td>
+        <td>
+          <nz-space>
+            <button
+              *nzSpaceItem
+              nz-button
+              nzType="link"
+              nzSize="small"
+              (click)="openDynamicForm(workflow)"
+              [disabled]="!workflow.form_config_id"
+            >
+              <span nz-icon nzType="form"></span>
+              打开表单
+            </button>
+            <button
+              *nzSpaceItem
+              nz-button
+              nzType="link"
+              nzSize="small"
+              (click)="showEditModal(workflow)"
+              [disabled]="!canEdit"
+            >
+              编辑
+            </button>
+            <button
+              *nzSpaceItem
+              nz-button
+              nzType="link"
+              nzSize="small"
+              nz-dropdown
+              [nzDropdownMenu]="statusMenu"
+              [disabled]="!canChangeStatus"
+            >
+              修改状态
+            </button>
+            <nz-dropdown-menu #statusMenu="nzDropdownMenu">
+              <ul nz-menu>
+                <li
+                  nz-menu-item
+                  *ngFor="let status of statusOptions"
+                  (click)="changeStatus(workflow, status.value)"
+                >
+                  <nz-tag [nzColor]="status.color">{{ status.label }}</nz-tag>
+                </li>
+              </ul>
+            </nz-dropdown-menu>
+            <button
+              *nzSpaceItem
+              nz-button
+              nzType="link"
+              nzSize="small"
+              (click)="showHistory(workflow)"
+            >
+              历史记录
+            </button>
+            <button
+              *nzSpaceItem
+              nz-button
+              nzType="link"
+              nzSize="small"
+              nzDanger
+              nz-popconfirm
+              nzPopconfirmTitle="确定要删除此工作流吗？"
+              (nzOnConfirm)="deleteWorkflow(workflow.id)"
+              [disabled]="!canDelete"
+            >
+              删除
+            </button>
+          </nz-space>
+        </td>
+      </tr>
+    </tbody>
+  </nz-table>
+</div>
+
+<!-- 创建工作流模态框 -->
+<nz-modal
+  [(nzVisible)]="isCreateModalVisible"
+  nzTitle="创建工作流"
+  (nzOnCancel)="handleCreateCancel()"
+  (nzOnOk)="handleCreateOk()"
+  nzWidth="600px"
+>
+  <ng-container *nzModalContent>
+    <form nz-form [formGroup]="createForm" nzLayout="vertical">
+      <nz-form-item>
+        <nz-form-label nzRequired>工作流名称</nz-form-label>
+        <nz-form-control nzErrorTip="请输入工作流名称">
+          <input
+            nz-input
+            formControlName="name"
+            placeholder="请输入工作流名称"
+          />
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label>描述</nz-form-label>
+        <nz-form-control>
+          <textarea
+            nz-input
+            formControlName="description"
+            placeholder="请输入工作流描述"
+            [nzAutosize]="{ minRows: 3, maxRows: 6 }"
+          ></textarea>
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label nzRequired>优先级</nz-form-label>
+        <nz-form-control>
+          <nz-select formControlName="priority" nzPlaceHolder="请选择优先级">
+            <nz-option
+              *ngFor="let priority of priorityOptions"
+              [nzValue]="priority.value"
+              [nzLabel]="priority.label"
+            ></nz-option>
+          </nz-select>
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label>负责人</nz-form-label>
+        <nz-form-control>
+          <input
+            nz-input
+            formControlName="assignee"
+            placeholder="请输入负责人"
+          />
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label nzRequired>截止日期</nz-form-label>
+        <nz-form-control nzErrorTip="请选择截止日期">
+          <nz-date-picker
+            formControlName="due_date"
+            nzPlaceHolder="请选择截止日期"
+            style="width: 100%"
+          >
+          </nz-date-picker>
+        </nz-form-control>
+      </nz-form-item>
+    </form>
+  </ng-container>
+</nz-modal>
+
+<!-- 编辑工作流模态框 -->
+<nz-modal
+  [(nzVisible)]="isEditModalVisible"
+  nzTitle="编辑工作流"
+  (nzOnCancel)="handleEditCancel()"
+  (nzOnOk)="handleEditOk()"
+  nzWidth="600px"
+>
+  <ng-container *nzModalContent>
+    <form nz-form [formGroup]="editForm" nzLayout="vertical">
+      <nz-form-item>
+        <nz-form-label nzRequired>工作流名称</nz-form-label>
+        <nz-form-control nzErrorTip="请输入工作流名称">
+          <input
+            nz-input
+            formControlName="name"
+            placeholder="请输入工作流名称"
+          />
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label>描述</nz-form-label>
+        <nz-form-control>
+          <textarea
+            nz-input
+            formControlName="description"
+            placeholder="请输入工作流描述"
+            [nzAutosize]="{ minRows: 3, maxRows: 6 }"
+          ></textarea>
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label nzRequired>优先级</nz-form-label>
+        <nz-form-control>
+          <nz-select formControlName="priority" nzPlaceHolder="请选择优先级">
+            <nz-option
+              *ngFor="let priority of priorityOptions"
+              [nzValue]="priority.value"
+              [nzLabel]="priority.label"
+            ></nz-option>
+          </nz-select>
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label>负责人</nz-form-label>
+        <nz-form-control>
+          <input
+            nz-input
+            formControlName="assignee"
+            placeholder="请输入负责人"
+          />
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label nzRequired>截止日期</nz-form-label>
+        <nz-form-control nzErrorTip="请选择截止日期">
+          <nz-date-picker
+            formControlName="due_date"
+            nzPlaceHolder="请选择截止日期"
+            style="width: 100%"
+          >
+          </nz-date-picker>
+        </nz-form-control>
+      </nz-form-item>
+    </form>
+  </ng-container>
+</nz-modal>
+
+<!-- 历史记录模态框 -->
+<nz-modal
+  [(nzVisible)]="isHistoryModalVisible"
+  nzTitle="工作流历史记录"
+  (nzOnCancel)="handleHistoryCancel()"
+  [nzFooter]="null"
+  nzWidth="700px"
+>
+  <ng-container *nzModalContent>
+    <div class="history-header" *ngIf="selectedWorkflow">
+      <h3>{{ selectedWorkflow.name }}</h3>
+      <p>工作流ID: {{ selectedWorkflow.d_workflow_id }}</p>
+    </div>
+    <nz-timeline>
+      <nz-timeline-item
+        *ngFor="let history of workflowHistory"
+        [nzColor]="getStatusConfig(history.to_status).color"
+      >
+        <div class="timeline-item">
+          <div class="timeline-header">
+            <span class="timeline-time">{{
+              history.changed_on | date: "yyyy-MM-dd HH:mm:ss"
+            }}</span>
+            <span class="timeline-user">{{ history.changed_by }}</span>
+          </div>
+          <div class="timeline-content">
+            <nz-tag [nzColor]="getStatusConfig(history.from_status).color">
+              {{ getStatusConfig(history.from_status).label }}
+            </nz-tag>
+            <span nz-icon nzType="arrow-right" class="timeline-arrow"></span>
+            <nz-tag [nzColor]="getStatusConfig(history.to_status).color">
+              {{ getStatusConfig(history.to_status).label }}
+            </nz-tag>
+          </div>
+          <div class="timeline-comment" *ngIf="history.comment">
+            <span nz-icon nzType="message"></span>
+            {{ history.comment }}
+          </div>
+        </div>
+      </nz-timeline-item>
+    </nz-timeline>
+    <nz-empty
+      *ngIf="workflowHistory.length === 0"
+      nzNotFoundContent="暂无历史记录"
+    ></nz-empty>
+  </ng-container>
+</nz-modal>
+
+<!-- 动态表单模态框 -->
+<nz-modal
+  [(nzVisible)]="isDynamicFormModalVisible"
+  [nzTitle]="'工作流表单：' + selectedWorkflow?.name"
+  (nzOnCancel)="handleFormCancel()"
+  [nzFooter]="null"
+  nzWidth="900px"
+>
+  <ng-container *nzModalContent>
+    <div
+      style="
+        margin-bottom: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      "
+    >
+      <div>
+        <strong>工作流ID:</strong> {{ selectedWorkflow?.d_workflow_id }}
+        <span style="margin-left: 16px; color: #999; font-size: 12px">
+          (权限: canEditForm={{ canEditForm }})
+        </span>
+      </div>
+      <button
+        *ngIf="canEditForm"
+        nz-button
+        nzType="default"
+        (click)="openFormBuilder(selectedWorkflow || undefined)"
+      >
+        <span nz-icon nzType="edit"></span>
+        编辑表单配置
+      </button>
+      <button
+        *ngIf="!canEditForm"
+        nz-button
+        nzType="default"
+        nzDanger
+        nz-tooltip
+        nzTooltipTitle="当前用户没有编辑表单的权限 (form:manage)"
+      >
+        <span nz-icon nzType="lock"></span>
+        无权限编辑
+      </button>
+    </div>
+    <app-dynamic-form-renderer
+      *ngIf="currentFormConfig"
+      [formConfig]="currentFormConfig"
+      (formSubmit)="handleFormSubmit($event)"
+      (formCancel)="handleFormCancel()"
+    ></app-dynamic-form-renderer>
+  </ng-container>
+</nz-modal>
+
+<!-- 表单构建器模态框 -->
+<nz-modal
+  [(nzVisible)]="isFormBuilderModalVisible"
+  nzTitle="动态表单管理"
+  (nzOnCancel)="handleFormBuilderClose()"
+  [nzFooter]="null"
+  nzWidth="1200px"
+  [nzBodyStyle]="{ padding: '0' }"
+>
+  <ng-container *nzModalContent>
+    <app-form-builder></app-form-builder>
+  </ng-container>
+</nz-modal>

@@ -102,9 +102,15 @@ export class PermissionService {
   /**
    * 检查当前用户是否拥有指定权限
    */
-  checkPermission(permissionCode: string): Observable<PermissionCheck> {
+  checkPermission(
+    permissionCheck: { resource: string; action: string } | string,
+  ): Observable<PermissionCheck> {
+    const code =
+      typeof permissionCheck === 'string'
+        ? permissionCheck
+        : `${permissionCheck.resource}:${permissionCheck.action}`;
     return this.http.post<PermissionCheck>(`${this.apiUrl}/check`, {
-      code: permissionCode,
+      code: code,
     });
   }
 

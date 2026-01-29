@@ -4,9 +4,7 @@ export const MAIN_ROUTES: Routes = [
   {
     path: '',
     loadComponent: () =>
-      import('./dashboard/dashboard.component').then(
-        (m) => m.DashboardComponent,
-      ),
+      import('./workflow/workflow.component').then((m) => m.WorkflowComponent),
   },
   {
     path: 'workflow',

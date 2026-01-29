@@ -1,0 +1,392 @@
+<div class="form-builder-container">
+  <div class="header">
+    <h2>动态表单配置</h2>
+    <button nz-button nzType="primary" (click)="showConfigModal()">
+      <span nz-icon nzType="plus"></span>
+      创建表单
+    </button>
+  </div>
+
+  <div class="configs-list">
+    <nz-card
+      *ngFor="let config of formConfigs"
+      class="config-card"
+      [nzTitle]="config.name"
+      [nzExtra]="extraTemplate"
+    >
+      <ng-template #extraTemplate>
+        <button
+          nz-button
+          nzType="link"
+          nzSize="small"
+          (click)="showConfigModal(config)"
+        >
+          编辑配置
+        </button>
+        <button
+          nz-button
+          nzType="link"
+          nzSize="small"
+          (click)="previewForm(config)"
+        >
+          预览
+        </button>
+        <button
+          nz-button
+          nzType="link"
+          nzSize="small"
+          nzDanger
+          nz-popconfirm
+          nzPopconfirmTitle="确定要删除此表单配置吗？"
+          (nzOnConfirm)="deleteConfig(config.id)"
+        >
+          删除
+        </button>
+      </ng-template>
+
+      <p *ngIf="config.description">{{ config.description }}</p>
+      <nz-divider></nz-divider>
+
+      <div class="fields-section">
+        <div class="section-header">
+          <h4>表单字段 ({{ config.fields.length }})</h4>
+          <button
+            nz-button
+            nzType="dashed"
+            nzSize="small"
+            (click)="showFieldModal(config)"
+          >
+            <span nz-icon nzType="plus"></span>
+            添加字段
+          </button>
+        </div>
+
+        <nz-table
+          #fieldTable
+          [nzData]="config.fields"
+          [nzShowPagination]="false"
+          [nzSize]="'small'"
+        >
+          <thead>
+            <tr>
+              <th nzWidth="120px">字段名</th>
+              <th>标签</th>
+              <th nzWidth="100px">类型</th>
+              <th nzWidth="80px">必填</th>
+              <th nzWidth="80px">宽度</th>
+              <th nzWidth="200px">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let field of fieldTable.data; let i = index">
+              <td>
+                <code>{{ field.name }}</code>
+              </td>
+              <td>{{ field.label }}</td>
+              <td>
+                <nz-tag [nzColor]="'blue'">
+                  {{ getFieldTypeLabel(field.type) }}
+                </nz-tag>
+              </td>
+              <td>
+                <span
+                  nz-icon
+                  [nzType]="
+                    field.validation?.required ? 'check-circle' : 'close-circle'
+                  "
+                  [style.color]="
+                    field.validation?.required ? '#52c41a' : '#ccc'
+                  "
+                ></span>
+              </td>
+              <td>{{ field.width || 24 }}/24</td>
+              <td>
+                <button
+                  nz-button
+                  nzType="link"
+                  nzSize="small"
+                  (click)="moveField(config, i, 'up')"
+                  [disabled]="i === 0"
+                >
+                  <span nz-icon nzType="up"></span>
+                </button>
+                <button
+                  nz-button
+                  nzType="link"
+                  nzSize="small"
+                  (click)="moveField(config, i, 'down')"
+                  [disabled]="i === config.fields.length - 1"
+                >
+                  <span nz-icon nzType="down"></span>
+                </button>
+                <button
+                  nz-button
+                  nzType="link"
+                  nzSize="small"
+                  (click)="showFieldModal(config, i)"
+                >
+                  编辑
+                </button>
+                <button
+                  nz-button
+                  nzType="link"
+                  nzSize="small"
+                  nzDanger
+                  nz-popconfirm
+                  nzPopconfirmTitle="确定要删除此字段吗？"
+                  (nzOnConfirm)="deleteField(config, i)"
+                >
+                  删除
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </nz-table>
+      </div>
+    </nz-card>
+  </div>
+</div>
+
+<!-- 表单配置模态框 -->
+<nz-modal
+  [(nzVisible)]="isConfigModalVisible"
+  [nzTitle]="currentConfig ? '编辑表单配置' : '创建表单配置'"
+  (nzOnCancel)="isConfigModalVisible = false"
+  (nzOnOk)="handleConfigOk()"
+  nzWidth="600px"
+>
+  <ng-container *nzModalContent>
+    <form nz-form [formGroup]="configForm" nzLayout="vertical">
+      <nz-form-item>
+        <nz-form-label nzRequired>表单名称</nz-form-label>
+        <nz-form-control nzErrorTip="请输入表单名称">
+          <input nz-input formControlName="name" placeholder="请输入表单名称" />
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label>表单描述</nz-form-label>
+        <nz-form-control>
+          <textarea
+            nz-input
+            formControlName="description"
+            placeholder="请输入表单描述"
+            [nzAutosize]="{ minRows: 3, maxRows: 6 }"
+          ></textarea>
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label>表单布局</nz-form-label>
+        <nz-form-control>
+          <nz-select formControlName="layout" style="width: 100%">
+            <nz-option nzValue="horizontal" nzLabel="水平布局"></nz-option>
+            <nz-option nzValue="vertical" nzLabel="垂直布局"></nz-option>
+            <nz-option nzValue="inline" nzLabel="行内布局"></nz-option>
+          </nz-select>
+        </nz-form-control>
+      </nz-form-item>
+    </form>
+  </ng-container>
+</nz-modal>
+
+<!-- 字段编辑模态框 -->
+<nz-modal
+  [(nzVisible)]="isFieldModalVisible"
+  [nzTitle]="editingFieldIndex >= 0 ? '编辑字段' : '添加字段'"
+  (nzOnCancel)="isFieldModalVisible = false"
+  (nzOnOk)="handleFieldOk()"
+  nzWidth="800px"
+>
+  <ng-container *nzModalContent>
+    <form nz-form [formGroup]="fieldForm" nzLayout="vertical">
+      <div nz-row [nzGutter]="16">
+        <div nz-col [nzSpan]="12">
+          <nz-form-item>
+            <nz-form-label nzRequired>字段名</nz-form-label>
+            <nz-form-control nzErrorTip="请输入字段名">
+              <input
+                nz-input
+                formControlName="name"
+                placeholder="请输入字段名（英文）"
+              />
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <div nz-col [nzSpan]="12">
+          <nz-form-item>
+            <nz-form-label nzRequired>字段标签</nz-form-label>
+            <nz-form-control nzErrorTip="请输入字段标签">
+              <input
+                nz-input
+                formControlName="label"
+                placeholder="请输入字段标签"
+              />
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <div nz-col [nzSpan]="12">
+          <nz-form-item>
+            <nz-form-label nzRequired>字段类型</nz-form-label>
+            <nz-form-control>
+              <nz-select
+                formControlName="type"
+                placeholder="请选择字段类型"
+                style="width: 100%"
+              >
+                <nz-option
+                  *ngFor="let type of fieldTypes"
+                  [nzValue]="type.value"
+                  [nzLabel]="type.label"
+                ></nz-option>
+              </nz-select>
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <div nz-col [nzSpan]="12">
+          <nz-form-item>
+            <nz-form-label>字段宽度</nz-form-label>
+            <nz-form-control>
+              <nz-input-number
+                formControlName="width"
+                [nzMin]="1"
+                [nzMax]="24"
+                style="width: 100%"
+              ></nz-input-number>
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <div nz-col [nzSpan]="12">
+          <nz-form-item>
+            <nz-form-label>占位符</nz-form-label>
+            <nz-form-control>
+              <input
+                nz-input
+                formControlName="placeholder"
+                placeholder="请输入占位符"
+              />
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <div nz-col [nzSpan]="12">
+          <nz-form-item>
+            <nz-form-label>默认值</nz-form-label>
+            <nz-form-control>
+              <input
+                nz-input
+                formControlName="defaultValue"
+                placeholder="请输入默认值"
+              />
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <div nz-col [nzSpan]="24">
+          <nz-form-item>
+            <nz-form-label>帮助文本</nz-form-label>
+            <nz-form-control>
+              <input
+                nz-input
+                formControlName="helpText"
+                placeholder="请输入帮助文本"
+              />
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <div nz-col [nzSpan]="8">
+          <nz-form-item>
+            <nz-form-label>必填</nz-form-label>
+            <nz-form-control>
+              <nz-switch formControlName="required"></nz-switch>
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <div nz-col [nzSpan]="8">
+          <nz-form-item>
+            <nz-form-label>禁用</nz-form-label>
+            <nz-form-control>
+              <nz-switch formControlName="disabled"></nz-switch>
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <div nz-col [nzSpan]="8">
+          <nz-form-item>
+            <nz-form-label>隐藏</nz-form-label>
+            <nz-form-control>
+              <nz-switch formControlName="hidden"></nz-switch>
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <!-- 选项配置 -->
+        <div nz-col [nzSpan]="24" *ngIf="needsOptions(fieldForm.value.type)">
+          <nz-divider nzText="选项配置"></nz-divider>
+          <div formArrayName="options">
+            <div
+              *ngFor="let option of optionsFormArray.controls; let i = index"
+              [formGroupName]="i"
+              class="option-row"
+            >
+              <input
+                nz-input
+                formControlName="label"
+                placeholder="选项标签"
+                style="width: 45%; margin-right: 8px"
+              />
+              <input
+                nz-input
+                formControlName="value"
+                placeholder="选项值"
+                style="width: 45%; margin-right: 8px"
+              />
+              <button
+                nz-button
+                nzType="link"
+                nzDanger
+                (click)="removeOption(i)"
+              >
+                <span nz-icon nzType="delete"></span>
+              </button>
+            </div>
+          </div>
+          <button
+            nz-button
+            nzType="dashed"
+            nzBlock
+            (click)="addOption()"
+            style="margin-top: 8px"
+          >
+            <span nz-icon nzType="plus"></span>
+            添加选项
+          </button>
+        </div>
+      </div>
+    </form>
+  </ng-container>
+</nz-modal>
+
+<!-- 预览模态框 -->
+<nz-modal
+  [(nzVisible)]="isPreviewModalVisible"
+  [nzTitle]="'表单预览：' + previewConfig?.name"
+  [nzFooter]="null"
+  (nzOnCancel)="isPreviewModalVisible = false"
+  nzWidth="800px"
+>
+  <ng-container *nzModalContent>
+    <app-dynamic-form-renderer
+      *ngIf="previewConfig"
+      [formConfig]="previewConfig"
+      (formSubmit)="handlePreviewSubmit($event)"
+      (formCancel)="isPreviewModalVisible = false"
+    ></app-dynamic-form-renderer>
+  </ng-container>
+</nz-modal>

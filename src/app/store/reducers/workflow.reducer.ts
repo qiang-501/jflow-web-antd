@@ -1,5 +1,9 @@
 import { createReducer, on } from '@ngrx/store';
-import { WorkFlow } from '../../models/work-flow';
+import {
+  WorkFlow,
+  WorkflowStatus,
+  WorkflowPriority,
+} from '../../models/work-flow';
 import { WorkFlowActions } from '../actions';
 
 export interface WorkFlowState {
@@ -10,12 +14,15 @@ export interface WorkFlowState {
 const initialWorkFlow: WorkFlow = {
   id: '',
   d_workflow_id: '',
-  status: '',
+  name: '',
+  description: '',
+  status: WorkflowStatus.DRAFT,
   important: '',
   process_id: '',
   due_date: '',
   created_by: '',
   created_on: '',
+  priority: WorkflowPriority.MEDIUM,
 };
 
 export const initialState: WorkFlowState = {
@@ -30,7 +37,12 @@ export const workFlowReducer = createReducer(
     (state, { status, important, due_date }) => ({
       ...state,
       currentWorkFlow: state.currentWorkFlow
-        ? { ...state.currentWorkFlow, status, important, due_date }
+        ? {
+            ...state.currentWorkFlow,
+            status: status as WorkflowStatus,
+            important,
+            due_date,
+          }
         : null,
     }),
   ),

@@ -1,7 +1,7 @@
 .menu-sidebar {
   position: relative;
   z-index: 10;
-  min-height: 100vh;
+  height: 100vh;
   box-shadow: 2px 0 6px rgba(0, 21, 41, 0.35);
 }
 
@@ -10,7 +10,9 @@
   padding: 20px 24px;
   font-size: 20px;
   cursor: pointer;
-  transition: all 0.3s, padding 0s;
+  transition:
+    all 0.3s,
+    padding 0s;
 }
 
 .trigger:hover {
@@ -40,7 +42,12 @@
   color: #fff;
   font-weight: 600;
   font-size: 14px;
-  font-family: Avenir, Helvetica Neue, Arial, Helvetica, sans-serif;
+  font-family:
+    Avenir,
+    Helvetica Neue,
+    Arial,
+    Helvetica,
+    sans-serif;
   vertical-align: middle;
 }
 
@@ -67,10 +74,81 @@ nz-content {
   background: #fff;
   height: 100%;
 }
+
 .menu {
-  height: calc(100% - 69px);
-  border-bottom-left-radius: 12px;
-  border-bottom-right-radius: 12px;
-  overflow: hidden;
-  border-bottom: 1px solid #f0f0f0;
+  height: calc(100vh - 64px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: none;
+}
+
+/* 优化滚动条样式 */
+.menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.menu::-webkit-scrollbar-track {
+  background: #001529;
+}
+
+.menu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.menu::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* 菜单项样式优化 */
+::ng-deep .menu .ant-menu-item,
+::ng-deep .menu .ant-menu-submenu-title {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  line-height: 40px;
+  margin: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+
+::ng-deep .menu .ant-menu-item .anticon,
+::ng-deep .menu .ant-menu-submenu-title .anticon {
+  font-size: 16px;
+  margin-right: 10px;
+}
+
+::ng-deep .menu .ant-menu-item:hover,
+::ng-deep .menu .ant-menu-submenu-title:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+::ng-deep .menu .ant-menu-item-selected {
+  background: #1890ff;
+  color: #fff;
+}
+
+::ng-deep .menu .ant-menu-item-selected .anticon {
+  color: #fff;
+}
+
+/* 子菜单样式 */
+::ng-deep .menu .ant-menu-sub {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+::ng-deep .menu .ant-menu-sub .ant-menu-item {
+  padding-left: 48px !important;
+}
+
+/* 菜单文字对齐 */
+::ng-deep .menu .ant-menu-item > a,
+::ng-deep .menu .ant-menu-item > span {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+::ng-deep .menu .ant-menu-submenu-title {
+  padding-left: 24px !important;
 }

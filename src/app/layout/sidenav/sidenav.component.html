@@ -1,41 +1,8 @@
-<!-- <ul class="menu" nz-menu nzMode="inline" [nzInlineCollapsed]="isCollapsed">
-  <ng-container *ngFor="let item of filteredMenu">
-    <li
-      [nzPaddingLeft]="1 * 24"
-      nz-menu-item
-      *ngIf="!item.children"
-      title="{{ item.title }}"
-    >
-      <span *ngIf="item.icon" nz-icon [nzType]="item.icon"></span>
-      <span>{{ item.title }}</span>
-    </li>
-    <li [nzPaddingLeft]="2 * 24" nz-submenu *ngIf="item.children">
-      <span title>
-        <span *ngIf="item.icon" nz-icon [nzType]="item.icon"></span>
-        <span>{{ item.title }}</span>
-      </span>
-      <ul>
-        <ng-container *ngFor="let child of item.children">
-          <li nz-menu-item nzMatchRouter>
-            <a routerLink="{{ child.link }}" rel="noopener noreferrer">
-              <span>{{ child.title }}</span></a
-            >
-          </li>
-        </ng-container>
-      </ul>
-    </li>
-  </ng-container>
-</ul> -->
-<ul class="menu" nz-menu [nzMode]="'inline'">
+<ul class="menu" nz-menu [nzMode]="'inline'" [nzTheme]="'dark'">
   <ng-container *ngFor="let item of menus">
     <ng-template #recursiveList let-menu>
       <ng-container *ngFor="let node of menu">
-        <li
-          [nzPaddingLeft]="node.level * 12"
-          *ngIf="!node.children"
-          nz-menu-item
-          nzMatchRouter
-        >
+        <li *ngIf="!node.children" nz-menu-item nzMatchRouter>
           <a
             *ngIf="node.link"
             [routerLink]="node.link"
@@ -50,10 +17,10 @@
           </span>
         </li>
         <li
-          [nzPaddingLeft]="node.level * 12"
           *ngIf="node.children"
           nz-submenu
           [nzTitle]="node.title"
+          [nzIcon]="node.icon"
         >
           <ul>
             <ng-container

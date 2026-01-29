@@ -19,7 +19,7 @@
   {
     "id": "3",
     "title": "User Management",
-    "icon": "user",
+    "icon": "team",
     "level": 1,
     "parent_id": "",
     "permission": "view"
@@ -27,19 +27,54 @@
   {
     "id": "4",
     "title": "Settings",
-    "icon": "user",
+    "icon": "setting",
     "level": 2,
     "parent_id": "3",
-    "link": "main/settings",
+    "link": "settings",
     "permission": "view"
   },
   {
     "id": "5",
     "title": "WorkFlows",
-    "icon": "user",
+    "icon": "apartment",
     "level": 2,
     "parent_id": "3",
-    "link": "main/workflow",
+    "link": "workflow",
+    "permission": "view"
+  },
+  {
+    "id": "6",
+    "title": "Access Control",
+    "icon": "safety",
+    "level": 1,
+    "parent_id": "",
+    "permission": "view"
+  },
+  {
+    "id": "7",
+    "title": "Users",
+    "icon": "user",
+    "level": 2,
+    "parent_id": "6",
+    "link": "users",
+    "permission": "view"
+  },
+  {
+    "id": "8",
+    "title": "Roles",
+    "icon": "idcard",
+    "level": 2,
+    "parent_id": "6",
+    "link": "roles",
+    "permission": "view"
+  },
+  {
+    "id": "9",
+    "title": "Permissions",
+    "icon": "lock",
+    "level": 2,
+    "parent_id": "6",
+    "link": "permissions",
     "permission": "view"
   }
 ]

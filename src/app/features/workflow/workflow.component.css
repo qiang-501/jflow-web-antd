@@ -1,34 +1,183 @@
-nz-header,
-nz-footer {
-  background: #7dbcea;
-  color: #fff;
-}
-
-nz-footer {
-  line-height: 1.5;
-}
-
-nz-sider {
-  background: #3ba0e9;
-  color: #fff;
-  line-height: 120px;
-}
-
-nz-content {
-  background: aliceblue;
-  color: #fff;
-  min-height: 120px;
-  line-height: 120px;
-}
-
-nz-layout {
-  margin-bottom: 48px;
-}
-
-nz-layout nz-layout,
-nz-layout:last-child {
-  margin: 0;
-}
-.main-layout {
+.workflow-container {
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+/* 表格容器样式 */
+::ng-deep .workflow-container .ant-table-wrapper {
+  flex: 1 1 auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+::ng-deep .workflow-container .ant-spin-nested-loading {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+::ng-deep .workflow-container .ant-spin-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+::ng-deep .workflow-container .ant-table {
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+::ng-deep .workflow-container .ant-table-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+::ng-deep .workflow-container .ant-table-body {
+  flex: 1 1 auto;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+}
+
+::ng-deep .workflow-container .ant-table-pagination {
+  flex-shrink: 0;
+}
+
+.workflow-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.workflow-name {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.workflow-desc {
+  font-size: 12px;
+  color: #888;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 300px;
+}
+
+/* 历史记录样式 */
+.history-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.history-header h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.history-header p {
+  margin: 0;
+  color: #888;
+  font-size: 14px;
+}
+
+.timeline-item {
+  padding-bottom: 8px;
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.timeline-time {
+  font-size: 13px;
+  color: #666;
+}
+
+.timeline-user {
+  font-size: 13px;
+  color: #1890ff;
+  font-weight: 500;
+}
+
+.timeline-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.timeline-arrow {
+  color: #888;
+}
+
+.timeline-comment {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #666;
+  margin-top: 8px;
+}
+
+.timeline-comment [nz-icon] {
+  margin-top: 2px;
+  color: #1890ff;
+}
+
+/* 表格样式优化 */
+::ng-deep .ant-table {
+  font-size: 14px;
+}
+
+::ng-deep .ant-table-thead > tr > th {
+  background: #fafafa;
+  font-weight: 500;
+}
+
+::ng-deep .ant-badge-status-text {
+  font-size: 13px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .workflow-container {
+    padding: 16px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .workflow-desc {
+    max-width: 200px;
+  }
 }
