@@ -1,0 +1,23 @@
+[
+  {
+    "id": "1",
+    "username": "admin",
+    "email": "admin@example.com",
+    "fullName": "系统管理员",
+    "status": "active",
+    "roleIds": ["1"],
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z",
+    "lastLoginAt": "2026-01-30T00:00:00.000Z"
+  },
+  {
+    "id": "2",
+    "username": "user1",
+    "email": "user1@example.com",
+    "fullName": "普通用户",
+    "status": "active",
+    "roleIds": ["2"],
+    "createdAt": "2024-01-15T00:00:00.000Z",
+    "updatedAt": "2024-01-15T00:00:00.000Z"
+  }
+]

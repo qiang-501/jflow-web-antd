@@ -1,0 +1,88 @@
+[
+  {
+    "id": "form-1",
+    "name": "系统升级申请表",
+    "description": "用于系统升级申请的动态表单",
+    "layout": "vertical",
+    "fields": [
+      {
+        "id": "field-1",
+        "name": "system_name",
+        "label": "系统名称",
+        "type": "text",
+        "placeholder": "请输入系统名称",
+        "order": 1,
+        "width": 24,
+        "validation": {
+          "required": true,
+          "minLength": 2,
+          "maxLength": 50
+        }
+      },
+      {
+        "id": "field-2",
+        "name": "upgrade_reason",
+        "label": "升级原因",
+        "type": "textarea",
+        "placeholder": "请详细说明升级原因",
+        "order": 2,
+        "width": 24,
+        "validation": {
+          "required": true,
+          "minLength": 10
+        }
+      },
+      {
+        "id": "field-3",
+        "name": "upgrade_date",
+        "label": "计划升级日期",
+        "type": "date",
+        "order": 3,
+        "width": 12,
+        "validation": {
+          "required": true
+        }
+      },
+      {
+        "id": "field-4",
+        "name": "risk_level",
+        "label": "风险等级",
+        "type": "select",
+        "order": 4,
+        "width": 12,
+        "validation": {
+          "required": true
+        },
+        "options": [
+          { "label": "低", "value": "low" },
+          { "label": "中", "value": "medium" },
+          { "label": "高", "value": "high" }
+        ]
+      },
+      {
+        "id": "field-5",
+        "name": "backup_required",
+        "label": "是否需要备份",
+        "type": "switch",
+        "order": 5,
+        "width": 12,
+        "defaultValue": true
+      },
+      {
+        "id": "field-6",
+        "name": "estimated_time",
+        "label": "预计耗时（小时）",
+        "type": "number",
+        "order": 6,
+        "width": 12,
+        "validation": {
+          "required": true,
+          "min": 1,
+          "max": 72
+        }
+      }
+    ],
+    "created_by": "admin",
+    "created_on": "2026-01-10 10:00:00"
+  }
+]

@@ -1,10 +1,4 @@
-import {
-  Component,
-  OnInit,
-  inject,
-  ChangeDetectorRef,
-  NgZone,
-} from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormsModule,
@@ -87,7 +81,6 @@ export class WorkflowComponent implements OnInit {
   private workflowService = inject(WorkflowService);
   private dynamicFormService = inject(DynamicFormService);
   private cdr = inject(ChangeDetectorRef);
-  private ngZone = inject(NgZone);
 
   // 权限控制
   canCreate = false;
@@ -236,16 +229,23 @@ export class WorkflowComponent implements OnInit {
 
   loadWorkflows(): void {
     this.loading = true;
-    // 模拟数据加载
-    this.ngZone.run(() => {
-      setTimeout(() => {
-        this.workflows = this.getMockWorkflows();
-        this.filteredWorkflows = [...this.workflows]; // 初始化filteredWorkflows
+    // 从API加载工作流数据
+    this.workflowService.getWorkflows().subscribe({
+      next: (response) => {
+        this.workflows = response.data;
+        this.filteredWorkflows = [...this.workflows];
+        this.total = response.total;
         this.applyFilters();
         this.updateStatistics();
         this.loading = false;
-        this.cdr.markForCheck(); // 手动触发变更检测
-      }, 500);
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        console.error('加载工作流失败:', error);
+        this.message.error('加载工作流数据失败');
+        this.loading = false;
+        this.cdr.markForCheck();
+      },
     });
   }
 
@@ -308,80 +308,6 @@ export class WorkflowComponent implements OnInit {
     this.filterPriority = null;
     this.searchText = '';
     this.applyFilters();
-  }
-
-  getMockWorkflows(): WorkFlow[] {
-    return [
-      {
-        id: '1',
-        d_workflow_id: 'WF-001',
-        name: '系统升级申请',
-        description: '升级核心系统到最新版本',
-        status: WorkflowStatus.IN_PROGRESS,
-        important: 'yes',
-        process_id: 'P001',
-        due_date: '2026-02-15',
-        created_by: 'admin',
-        created_on: '2026-01-15 10:00:00',
-        assignee: 'user1',
-        priority: WorkflowPriority.HIGH,
-      },
-      {
-        id: '2',
-        d_workflow_id: 'WF-002',
-        name: '新功能开发',
-        description: '开发新的用户管理功能',
-        status: WorkflowStatus.REVIEW,
-        important: 'no',
-        process_id: 'P002',
-        due_date: '2026-02-20',
-        created_by: 'manager',
-        created_on: '2026-01-20 14:30:00',
-        assignee: 'developer1',
-        priority: WorkflowPriority.MEDIUM,
-      },
-      {
-        id: '3',
-        d_workflow_id: 'WF-003',
-        name: 'Bug修复',
-        description: '修复登录页面显示问题',
-        status: WorkflowStatus.COMPLETED,
-        important: 'no',
-        process_id: 'P003',
-        due_date: '2026-01-25',
-        created_by: 'developer1',
-        created_on: '2026-01-18 09:00:00',
-        assignee: 'developer2',
-        priority: WorkflowPriority.LOW,
-      },
-      {
-        id: '4',
-        d_workflow_id: 'WF-004',
-        name: '紧急安全漏洞修复',
-        description: '修复发现的严重安全漏洞',
-        status: WorkflowStatus.PENDING,
-        important: 'yes',
-        process_id: 'P004',
-        due_date: '2026-02-01',
-        created_by: 'security_team',
-        created_on: '2026-01-28 15:00:00',
-        assignee: 'senior_dev',
-        priority: WorkflowPriority.URGENT,
-      },
-      {
-        id: '5',
-        d_workflow_id: 'WF-005',
-        name: '数据库优化',
-        description: '优化数据库查询性能',
-        status: WorkflowStatus.DRAFT,
-        important: 'no',
-        process_id: 'P005',
-        due_date: '2026-03-01',
-        created_by: 'dba',
-        created_on: '2026-01-25 11:00:00',
-        priority: WorkflowPriority.MEDIUM,
-      },
-    ];
   }
 
   // 创建工作流
@@ -485,31 +411,19 @@ export class WorkflowComponent implements OnInit {
   // 查看历史
   showHistory(workflow: WorkFlow): void {
     this.selectedWorkflow = workflow;
-    this.workflowHistory = this.getMockHistory(workflow.id);
     this.isHistoryModalVisible = true;
-  }
 
-  getMockHistory(workflowId: string): WorkflowStatusHistory[] {
-    return [
-      {
-        id: '1',
-        workflow_id: workflowId,
-        from_status: WorkflowStatus.DRAFT,
-        to_status: WorkflowStatus.PENDING,
-        changed_by: 'admin',
-        changed_on: '2026-01-15 10:30:00',
-        comment: '提交审批',
+    // 从API加载工作流历史
+    this.workflowService.getWorkflowHistory(workflow.id).subscribe({
+      next: (history) => {
+        this.workflowHistory = history;
       },
-      {
-        id: '2',
-        workflow_id: workflowId,
-        from_status: WorkflowStatus.PENDING,
-        to_status: WorkflowStatus.IN_PROGRESS,
-        changed_by: 'manager',
-        changed_on: '2026-01-16 09:00:00',
-        comment: '开始处理',
+      error: (error) => {
+        console.error('加载历史记录失败:', error);
+        this.message.error('加载历史记录失败');
+        this.workflowHistory = [];
       },
-    ];
+    });
   }
 
   handleHistoryCancel(): void {
@@ -556,6 +470,7 @@ export class WorkflowComponent implements OnInit {
         next: (config) => {
           this.currentFormConfig = config;
           this.isDynamicFormModalVisible = true;
+          this.cdr.detectChanges();
         },
         error: () => {
           this.message.error('加载表单配置失败');

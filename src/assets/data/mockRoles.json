@@ -1,0 +1,23 @@
+[
+  {
+    "id": "1",
+    "name": "超级管理员",
+    "code": "super_admin",
+    "description": "拥有所有权限",
+    "permissionIds": ["1", "2", "3", "4", "5", "6"],
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z",
+    "level": 1
+  },
+  {
+    "id": "2",
+    "name": "普通用户",
+    "code": "user",
+    "description": "基础权限",
+    "parentId": "1",
+    "permissionIds": ["4", "5"],
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z",
+    "level": 2
+  }
+]

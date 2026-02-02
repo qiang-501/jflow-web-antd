@@ -7,8 +7,16 @@ import {
 } from '@angular/common/http';
 import { Observable, of, tap } from 'rxjs';
 import { delay, mergeMap, materialize, dematerialize } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
 import * as MENU from '../../../assets/data/menuResult.json';
 import * as MENUACTION from '../../../assets/data/menuActions.json';
+import * as USERS_DATA from '../../../assets/data/mockUsers.json';
+import * as ROLES_DATA from '../../../assets/data/mockRoles.json';
+import * as PERMISSIONS_DATA from '../../../assets/data/mockPermissions.json';
+import * as MENU_PERMISSIONS_DATA from '../../../assets/data/mockMenuPermissions.json';
+import * as WORKFLOWS_DATA from '../../../assets/data/mockWorkflows.json';
+import * as WORKFLOW_HISTORY_DATA from '../../../assets/data/mockWorkflowHistory.json';
+import * as FORM_CONFIGS_DATA from '../../../assets/data/mockFormConfigs.json';
 import { User, UserStatus } from '../../models/user.model';
 import { Role } from '../../models/role.model';
 import {
@@ -27,353 +35,69 @@ import { DynamicFormConfig, FieldType } from '../../models/dynamic-form.model';
 const menuList: any = (MENU as any).default;
 const menuActionList: any = (MENUACTION as any).default;
 
-// Mock数据
-let mockUsers: User[] = [
-  {
-    id: '1',
-    username: 'admin',
-    email: 'admin@example.com',
-    fullName: '系统管理员',
-    status: UserStatus.Active,
-    roleIds: ['1'],
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-    lastLoginAt: new Date(),
-  },
-  {
-    id: '2',
-    username: 'user1',
-    email: 'user1@example.com',
-    fullName: '普通用户',
-    status: UserStatus.Active,
-    roleIds: ['2'],
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-01-15'),
-  },
-];
+// 从JSON文件加载Mock数据并转换日期字符串为Date对象
+let mockUsers: User[] = ((USERS_DATA as any).default as any[]).map((user) => ({
+  ...user,
+  status: user.status as UserStatus,
+  createdAt: new Date(user.createdAt),
+  updatedAt: new Date(user.updatedAt),
+  lastLoginAt: user.lastLoginAt ? new Date(user.lastLoginAt) : undefined,
+}));
 
-let mockRoles: Role[] = [
-  {
-    id: '1',
-    name: '超级管理员',
-    code: 'super_admin',
-    description: '拥有所有权限',
-    permissionIds: ['1', '2', '3', '4', '5', '6'],
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-    level: 1,
-  },
-  {
-    id: '2',
-    name: '普通用户',
-    code: 'user',
-    description: '基础权限',
-    parentId: '1',
-    permissionIds: ['4', '5'],
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-    level: 2,
-  },
-];
+let mockRoles: Role[] = ((ROLES_DATA as any).default as any[]).map((role) => ({
+  ...role,
+  createdAt: new Date(role.createdAt),
+  updatedAt: new Date(role.updatedAt),
+}));
 
-let mockPermissions: Permission[] = [
-  {
-    id: '1',
-    name: '用户创建',
-    code: 'user:create',
-    type: PermissionType.Action,
-    menuId: 'users',
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-  },
-  {
-    id: '2',
-    name: '用户编辑',
-    code: 'user:edit',
-    type: PermissionType.Action,
-    menuId: 'users',
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-  },
-  {
-    id: '3',
-    name: '用户删除',
-    code: 'user:delete',
-    type: PermissionType.Action,
-    menuId: 'users',
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-  },
-  {
-    id: '4',
-    name: '角色查看',
-    code: 'role:view',
-    type: PermissionType.Menu,
-    menuId: 'roles',
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-  },
-  {
-    id: '5',
-    name: '角色管理',
-    code: 'role:manage',
-    type: PermissionType.Action,
-    menuId: 'roles',
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-  },
-  {
-    id: '6',
-    name: '权限管理',
-    code: 'permission:manage',
-    type: PermissionType.Menu,
-    menuId: 'permissions',
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-  },
-];
+let mockPermissions: Permission[] = (
+  (PERMISSIONS_DATA as any).default as any[]
+).map((permission) => ({
+  ...permission,
+  type: permission.type as PermissionType,
+  createdAt: new Date(permission.createdAt),
+  updatedAt: new Date(permission.updatedAt),
+}));
 
-let mockMenuPermissions: MenuPermission[] = [
-  {
-    id: 'mp1',
-    menuId: 'users',
-    menuName: '用户管理',
-    path: '/main/users',
-    icon: 'user',
-    orderNum: 1,
-    visible: true,
-    actions: [
-      { id: 'a1', name: '新增', code: 'add', menuId: 'users' },
-      { id: 'a2', name: '编辑', code: 'edit', menuId: 'users' },
-      { id: 'a3', name: '删除', code: 'delete', menuId: 'users' },
-      { id: 'a4', name: '重置密码', code: 'reset_password', menuId: 'users' },
-    ],
-  },
-  {
-    id: 'mp2',
-    menuId: 'roles',
-    menuName: '角色管理',
-    path: '/main/roles',
-    icon: 'team',
-    orderNum: 2,
-    visible: true,
-    actions: [
-      { id: 'a5', name: '新增', code: 'add', menuId: 'roles' },
-      { id: 'a6', name: '编辑', code: 'edit', menuId: 'roles' },
-      { id: 'a7', name: '删除', code: 'delete', menuId: 'roles' },
-      {
-        id: 'a8',
-        name: '分配权限',
-        code: 'assign_permissions',
-        menuId: 'roles',
-      },
-    ],
-  },
-  {
-    id: 'mp3',
-    menuId: 'permissions',
-    menuName: '权限管理',
-    path: '/main/permissions',
-    icon: 'safety',
-    orderNum: 3,
-    visible: true,
-    actions: [
-      { id: 'a9', name: '新增操作', code: 'add_action', menuId: 'permissions' },
-      {
-        id: 'a10',
-        name: '编辑操作',
-        code: 'edit_action',
-        menuId: 'permissions',
-      },
-      {
-        id: 'a11',
-        name: '删除操作',
-        code: 'delete_action',
-        menuId: 'permissions',
-      },
-    ],
-  },
-];
+let mockMenuPermissions: MenuPermission[] = (MENU_PERMISSIONS_DATA as any)
+  .default;
 
-let mockWorkflows: WorkFlow[] = [
-  {
-    id: '1',
-    d_workflow_id: 'WF-001',
-    name: '系统升级申请',
-    description: '升级核心系统到最新版本',
-    status: WorkflowStatus.IN_PROGRESS,
-    important: 'yes',
-    process_id: 'P001',
-    due_date: '2026-02-15',
-    created_by: 'admin',
-    created_on: '2026-01-15 10:00:00',
-    assignee: 'user1',
-    priority: WorkflowPriority.HIGH,
-    form_config_id: 'form-1', // 关联动态表单
-  },
-  {
-    id: '2',
-    d_workflow_id: 'WF-002',
-    name: '新功能开发',
-    description: '开发新的用户管理功能',
-    status: WorkflowStatus.REVIEW,
-    important: 'no',
-    process_id: 'P002',
-    due_date: '2026-02-20',
-    created_by: 'manager',
-    created_on: '2026-01-20 14:30:00',
-    assignee: 'developer1',
-    priority: WorkflowPriority.MEDIUM,
-  },
-  {
-    id: '3',
-    d_workflow_id: 'WF-003',
-    name: 'Bug修复',
-    description: '修复登录页面的显示问题',
-    status: WorkflowStatus.COMPLETED,
-    important: 'no',
-    process_id: 'P003',
-    due_date: '2026-01-25',
-    created_by: 'developer1',
-    created_on: '2026-01-18 09:00:00',
-    assignee: 'developer2',
-    priority: WorkflowPriority.LOW,
-  },
-];
+let mockWorkflows: WorkFlow[] = ((WORKFLOWS_DATA as any).default as any[]).map(
+  (workflow) => ({
+    ...workflow,
+    status: workflow.status as WorkflowStatus,
+    priority: workflow.priority as WorkflowPriority,
+  }),
+);
 
-let mockWorkflowHistory: WorkflowStatusHistory[] = [
-  {
-    id: '1',
-    workflow_id: '1',
-    from_status: WorkflowStatus.DRAFT,
-    to_status: WorkflowStatus.PENDING,
-    changed_by: 'admin',
-    changed_on: '2026-01-15 10:30:00',
-    comment: '提交审批',
-  },
-  {
-    id: '2',
-    workflow_id: '1',
-    from_status: WorkflowStatus.PENDING,
-    to_status: WorkflowStatus.IN_PROGRESS,
-    changed_by: 'manager',
-    changed_on: '2026-01-16 09:00:00',
-    comment: '开始处理',
-  },
-  {
-    id: '3',
-    workflow_id: '2',
-    from_status: WorkflowStatus.DRAFT,
-    to_status: WorkflowStatus.IN_PROGRESS,
-    changed_by: 'manager',
-    changed_on: '2026-01-20 15:00:00',
-    comment: '直接开始开发',
-  },
-  {
-    id: '4',
-    workflow_id: '2',
-    from_status: WorkflowStatus.IN_PROGRESS,
-    to_status: WorkflowStatus.REVIEW,
-    changed_by: 'developer1',
-    changed_on: '2026-01-28 16:00:00',
-    comment: '提交代码审查',
-  },
-];
+let mockWorkflowHistory: WorkflowStatusHistory[] = (
+  (WORKFLOW_HISTORY_DATA as any).default as any[]
+).map((history) => ({
+  ...history,
+  from_status: history.from_status as WorkflowStatus,
+  to_status: history.to_status as WorkflowStatus,
+}));
 
-// 动态表单配置数据
-let mockFormConfigs: DynamicFormConfig[] = [
-  {
-    id: 'form-1',
-    name: '系统升级申请表',
-    description: '用于系统升级申请的动态表单',
-    layout: 'vertical',
-    fields: [
-      {
-        id: 'field-1',
-        name: 'system_name',
-        label: '系统名称',
-        type: FieldType.TEXT,
-        placeholder: '请输入系统名称',
-        order: 1,
-        width: 24,
-        validation: {
-          required: true,
-          minLength: 2,
-          maxLength: 50,
-        },
-      },
-      {
-        id: 'field-2',
-        name: 'upgrade_reason',
-        label: '升级原因',
-        type: FieldType.TEXTAREA,
-        placeholder: '请详细说明升级原因',
-        order: 2,
-        width: 24,
-        validation: {
-          required: true,
-          minLength: 10,
-        },
-      },
-      {
-        id: 'field-3',
-        name: 'upgrade_date',
-        label: '计划升级日期',
-        type: FieldType.DATE,
-        order: 3,
-        width: 12,
-        validation: {
-          required: true,
-        },
-      },
-      {
-        id: 'field-4',
-        name: 'risk_level',
-        label: '风险等级',
-        type: FieldType.SELECT,
-        order: 4,
-        width: 12,
-        validation: {
-          required: true,
-        },
-        options: [
-          { label: '低', value: 'low' },
-          { label: '中', value: 'medium' },
-          { label: '高', value: 'high' },
-        ],
-      },
-      {
-        id: 'field-5',
-        name: 'backup_required',
-        label: '是否需要备份',
-        type: FieldType.SWITCH,
-        order: 5,
-        width: 12,
-        defaultValue: true,
-      },
-      {
-        id: 'field-6',
-        name: 'estimated_time',
-        label: '预计耗时（小时）',
-        type: FieldType.NUMBER,
-        order: 6,
-        width: 12,
-        validation: {
-          required: true,
-          min: 1,
-          max: 72,
-        },
-      },
-    ],
-    created_by: 'admin',
-    created_on: '2026-01-10 10:00:00',
-  },
-];
+let mockFormConfigs: DynamicFormConfig[] = (
+  (FORM_CONFIGS_DATA as any).default as any[]
+).map((config) => ({
+  ...config,
+  fields: config.fields.map((field: any) => ({
+    ...field,
+    type: field.type as FieldType,
+  })),
+}));
 
 export function FakeBackendInterceptor(
   req: HttpRequest<unknown>,
   next: HttpHandlerFn,
 ): Observable<HttpEvent<unknown>> {
+  // 检查是否使用Mock数据
+  if (!environment.useMockData) {
+    // 使用真实API，直接传递请求
+    return next(req);
+  }
+
   const { url, method, body } = req;
 
   return of(null)
@@ -384,11 +108,11 @@ export function FakeBackendInterceptor(
 
   function handleRoute() {
     // 菜单API
-    if (url.endsWith('api/menu') && method === 'GET') {
+    if (url.endsWith('api/menus') && method === 'GET') {
       return of(new HttpResponse({ status: 200, body: menuList }));
     }
 
-    if (url.endsWith('api/menu/actions') && method === 'GET') {
+    if (url.endsWith('api/menus/actions') && method === 'GET') {
       return of(new HttpResponse({ status: 200, body: menuActionList }));
     }
 

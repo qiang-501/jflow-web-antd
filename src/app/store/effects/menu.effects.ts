@@ -14,7 +14,7 @@ export class MenuEffects {
     return this.actions$.pipe(
       ofType(MenuActions.loadMenus),
       mergeMap(() => {
-        return this.http.get('api/menu').pipe(
+        return this.http.get('api/menus').pipe(
           map((menus: any) =>
             MenuActions.menusLoadedSuccess({ payload: menus }),
           ),
@@ -30,7 +30,7 @@ export class MenuEffects {
     return this.actions$.pipe(
       ofType('LoadMenuActions'),
       mergeMap(() => {
-        return this.http.get('api/menu/actions').pipe(
+        return this.http.get('api/menus/actions').pipe(
           map((menus) => ({
             type: 'MenuActionsLoadedSuccess',
             payload: menus,

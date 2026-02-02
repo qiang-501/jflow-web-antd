@@ -1,0 +1,58 @@
+<div class="login-container">
+  <nz-card class="login-card" [nzBordered]="true">
+    <h1 class="login-title">系统登录</h1>
+    <form
+      nz-form
+      [formGroup]="loginForm"
+      (ngSubmit)="submitForm()"
+      class="login-form"
+    >
+      <nz-form-item>
+        <nz-form-label [nzSpan]="24" nzRequired>用户名</nz-form-label>
+        <nz-form-control [nzSpan]="24" nzErrorTip="请输入用户名">
+          <input
+            nz-input
+            formControlName="username"
+            placeholder="请输入用户名"
+            autocomplete="username"
+          />
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label [nzSpan]="24" nzRequired>密码</nz-form-label>
+        <nz-form-control [nzSpan]="24" nzErrorTip="请输入密码（至少6位）">
+          <input
+            nz-input
+            type="password"
+            formControlName="password"
+            placeholder="请输入密码"
+            autocomplete="current-password"
+          />
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-control [nzSpan]="24">
+          <button
+            nz-button
+            nzType="primary"
+            nzBlock
+            [nzLoading]="loading"
+            [disabled]="!loginForm.valid"
+          >
+            登录
+          </button>
+        </nz-form-control>
+      </nz-form-item>
+
+      <div class="login-tips">
+        <p>默认账号：</p>
+        <ul>
+          <li>管理员：admin / admin123</li>
+          <li>普通用户：user1 / user123</li>
+        </ul>
+      </div>
+    </form>
+  </nz-card>
+</div>

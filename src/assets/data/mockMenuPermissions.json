@@ -1,0 +1,71 @@
+[
+  {
+    "id": "mp1",
+    "menuId": "users",
+    "menuName": "用户管理",
+    "path": "/main/users",
+    "icon": "user",
+    "orderNum": 1,
+    "visible": true,
+    "actions": [
+      { "id": "a1", "name": "新增", "code": "add", "menuId": "users" },
+      { "id": "a2", "name": "编辑", "code": "edit", "menuId": "users" },
+      { "id": "a3", "name": "删除", "code": "delete", "menuId": "users" },
+      {
+        "id": "a4",
+        "name": "重置密码",
+        "code": "reset_password",
+        "menuId": "users"
+      }
+    ]
+  },
+  {
+    "id": "mp2",
+    "menuId": "roles",
+    "menuName": "角色管理",
+    "path": "/main/roles",
+    "icon": "team",
+    "orderNum": 2,
+    "visible": true,
+    "actions": [
+      { "id": "a5", "name": "新增", "code": "add", "menuId": "roles" },
+      { "id": "a6", "name": "编辑", "code": "edit", "menuId": "roles" },
+      { "id": "a7", "name": "删除", "code": "delete", "menuId": "roles" },
+      {
+        "id": "a8",
+        "name": "分配权限",
+        "code": "assign_permissions",
+        "menuId": "roles"
+      }
+    ]
+  },
+  {
+    "id": "mp3",
+    "menuId": "permissions",
+    "menuName": "权限管理",
+    "path": "/main/permissions",
+    "icon": "safety",
+    "orderNum": 3,
+    "visible": true,
+    "actions": [
+      {
+        "id": "a9",
+        "name": "新增操作",
+        "code": "add_action",
+        "menuId": "permissions"
+      },
+      {
+        "id": "a10",
+        "name": "编辑操作",
+        "code": "edit_action",
+        "menuId": "permissions"
+      },
+      {
+        "id": "a11",
+        "name": "删除操作",
+        "code": "delete_action",
+        "menuId": "permissions"
+      }
+    ]
+  }
+]

@@ -1,0 +1,38 @@
+[
+  {
+    "id": "1",
+    "workflow_id": "1",
+    "from_status": "draft",
+    "to_status": "pending",
+    "changed_by": "admin",
+    "changed_on": "2026-01-15 10:30:00",
+    "comment": "提交审批"
+  },
+  {
+    "id": "2",
+    "workflow_id": "1",
+    "from_status": "pending",
+    "to_status": "in_progress",
+    "changed_by": "manager",
+    "changed_on": "2026-01-16 09:00:00",
+    "comment": "开始处理"
+  },
+  {
+    "id": "3",
+    "workflow_id": "2",
+    "from_status": "draft",
+    "to_status": "in_progress",
+    "changed_by": "manager",
+    "changed_on": "2026-01-20 15:00:00",
+    "comment": "直接开始开发"
+  },
+  {
+    "id": "4",
+    "workflow_id": "2",
+    "from_status": "in_progress",
+    "to_status": "review",
+    "changed_by": "developer1",
+    "changed_on": "2026-01-28 16:00:00",
+    "comment": "提交代码审查"
+  }
+]

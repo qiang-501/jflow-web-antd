@@ -8,7 +8,11 @@ import { registerLocaleData } from '@angular/common';
 import en from '@angular/common/locales/en';
 import { FormsModule } from '@angular/forms';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { provideHttpClient } from '@angular/common/http';
+import {
+  provideHttpClient,
+  withInterceptors,
+  HTTP_INTERCEPTORS,
+} from '@angular/common/http';
 import { provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
 import { provideRouterStore } from '@ngrx/router-store';
@@ -17,6 +21,7 @@ import { ValveEffects, MenuEffects, WorkFlowEffects } from './store';
 import { UserEffects } from './store/effects/user.effects';
 import { RoleEffects } from './store/effects/role.effects';
 import { PermissionEffects } from './store/effects/permission.effects';
+import { AuthInterceptor } from './core/interceptors/auth.interceptor';
 
 registerLocaleData(en);
 
@@ -28,6 +33,11 @@ export const appConfig: ApplicationConfig = {
     importProvidersFrom(FormsModule),
     provideAnimationsAsync(),
     provideHttpClient(),
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: AuthInterceptor,
+      multi: true,
+    },
     provideStore(),
     provideEffects(
       ValveEffects,

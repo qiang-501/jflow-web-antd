@@ -137,7 +137,7 @@
 
 <!-- 创建工作流模态框 -->
 <nz-modal
-  [(nzVisible)]="isCreateModalVisible"
+  [nzVisible]="isCreateModalVisible"
   nzTitle="创建工作流"
   (nzOnCancel)="handleCreateCancel()"
   (nzOnOk)="handleCreateOk()"
@@ -209,7 +209,7 @@
 
 <!-- 编辑工作流模态框 -->
 <nz-modal
-  [(nzVisible)]="isEditModalVisible"
+  [nzVisible]="isEditModalVisible"
   nzTitle="编辑工作流"
   (nzOnCancel)="handleEditCancel()"
   (nzOnOk)="handleEditOk()"
@@ -281,7 +281,7 @@
 
 <!-- 历史记录模态框 -->
 <nz-modal
-  [(nzVisible)]="isHistoryModalVisible"
+  [nzVisible]="isHistoryModalVisible"
   nzTitle="工作流历史记录"
   (nzOnCancel)="handleHistoryCancel()"
   [nzFooter]="null"
@@ -329,7 +329,7 @@
 
 <!-- 动态表单模态框 -->
 <nz-modal
-  [(nzVisible)]="isDynamicFormModalVisible"
+  [nzVisible]="isDynamicFormModalVisible"
   [nzTitle]="'工作流表单：' + selectedWorkflow?.name"
   (nzOnCancel)="handleFormCancel()"
   [nzFooter]="null"
@@ -382,7 +382,7 @@
 
 <!-- 表单构建器模态框 -->
 <nz-modal
-  [(nzVisible)]="isFormBuilderModalVisible"
+  [nzVisible]="isFormBuilderModalVisible"
   nzTitle="动态表单管理"
   (nzOnCancel)="handleFormBuilderClose()"
   [nzFooter]="null"

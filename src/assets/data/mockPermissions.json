@@ -1,0 +1,56 @@
+[
+  {
+    "id": "1",
+    "name": "用户创建",
+    "code": "user:create",
+    "type": "action",
+    "menuId": "users",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "2",
+    "name": "用户编辑",
+    "code": "user:edit",
+    "type": "action",
+    "menuId": "users",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "3",
+    "name": "用户删除",
+    "code": "user:delete",
+    "type": "action",
+    "menuId": "users",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "4",
+    "name": "角色查看",
+    "code": "role:view",
+    "type": "menu",
+    "menuId": "roles",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "5",
+    "name": "角色管理",
+    "code": "role:manage",
+    "type": "action",
+    "menuId": "roles",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "6",
+    "name": "权限管理",
+    "code": "permission:manage",
+    "type": "menu",
+    "menuId": "permissions",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+]
