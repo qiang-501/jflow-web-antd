@@ -14,8 +14,8 @@ export class UserService {
   /**
    * 获取所有用户列表
    */
-  getUsers(): Observable<User[]> {
-    return this.http.get<User[]>(this.apiUrl);
+  getUsers(): Observable<{ data: User[]; total: number }> {
+    return this.http.get<{ data: User[]; total: number }>(this.apiUrl);
   }
 
   /**
@@ -35,8 +35,8 @@ export class UserService {
   /**
    * 更新用户信息
    */
-  updateUser(user: UpdateUserDto): Observable<User> {
-    return this.http.put<User>(`${this.apiUrl}/${user.id}`, user);
+  updateUser(id: string, user: UpdateUserDto): Observable<User> {
+    return this.http.put<User>(`${this.apiUrl}/${id}`, user);
   }
 
   /**

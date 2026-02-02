@@ -34,7 +34,7 @@ export class WorkflowService {
   /**
    * 根据ID获取工作流详情
    */
-  getWorkflowById(id: string): Observable<WorkFlow> {
+  getWorkflowById(id: number): Observable<WorkFlow> {
     return this.http.get<WorkFlow>(`${this.apiUrl}/${id}`);
   }
 
@@ -49,7 +49,7 @@ export class WorkflowService {
    * 更新工作流信息
    */
   updateWorkflow(
-    id: string,
+    id: number,
     workflow: UpdateWorkflowDto,
   ): Observable<WorkFlow> {
     return this.http.put<WorkFlow>(`${this.apiUrl}/${id}`, workflow);
@@ -58,7 +58,7 @@ export class WorkflowService {
   /**
    * 删除工作流
    */
-  deleteWorkflow(id: string): Observable<void> {
+  deleteWorkflow(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
@@ -66,7 +66,7 @@ export class WorkflowService {
    * 修改工作流状态
    */
   changeWorkflowStatus(
-    id: string,
+    id: number,
     status: WorkflowStatus,
     comment?: string,
   ): Observable<WorkFlow> {
@@ -79,7 +79,7 @@ export class WorkflowService {
   /**
    * 获取工作流状态历史记录
    */
-  getWorkflowHistory(id: string): Observable<WorkflowStatusHistory[]> {
+  getWorkflowHistory(id: number): Observable<WorkflowStatusHistory[]> {
     return this.http.get<WorkflowStatusHistory[]>(
       `${this.apiUrl}/${id}/history`,
     );
@@ -88,7 +88,7 @@ export class WorkflowService {
   /**
    * 分配工作流给用户
    */
-  assignWorkflow(id: string, assignee: string): Observable<WorkFlow> {
+  assignWorkflow(id: number, assignee: string): Observable<WorkFlow> {
     return this.http.patch<WorkFlow>(`${this.apiUrl}/${id}/assign`, {
       assignee,
     });

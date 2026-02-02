@@ -77,8 +77,8 @@ export class RoleEffects {
   updateRole$ = createEffect(() => {
     return this.actions$.pipe(
       ofType(RoleActions.updateRole),
-      mergeMap(({ role }) => {
-        return this.roleService.updateRole(role).pipe(
+      mergeMap(({ id, role }) => {
+        return this.roleService.updateRole(id, role).pipe(
           map((updatedRole) =>
             RoleActions.updateRoleSuccess({ payload: updatedRole }),
           ),

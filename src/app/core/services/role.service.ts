@@ -48,8 +48,8 @@ export class RoleService {
   /**
    * 更新角色信息
    */
-  updateRole(role: UpdateRoleDto): Observable<Role> {
-    return this.http.put<Role>(`${this.apiUrl}/${role.id}`, role);
+  updateRole(id: string, role: UpdateRoleDto): Observable<Role> {
+    return this.http.put<Role>(`${this.apiUrl}/${id}`, role);
   }
 
   /**

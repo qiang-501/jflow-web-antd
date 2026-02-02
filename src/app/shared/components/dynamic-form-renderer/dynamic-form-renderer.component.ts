@@ -64,6 +64,18 @@ export class DynamicFormRendererComponent implements OnInit {
   form!: FormGroup;
   FieldType = FieldType;
 
+  // 缓存可见字段列表，避免每次都创建新数组
+  private _cachedVisibleFields: DynamicFormField[] | null = null;
+
+  // 获取表单布局类型
+  get formLayout(): 'horizontal' | 'vertical' | 'inline' {
+    const layout = this.formConfig.layout;
+    if (layout === 'horizontal' || layout === 'inline') {
+      return layout;
+    }
+    return 'vertical';
+  }
+
   ngOnInit(): void {
     this.buildForm();
     if (this.initialData) {
@@ -74,9 +86,14 @@ export class DynamicFormRendererComponent implements OnInit {
   buildForm(): void {
     const group: { [key: string]: any } = {};
 
-    this.formConfig.fields
-      .sort((a, b) => a.order - b.order)
-      .forEach((field) => {
+    // 确保 fields 是数组
+    const fields = Array.isArray(this.formConfig.fields)
+      ? (this.formConfig.fields as DynamicFormField[])
+      : [];
+
+    fields
+      .sort((a: DynamicFormField, b: DynamicFormField) => a.order - b.order)
+      .forEach((field: DynamicFormField) => {
         const validators = this.buildValidators(field);
         group[field.name] = [
           field.defaultValue !== undefined ? field.defaultValue : null,
@@ -86,8 +103,13 @@ export class DynamicFormRendererComponent implements OnInit {
 
     this.form = this.fb.group(group);
 
+    // 计算并缓存可见字段
+    this._cachedVisibleFields = fields
+      .filter((field: DynamicFormField) => !field.hidden)
+      .sort((a: DynamicFormField, b: DynamicFormField) => a.order - b.order);
+
     // 设置字段依赖关系
-    this.formConfig.fields.forEach((field) => {
+    fields.forEach((field: DynamicFormField) => {
       if (field.dependsOn) {
         const dependField = this.form.get(field.dependsOn.field);
         dependField?.valueChanges.subscribe((value) => {
@@ -141,9 +163,8 @@ export class DynamicFormRendererComponent implements OnInit {
   }
 
   getVisibleFields(): DynamicFormField[] {
-    return this.formConfig.fields
-      .filter((field) => !field.hidden)
-      .sort((a, b) => a.order - b.order);
+    // 返回缓存的可见字段列表
+    return this._cachedVisibleFields || [];
   }
 
   getFieldWidth(field: DynamicFormField): number {

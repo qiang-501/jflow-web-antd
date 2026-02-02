@@ -1,11 +1,22 @@
 <div class="form-builder-container">
-  <div class="header">
+  <!-- 只在非单表单模式且非创建模式下显示头部 -->
+  <div class="header" *ngIf="!singleFormMode && formConfigs.length > 0">
     <h2>动态表单配置</h2>
     <button nz-button nzType="primary" (click)="showConfigModal()">
       <span nz-icon nzType="plus"></span>
       创建表单
     </button>
   </div>
+
+  <!-- 单表单编辑模式提示 -->
+  <nz-alert
+    *ngIf="singleFormMode && formConfigs.length > 0"
+    nzType="info"
+    nzShowIcon
+    [nzMessage]="'正在编辑表单字段: ' + formConfigs[0].name"
+    nzDescription="您只能编辑此工作流关联的表单字段"
+    style="margin-bottom: 16px"
+  ></nz-alert>
 
   <div class="configs-list">
     <nz-card
@@ -16,6 +27,7 @@
     >
       <ng-template #extraTemplate>
         <button
+          *ngIf="!singleFormMode"
           nz-button
           nzType="link"
           nzSize="small"
@@ -32,6 +44,7 @@
           预览
         </button>
         <button
+          *ngIf="!singleFormMode"
           nz-button
           nzType="link"
           nzSize="small"
@@ -49,7 +62,7 @@
 
       <div class="fields-section">
         <div class="section-header">
-          <h4>表单字段 ({{ config.fields.length }})</h4>
+          <h4>表单字段 ({{ getFieldsLength(config) }})</h4>
           <button
             nz-button
             nzType="dashed"
@@ -63,7 +76,7 @@
 
         <nz-table
           #fieldTable
-          [nzData]="config.fields"
+          [nzData]="getConfigFields(config)"
           [nzShowPagination]="false"
           [nzSize]="'small'"
         >

@@ -29,37 +29,56 @@ export class SidenavComponent implements OnInit {
   ngOnInit() {
     this.menuStore.dispatch(MenuActions.loadMenus({ page: 1 }));
     this.menuStore.select(selectAllMenus).subscribe((menus) => {
+      console.log('Loaded menus from store:', menus);
       this.menus = this.buildMenuTree(menus);
     });
   }
 
   buildMenuTree(menu: readonly MenuNode[]): MenuItem[] {
-    const map = new Map<string, MenuItem & { parent_id?: string }>();
+    const map = new Map<number, MenuItem & { parentId?: number }>();
     const roots: MenuItem[] = [];
+
+    // 计算层级
+    const calculateLevel = (
+      menuId: number,
+      menuMap: Map<number, MenuNode>,
+    ): number => {
+      const menuNode = menuMap.get(menuId);
+      if (!menuNode || !menuNode.parentId) return 1;
+      return calculateLevel(menuNode.parentId, menuMap) + 1;
+    };
+
+    // 创建 menuMap 用于层级计算
+    const menuMap = new Map<number, MenuNode>();
+    menu.forEach((item) => menuMap.set(item.id, item));
+
     for (const item of menu) {
       map.set(item.id, {
-        id: item.id,
-        title: item.title,
+        id: String(item.id),
+        title: item.title || item.name,
         icon: item.icon,
-        link: item.link,
-        level: item.level,
+        link: item.path,
+        level: calculateLevel(item.id, menuMap),
         children: [],
-        parent_id: item.parent_id,
+        parentId: item.parentId,
       });
     }
+
     for (const item of map.values()) {
-      if (item.parent_id && map.has(item.parent_id)) {
-        const parent = map.get(item.parent_id)!;
+      if (item.parentId && map.has(item.parentId)) {
+        const parent = map.get(item.parentId)!;
         parent.children = parent.children || [];
         parent.children.push(item);
       } else {
         roots.push(item);
       }
-      delete item.parent_id;
+      delete item.parentId;
       if (item.children && item.children.length === 0) {
         delete item.children;
       }
     }
+
+    console.log('Built menu tree:', roots);
     return roots;
   }
 }

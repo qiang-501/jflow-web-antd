@@ -37,6 +37,8 @@ import {
 } from '../../models/work-flow';
 import { PermissionService } from '../../core/services/permission.service';
 import { WorkflowService } from '../../core/services/workflow.service';
+import { UserService } from '../../core/services/user.service';
+import { User } from '../../models/user.model';
 import { DynamicFormConfig } from '../../models/dynamic-form.model';
 import { DynamicFormRendererComponent } from '../../shared/components/dynamic-form-renderer/dynamic-form-renderer.component';
 import { FormBuilderComponent } from '../../shared/components/form-builder/form-builder.component';
@@ -79,6 +81,7 @@ export class WorkflowComponent implements OnInit {
   private message = inject(NzMessageService);
   private permissionService = inject(PermissionService);
   private workflowService = inject(WorkflowService);
+  private userService = inject(UserService);
   private dynamicFormService = inject(DynamicFormService);
   private cdr = inject(ChangeDetectorRef);
 
@@ -88,6 +91,7 @@ export class WorkflowComponent implements OnInit {
   canDelete = false;
   canChangeStatus = false;
   canEditForm = false; // 编辑动态表单权限（仅管理员）
+  canManageForms = false; // 管理表单权限（创建、编辑、删除表单）
 
   // 表格数据
   workflows: WorkFlow[] = [];
@@ -96,6 +100,14 @@ export class WorkflowComponent implements OnInit {
   pageSize = 10;
   pageIndex = 1;
   total = 0;
+
+  // 用户列表
+  users: User[] = [];
+  usersLoading = false;
+
+  // 表单配置列表
+  formConfigs: DynamicFormConfig[] = [];
+  formConfigsLoading = false;
 
   // 筛选条件
   filterStatus: WorkflowStatus | null = null;
@@ -119,10 +131,10 @@ export class WorkflowComponent implements OnInit {
   isHistoryModalVisible = false;
   isDynamicFormModalVisible = false;
   isFormBuilderModalVisible = false;
+  isCreatingNewForm = false; // 是否正在创建新表单（不显示其他表单）
   selectedWorkflow: WorkFlow | null = null;
   workflowHistory: WorkflowStatusHistory[] = [];
   currentFormConfig: DynamicFormConfig | null = null;
-  formConfigs: DynamicFormConfig[] = [];
 
   // 表单
   createForm!: FormGroup;
@@ -154,23 +166,27 @@ export class WorkflowComponent implements OnInit {
     this.initForms();
     this.checkPermissions();
     this.loadWorkflows();
+    this.loadUsers();
+    this.loadFormConfigs();
   }
 
   initForms(): void {
     this.createForm = this.fb.group({
+      dWorkflowId: ['', [Validators.required]],
       name: ['', [Validators.required, Validators.minLength(3)]],
       description: [''],
       priority: [WorkflowPriority.MEDIUM, [Validators.required]],
-      assignee: [''],
-      due_date: [null, [Validators.required]],
+      assignedTo: [null],
+      dueDate: [null, [Validators.required]],
+      formConfigId: [null], // 关联的表单配置
     });
 
     this.editForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
       description: [''],
       priority: [WorkflowPriority.MEDIUM, [Validators.required]],
-      assignee: [''],
-      due_date: [null, [Validators.required]],
+      assignedTo: [null],
+      dueDate: [null, [Validators.required]],
     });
   }
 
@@ -221,8 +237,10 @@ export class WorkflowComponent implements OnInit {
       })
       .subscribe((result) => {
         this.canEditForm = result.hasPermission;
+        this.canManageForms = result.hasPermission; // 使用相同的权限
         console.log('form:manage permission:', result.hasPermission);
         console.log('canEditForm is now:', this.canEditForm);
+        console.log('canManageForms is now:', this.canManageForms);
         this.cdr.markForCheck(); // 手动触发变更检测
       });
   }
@@ -249,6 +267,39 @@ export class WorkflowComponent implements OnInit {
     });
   }
 
+  loadUsers(): void {
+    this.usersLoading = true;
+    this.userService.getUsers().subscribe({
+      next: (response) => {
+        this.users = response.data;
+        this.usersLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        console.error('加载用户列表失败:', error);
+        this.message.error('加载用户列表失败');
+        this.usersLoading = false;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  loadFormConfigs(): void {
+    this.formConfigsLoading = true;
+    this.dynamicFormService.getFormConfigs().subscribe({
+      next: (response) => {
+        this.formConfigs = response.data;
+        this.formConfigsLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        console.error('加载表单配置失败:', error);
+        this.formConfigsLoading = false;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
   applyFilters(): void {
     let filtered = [...this.workflows];
 
@@ -268,9 +319,8 @@ export class WorkflowComponent implements OnInit {
       filtered = filtered.filter(
         (w) =>
           w.name.toLowerCase().includes(search) ||
-          w.d_workflow_id.toLowerCase().includes(search) ||
-          w.description?.toLowerCase().includes(search) ||
-          w.assignee?.toLowerCase().includes(search),
+          w.dWorkflowId.toLowerCase().includes(search) ||
+          w.description?.toLowerCase().includes(search),
       );
     }
 
@@ -326,18 +376,34 @@ export class WorkflowComponent implements OnInit {
     if (this.createForm.valid) {
       const formValue = this.createForm.value;
       const newWorkflow: CreateWorkflowDto = {
+        dWorkflowId: formValue.dWorkflowId,
         name: formValue.name,
         description: formValue.description,
         priority: formValue.priority,
-        assignee: formValue.assignee,
-        due_date: formValue.due_date?.toISOString() || '',
+        assignedTo: formValue.assignedTo,
+        dueDate: formValue.dueDate?.toISOString(),
+        formConfigId: formValue.formConfigId, // 添加表单配置ID
       };
 
-      // 这里应该调用API创建工作流
-      console.log('Creating workflow:', newWorkflow);
-      this.message.success('工作流创建成功');
-      this.isCreateModalVisible = false;
-      this.loadWorkflows();
+      this.loading = true;
+      this.workflowService.createWorkflow(newWorkflow).subscribe({
+        next: (workflow) => {
+          this.message.success('工作流创建成功');
+          this.isCreateModalVisible = false;
+          this.createForm.reset();
+          this.loadWorkflows();
+        },
+        error: (error) => {
+          console.error('创建工作流失败:', error);
+          this.message.error(
+            error.error?.message || '创建工作流失败，请稍后重试',
+          );
+          this.loading = false;
+        },
+        complete: () => {
+          this.loading = false;
+        },
+      });
     } else {
       Object.values(this.createForm.controls).forEach((control) => {
         if (control.invalid) {
@@ -363,8 +429,8 @@ export class WorkflowComponent implements OnInit {
       name: workflow.name,
       description: workflow.description,
       priority: workflow.priority,
-      assignee: workflow.assignee,
-      due_date: workflow.due_date ? new Date(workflow.due_date) : null,
+      assignedTo: workflow.assignedTo,
+      dueDate: workflow.dueDate ? new Date(workflow.dueDate) : null,
     });
     this.isEditModalVisible = true;
   }
@@ -376,15 +442,32 @@ export class WorkflowComponent implements OnInit {
         name: formValue.name,
         description: formValue.description,
         priority: formValue.priority,
-        assignee: formValue.assignee,
-        due_date: formValue.due_date?.toISOString() || '',
+        assignedTo: formValue.assignedTo,
+        dueDate: formValue.dueDate?.toISOString(),
       };
 
-      // 这里应该调用API更新工作流
-      console.log('Updating workflow:', this.selectedWorkflow.id, updateData);
-      this.message.success('工作流更新成功');
-      this.isEditModalVisible = false;
-      this.loadWorkflows();
+      this.loading = true;
+      this.workflowService
+        .updateWorkflow(this.selectedWorkflow.id, updateData)
+        .subscribe({
+          next: (workflow) => {
+            this.message.success('工作流更新成功');
+            this.isEditModalVisible = false;
+            this.selectedWorkflow = null;
+            this.editForm.reset();
+            this.loadWorkflows();
+          },
+          error: (error) => {
+            console.error('更新工作流失败:', error);
+            this.message.error(
+              error.error?.message || '更新工作流失败，请稍后重试',
+            );
+            this.loading = false;
+          },
+          complete: () => {
+            this.loading = false;
+          },
+        });
     }
   }
 
@@ -400,12 +483,25 @@ export class WorkflowComponent implements OnInit {
       return;
     }
 
-    // 这里应该调用API修改状态
-    console.log('Changing status:', workflow.id, newStatus);
-    workflow.status = newStatus;
-    this.updateStatistics(); // 更新统计数据
-    this.cdr.markForCheck(); // 触发变更检测
-    this.message.success('状态修改成功');
+    this.loading = true;
+    this.workflowService
+      .changeWorkflowStatus(workflow.id, newStatus)
+      .subscribe({
+        next: (updatedWorkflow) => {
+          workflow.status = updatedWorkflow.status;
+          this.updateStatistics();
+          this.cdr.markForCheck();
+          this.message.success('状态修改成功');
+          this.loading = false;
+        },
+        error: (error) => {
+          console.error('修改状态失败:', error);
+          this.message.error(
+            error.error?.message || '修改状态失败，请稍后重试',
+          );
+          this.loading = false;
+        },
+      });
   }
 
   // 查看历史
@@ -432,16 +528,26 @@ export class WorkflowComponent implements OnInit {
   }
 
   // 删除工作流
-  deleteWorkflow(id: string): void {
+  deleteWorkflow(id: number): void {
     if (!this.canDelete) {
       this.message.warning('您没有删除工作流的权限');
       return;
     }
 
-    // 这里应该调用API删除工作流
-    console.log('Deleting workflow:', id);
-    this.message.success('工作流删除成功');
-    this.loadWorkflows();
+    this.loading = true;
+    this.workflowService.deleteWorkflow(id).subscribe({
+      next: () => {
+        this.message.success('工作流删除成功');
+        this.loadWorkflows();
+      },
+      error: (error) => {
+        console.error('删除工作流失败:', error);
+        this.message.error(
+          error.error?.message || '删除工作流失败，请稍后重试',
+        );
+        this.loading = false;
+      },
+    });
   }
 
   // 获取状态配置
@@ -464,9 +570,9 @@ export class WorkflowComponent implements OnInit {
   openDynamicForm(workflow: WorkFlow): void {
     this.selectedWorkflow = workflow;
 
-    if (workflow.form_config_id) {
+    if (workflow.formConfigId) {
       // 加载表单配置
-      this.dynamicFormService.getFormConfig(workflow.form_config_id).subscribe({
+      this.dynamicFormService.getFormConfig(workflow.formConfigId).subscribe({
         next: (config) => {
           this.currentFormConfig = config;
           this.isDynamicFormModalVisible = true;
@@ -508,14 +614,65 @@ export class WorkflowComponent implements OnInit {
       return;
     }
 
+    if (workflow && !workflow.formConfigId) {
+      this.message.warning('此工作流尚未关联动态表单，无法编辑字段');
+      return;
+    }
+
     console.log('Opening form builder...');
     this.selectedWorkflow = workflow || null;
+    this.isCreatingNewForm = false; // 不是创建模式
+    this.isFormBuilderModalVisible = true;
+  }
+
+  // 创建新表单配置（在创建工作流时）
+  createNewFormConfig(): void {
+    if (!this.canManageForms) {
+      this.message.warning('您没有创建表单的权限');
+      return;
+    }
+
+    // 打开表单构建器，创建新表单（仅创建模式）
+    this.selectedWorkflow = null;
+    this.isCreatingNewForm = true; // 设置为创建模式
+    this.isFormBuilderModalVisible = true;
+  }
+
+  // 编辑选中的表单配置（在创建工作流时）
+  editFormConfigInCreate(): void {
+    if (!this.canManageForms) {
+      this.message.warning('您没有编辑表单的权限');
+      return;
+    }
+
+    const formConfigId = this.createForm.get('formConfigId')?.value;
+    if (!formConfigId) {
+      this.message.warning('请先选择要编辑的表单');
+      return;
+    }
+
+    // 创建临时工作流对象，用于传递给表单构建器
+    this.selectedWorkflow = {
+      id: 0,
+      formConfigId: formConfigId,
+    } as WorkFlow;
+    this.isCreatingNewForm = false; // 不是创建模式，是编辑模式
     this.isFormBuilderModalVisible = true;
   }
 
   // 处理表单构建器关闭
   handleFormBuilderClose(): void {
     this.isFormBuilderModalVisible = false;
+    this.isCreatingNewForm = false; // 重置创建模式标识
+    // 如果是在创建工作流时新建的表单，自动选中
+    // 这里可以根据实际需求调整逻辑
     this.selectedWorkflow = null;
+  }
+
+  // 根据用户ID获取用户名
+  getUserName(userId: string | number | null | undefined): string {
+    if (!userId) return '-';
+    const user = this.users.find((u) => u.id === String(userId));
+    return user ? user.fullName || user.username : String(userId);
   }
 }

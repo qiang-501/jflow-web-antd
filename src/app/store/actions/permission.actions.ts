@@ -32,7 +32,10 @@ export const PermissionActions = createActionGroup({
     'Create Permission Error': props<{ payload: any }>(),
 
     // 更新权限
-    'Update Permission': props<{ permission: UpdatePermissionDto }>(),
+    'Update Permission': props<{
+      id: string;
+      permission: UpdatePermissionDto;
+    }>(),
     'Update Permission Success': props<{ payload: Permission }>(),
     'Update Permission Error': props<{ payload: any }>(),
 

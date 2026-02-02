@@ -9,82 +9,111 @@ export interface MenuItem {
   level: number;
   children?: MenuItem[];
 }
+
 export interface MenuNode {
-  id: string;
-  parent_id?: string;
+  id: number;
+  parentId?: number;
+  name: string;
   title: string;
+  path?: string;
   icon?: string;
-  link?: string;
-  level: number;
+  type?: string;
+  status?: string;
+  sortOrder?: number;
+  isVisible?: boolean;
 }
 export const MENU: Array<MenuNode> = [
   {
-    id: '1',
+    id: 1,
+    name: 'dashboard',
     title: 'Dashboard',
     icon: 'dashboard',
-    level: 1,
-    parent_id: '',
+    type: 'menu',
+    status: 'active',
+    sortOrder: 1,
   },
   {
-    id: '2',
+    id: 2,
+    name: 'main',
     title: 'Main',
     icon: 'user',
-    level: 2,
-    parent_id: '1',
-    link: 'main',
+    path: 'main',
+    parentId: 1,
+    type: 'menu',
+    status: 'active',
+    sortOrder: 1,
   },
   {
-    id: '3',
+    id: 3,
+    name: 'user-management',
     title: 'User Management',
     icon: 'team',
-    level: 1,
-    parent_id: '',
+    type: 'menu',
+    status: 'active',
+    sortOrder: 2,
   },
   {
-    id: '4',
+    id: 4,
+    name: 'settings',
     title: 'Settings',
     icon: 'setting',
-    level: 2,
-    parent_id: '3',
-    link: 'main/settings',
+    path: 'main/settings',
+    parentId: 3,
+    type: 'menu',
+    status: 'active',
+    sortOrder: 1,
   },
   {
-    id: '5',
+    id: 5,
+    name: 'workflows',
     title: 'WorkFlows',
     icon: 'apartment',
-    level: 2,
-    parent_id: '3',
-    link: 'main/workflow',
+    path: 'main/workflow',
+    parentId: 3,
+    type: 'menu',
+    status: 'active',
+    sortOrder: 2,
   },
   {
-    id: '6',
+    id: 6,
+    name: 'access-control',
     title: 'Access Control',
     icon: 'safety',
-    level: 1,
-    parent_id: '',
+    type: 'menu',
+    status: 'active',
+    sortOrder: 3,
   },
   {
-    id: '7',
+    id: 7,
+    name: 'users',
     title: 'Users',
     icon: 'user',
-    level: 2,
-    parent_id: '6',
-    link: 'main/users',
+    path: 'main/users',
+    parentId: 6,
+    type: 'menu',
+    status: 'active',
+    sortOrder: 1,
   },
   {
-    id: '8',
+    id: 8,
+    name: 'roles',
     title: 'Roles',
     icon: 'idcard',
-    level: 2,
-    parent_id: '6',
-    link: 'main/roles',
+    path: 'main/roles',
+    parentId: 6,
+    type: 'menu',
+    status: 'active',
+    sortOrder: 2,
   },
   {
-    id: '9',
+    id: 9,
+    name: 'permissions',
     title: 'Permissions',
     icon: 'lock',
-    level: 2,
-    parent_id: '6',
-    link: 'main/permissions',
+    path: 'main/permissions',
+    parentId: 6,
+    type: 'menu',
+    status: 'active',
+    sortOrder: 3,
   },
 ];

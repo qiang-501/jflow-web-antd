@@ -14,10 +14,12 @@ export class MenuEffects {
     return this.actions$.pipe(
       ofType(MenuActions.loadMenus),
       mergeMap(() => {
-        return this.http.get('api/menus').pipe(
-          map((menus: any) =>
-            MenuActions.menusLoadedSuccess({ payload: menus }),
-          ),
+        return this.http.get<{ data: any[]; total: number }>('api/menus').pipe(
+          map((response) => {
+            // 提取 data 数组，如果没有则使用原始响应
+            const menus = response.data || response;
+            return MenuActions.menusLoadedSuccess({ payload: menus });
+          }),
           catchError((error) =>
             of(MenuActions.menusLoadedError({ payload: error })),
           ),

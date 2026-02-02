@@ -23,19 +23,18 @@ export interface CreateUserDto {
   username: string;
   email: string;
   password: string;
-  fullName: string;
-  phone?: string;
-  roleIds: string[];
+  fullName?: string;
+  status?: UserStatus;
+  roleIds?: number[];
 }
 
 export interface UpdateUserDto {
-  id: string;
+  username?: string;
+  password?: string;
   email?: string;
   fullName?: string;
-  phone?: string;
-  avatar?: string;
   status?: UserStatus;
-  roleIds?: string[];
+  roleIds?: number[];
 }
 
 export interface UserState {

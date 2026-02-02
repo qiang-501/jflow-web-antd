@@ -1,19 +1,16 @@
 export interface WorkFlow {
-  id: string;
-  d_workflow_id: string;
+  id: number;
+  dWorkflowId: string;
   name: string;
   description?: string;
   status: WorkflowStatus;
-  important: string;
-  process_id: string;
-  due_date: string;
-  created_by: string;
-  created_on: string;
-  updated_by?: string;
-  updated_on?: string;
-  assignee?: string;
   priority: WorkflowPriority;
-  form_config_id?: string; // 关联的动态表单ID
+  formConfigId?: number;
+  createdBy?: number;
+  assignedTo?: number;
+  dueDate?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export enum WorkflowStatus {
@@ -43,11 +40,15 @@ export interface WorkflowStatusHistory {
 }
 
 export interface CreateWorkflowDto {
+  dWorkflowId: string;
   name: string;
   description?: string;
-  priority: WorkflowPriority;
-  assignee?: string;
-  due_date: string;
+  status?: WorkflowStatus;
+  priority?: WorkflowPriority;
+  formConfigId?: number;
+  createdBy?: number;
+  assignedTo?: number;
+  dueDate?: string;
 }
 
 export interface UpdateWorkflowDto {
@@ -55,6 +56,7 @@ export interface UpdateWorkflowDto {
   description?: string;
   status?: WorkflowStatus;
   priority?: WorkflowPriority;
-  assignee?: string;
-  due_date?: string;
+  formConfigId?: number;
+  assignedTo?: number;
+  dueDate?: string;
 }

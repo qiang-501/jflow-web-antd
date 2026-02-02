@@ -61,12 +61,14 @@ export interface DynamicFormConfig {
   id: string;
   name: string;
   description?: string;
-  fields: DynamicFormField[];
-  layout?: 'horizontal' | 'vertical' | 'inline';
-  created_by?: string;
-  created_on?: string;
-  updated_by?: string;
-  updated_on?: string;
+  fields: any; // 使用 any 匹配后端的 JSON 类型
+  layout?: string;
+  labelWidth?: string;
+  labelAlign?: string;
+  version?: number;
+  active?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface FormSubmission {
@@ -81,13 +83,21 @@ export interface FormSubmission {
 export interface CreateFormConfigDto {
   name: string;
   description?: string;
-  fields: DynamicFormField[];
-  layout?: 'horizontal' | 'vertical' | 'inline';
+  fields: any;
+  layout?: string;
+  labelWidth?: string;
+  labelAlign?: string;
+  version?: number;
+  active?: boolean;
 }
 
 export interface UpdateFormConfigDto {
   name?: string;
   description?: string;
-  fields?: DynamicFormField[];
-  layout?: 'horizontal' | 'vertical' | 'inline';
+  fields?: any;
+  layout?: string;
+  labelWidth?: string;
+  labelAlign?: string;
+  version?: number;
+  active?: boolean;
 }

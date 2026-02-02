@@ -91,8 +91,8 @@ export class PermissionEffects {
   updatePermission$ = createEffect(() => {
     return this.actions$.pipe(
       ofType(PermissionActions.updatePermission),
-      mergeMap(({ permission }) => {
-        return this.permissionService.updatePermission(permission).pipe(
+      mergeMap(({ id, permission }) => {
+        return this.permissionService.updatePermission(id, permission).pipe(
           map((updatedPermission) =>
             PermissionActions.updatePermissionSuccess({
               payload: updatedPermission,

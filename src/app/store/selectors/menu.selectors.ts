@@ -18,7 +18,7 @@ export const selectMenusError = createSelector(
   (state) => state.error,
 );
 
-export const selectMenuById = (id: string) =>
+export const selectMenuById = (id: number) =>
   createSelector(selectAllMenus, (menus) =>
     menus.find((menu) => menu.id === id),
   );

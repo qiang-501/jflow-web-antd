@@ -17,7 +17,9 @@ export class UserEffects {
       ofType(UserActions.loadUsers),
       mergeMap(() => {
         return this.userService.getUsers().pipe(
-          map((users) => UserActions.usersLoadedSuccess({ payload: users })),
+          map((response) =>
+            UserActions.usersLoadedSuccess({ payload: response.data }),
+          ),
           catchError((error) =>
             of(UserActions.usersLoadedError({ payload: error })),
           ),
@@ -60,8 +62,8 @@ export class UserEffects {
   updateUser$ = createEffect(() => {
     return this.actions$.pipe(
       ofType(UserActions.updateUser),
-      mergeMap(({ user }) => {
-        return this.userService.updateUser(user).pipe(
+      mergeMap(({ id, user }) => {
+        return this.userService.updateUser(id, user).pipe(
           map((updatedUser) =>
             UserActions.updateUserSuccess({ payload: updatedUser }),
           ),

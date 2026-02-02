@@ -1,4 +1,10 @@
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  inject,
+  Input,
+  ChangeDetectorRef,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormBuilder,
@@ -21,6 +27,7 @@ import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzDividerModule } from 'ng-zorro-antd/divider';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzTagModule } from 'ng-zorro-antd/tag';
+import { NzAlertModule } from 'ng-zorro-antd/alert';
 import {
   DynamicFormConfig,
   DynamicFormField,
@@ -49,6 +56,7 @@ import { DynamicFormRendererComponent } from '../dynamic-form-renderer/dynamic-f
     NzDividerModule,
     NzPopconfirmModule,
     NzTagModule,
+    NzAlertModule,
     DynamicFormRendererComponent,
   ],
   templateUrl: './form-builder.component.html',
@@ -58,9 +66,14 @@ export class FormBuilderComponent implements OnInit {
   private fb = inject(FormBuilder);
   private message = inject(NzMessageService);
   private formService = inject(DynamicFormService);
+  private cdr = inject(ChangeDetectorRef);
+
+  @Input() formConfigId?: number; // 指定要编辑的表单ID
+  @Input() createMode = false; // 是否为创建模式（仅创建新表单，不显示列表）
 
   formConfigs: DynamicFormConfig[] = [];
   loading = false;
+  singleFormMode = false; // 是否为单表单编辑模式
 
   // 模态框控制
   isConfigModalVisible = false;
@@ -92,7 +105,23 @@ export class FormBuilderComponent implements OnInit {
 
   ngOnInit(): void {
     this.initForms();
-    this.loadFormConfigs();
+    if (this.createMode) {
+      // 创建模式：不加载任何表单，直接打开创建对话框
+      this.singleFormMode = false;
+      this.formConfigs = [];
+      // 使用setTimeout避免ExpressionChangedAfterItHasBeenCheckedError
+      setTimeout(() => {
+        this.showConfigModal();
+      });
+    } else if (this.formConfigId) {
+      // 单表单编辑模式：只加载指定的表单
+      this.singleFormMode = true;
+      this.loadSingleFormConfig(this.formConfigId);
+    } else {
+      // 普通模式：加载所有表单
+      this.singleFormMode = false;
+      this.loadFormConfigs();
+    }
   }
 
   initForms(): void {
@@ -130,10 +159,46 @@ export class FormBuilderComponent implements OnInit {
 
   loadFormConfigs(): void {
     this.loading = true;
-    setTimeout(() => {
-      this.formConfigs = this.getMockConfigs();
-      this.loading = false;
-    }, 500);
+    this.formService.getFormConfigs().subscribe({
+      next: (response) => {
+        // 确保每个配置的 fields 都是数组
+        this.formConfigs = response.data.map((config) => ({
+          ...config,
+          fields: Array.isArray(config.fields) ? config.fields : [],
+        }));
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('加载表单配置失败:', error);
+        this.message.error('加载表单配置失败');
+        this.loading = false;
+      },
+    });
+  }
+
+  // 加载单个表单配置
+  loadSingleFormConfig(id: number): void {
+    this.loading = true;
+    this.formService.getFormConfigById(id).subscribe({
+      next: (config) => {
+        // 确保 fields 是数组
+        this.formConfigs = [
+          {
+            ...config,
+            fields: Array.isArray(config.fields) ? config.fields : [],
+          },
+        ];
+        // 自动设置为当前编辑的表单
+        this.currentConfig = this.formConfigs[0];
+        this.loading = false;
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        console.error('加载表单配置失败:', error);
+        this.message.error('加载表单配置失败');
+        this.loading = false;
+      },
+    });
   }
 
   getMockConfigs(): DynamicFormConfig[] {
@@ -163,8 +228,7 @@ export class FormBuilderComponent implements OnInit {
             width: 12,
           },
         ],
-        created_by: 'admin',
-        created_on: '2026-01-20',
+        createdAt: '2026-01-20',
       },
     ];
   }
@@ -187,25 +251,57 @@ export class FormBuilderComponent implements OnInit {
     if (this.configForm.valid) {
       const formValue = this.configForm.value;
       if (this.currentConfig) {
-        this.currentConfig.name = formValue.name;
-        this.currentConfig.description = formValue.description;
-        this.currentConfig.layout = formValue.layout;
-        this.message.success('表单配置已更新');
+        // 更新现有配置
+        const updateDto = {
+          name: formValue.name,
+          description: formValue.description,
+          layout: formValue.layout,
+          fields: this.currentConfig.fields,
+        };
+
+        this.formService
+          .updateFormConfig(Number(this.currentConfig.id), updateDto)
+          .subscribe({
+            next: (updatedConfig) => {
+              const index = this.formConfigs.findIndex(
+                (c) => c.id === this.currentConfig!.id,
+              );
+              if (index >= 0) {
+                this.formConfigs[index] = updatedConfig;
+              }
+              this.currentConfig = updatedConfig;
+              this.message.success('表单配置已更新');
+              this.isConfigModalVisible = false;
+              this.cdr.markForCheck();
+            },
+            error: (error) => {
+              console.error('更新表单配置失败:', error);
+              this.message.error(error.error?.message || '更新表单配置失败');
+            },
+          });
       } else {
-        const newConfig: DynamicFormConfig = {
-          id: Date.now().toString(),
+        // 创建新配置
+        const createDto = {
           name: formValue.name,
           description: formValue.description,
           layout: formValue.layout,
           fields: [],
-          created_by: 'current_user',
-          created_on: new Date().toISOString(),
         };
-        this.formConfigs.push(newConfig);
-        this.currentConfig = newConfig;
-        this.message.success('表单配置已创建');
+
+        this.formService.createFormConfig(createDto).subscribe({
+          next: (newConfig) => {
+            this.formConfigs.push(newConfig);
+            this.currentConfig = newConfig;
+            this.message.success('表单配置已创建');
+            this.isConfigModalVisible = false;
+            this.cdr.markForCheck();
+          },
+          error: (error) => {
+            console.error('创建表单配置失败:', error);
+            this.message.error(error.error?.message || '创建表单配置失败');
+          },
+        });
       }
-      this.isConfigModalVisible = false;
     }
   }
 
@@ -213,8 +309,9 @@ export class FormBuilderComponent implements OnInit {
     this.currentConfig = config;
     this.editingFieldIndex = fieldIndex !== undefined ? fieldIndex : -1;
 
-    if (fieldIndex !== undefined) {
-      const field = config.fields[fieldIndex];
+    const fields = this.getConfigFields(config);
+    if (fieldIndex !== undefined && fields[fieldIndex]) {
+      const field = fields[fieldIndex];
       this.fieldForm.patchValue({
         name: field.name,
         label: field.label,
@@ -237,7 +334,7 @@ export class FormBuilderComponent implements OnInit {
 
       // 加载选项
       this.optionsFormArray.clear();
-      field.options?.forEach((opt) => {
+      field.options?.forEach((opt: FieldOption) => {
         this.optionsFormArray.push(
           this.fb.group({
             label: [opt.label],
@@ -275,11 +372,12 @@ export class FormBuilderComponent implements OnInit {
   handleFieldOk(): void {
     if (this.fieldForm.valid && this.currentConfig) {
       const formValue = this.fieldForm.value;
+      const fields = this.getConfigFields(this.currentConfig);
 
       const field: DynamicFormField = {
         id:
-          this.editingFieldIndex >= 0
-            ? this.currentConfig.fields[this.editingFieldIndex].id
+          this.editingFieldIndex >= 0 && fields[this.editingFieldIndex]
+            ? fields[this.editingFieldIndex].id
             : `f${Date.now()}`,
         name: formValue.name,
         label: formValue.label,
@@ -291,9 +389,9 @@ export class FormBuilderComponent implements OnInit {
         disabled: formValue.disabled,
         hidden: formValue.hidden,
         order:
-          this.editingFieldIndex >= 0
-            ? this.currentConfig.fields[this.editingFieldIndex].order
-            : this.currentConfig.fields.length + 1,
+          this.editingFieldIndex >= 0 && fields[this.editingFieldIndex]
+            ? fields[this.editingFieldIndex].order
+            : fields.length + 1,
         validation: {
           required: formValue.required,
           min: formValue.min,
@@ -311,21 +409,79 @@ export class FormBuilderComponent implements OnInit {
       };
 
       if (this.editingFieldIndex >= 0) {
-        this.currentConfig.fields[this.editingFieldIndex] = field;
-        this.message.success('字段已更新');
+        fields[this.editingFieldIndex] = field;
       } else {
-        this.currentConfig.fields.push(field);
-        this.message.success('字段已添加');
+        fields.push(field);
       }
 
-      this.isFieldModalVisible = false;
+      // 更新 config.fields
+      this.currentConfig.fields = fields;
+
+      // 更新到服务器
+      const updateDto = {
+        name: this.currentConfig.name,
+        description: this.currentConfig.description,
+        layout: this.currentConfig.layout,
+        fields: this.currentConfig.fields,
+      };
+
+      this.formService
+        .updateFormConfig(Number(this.currentConfig.id), updateDto)
+        .subscribe({
+          next: (updatedConfig) => {
+            const index = this.formConfigs.findIndex(
+              (c) => c.id === this.currentConfig!.id,
+            );
+            if (index >= 0) {
+              this.formConfigs[index] = updatedConfig;
+            }
+            this.currentConfig = updatedConfig;
+            const action = this.editingFieldIndex >= 0 ? '更新' : '添加';
+            this.message.success(`字段已${action}`);
+            this.isFieldModalVisible = false;
+            this.cdr.markForCheck();
+          },
+          error: (error) => {
+            console.error('保存字段失败:', error);
+            this.message.error(error.error?.message || '保存字段失败');
+          },
+        });
     }
   }
 
   deleteField(config: DynamicFormConfig, index: number): void {
-    config.fields.splice(index, 1);
-    config.fields.forEach((f, i) => (f.order = i + 1));
-    this.message.success('字段已删除');
+    const fields = this.getConfigFields(config);
+    fields.splice(index, 1);
+    fields.forEach((f: DynamicFormField, i: number) => (f.order = i + 1));
+
+    // 更新 config.fields
+    config.fields = fields;
+    // 更新到服务器
+    const updateDto = {
+      name: config.name,
+      description: config.description,
+      layout: config.layout,
+      fields: config.fields,
+    };
+
+    this.formService.updateFormConfig(Number(config.id), updateDto).subscribe({
+      next: (updatedConfig) => {
+        const configIndex = this.formConfigs.findIndex(
+          (c) => c.id === config.id,
+        );
+        if (configIndex >= 0) {
+          this.formConfigs[configIndex] = updatedConfig;
+        }
+        this.message.success('字段已删除');
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        console.error('删除字段失败:', error);
+        this.message.error(error.error?.message || '删除字段失败');
+        // 恢复字段
+        this.loadFormConfigs();
+      },
+    });
   }
 
   moveField(
@@ -333,14 +489,18 @@ export class FormBuilderComponent implements OnInit {
     index: number,
     direction: 'up' | 'down',
   ): void {
+    const fields = this.getConfigFields(config);
     const newIndex = direction === 'up' ? index - 1 : index + 1;
-    if (newIndex < 0 || newIndex >= config.fields.length) return;
+    if (newIndex < 0 || newIndex >= fields.length) return;
 
-    const temp = config.fields[index];
-    config.fields[index] = config.fields[newIndex];
-    config.fields[newIndex] = temp;
+    const temp = fields[index];
+    fields[index] = fields[newIndex];
+    fields[newIndex] = temp;
 
-    config.fields.forEach((f, i) => (f.order = i + 1));
+    fields.forEach((f: DynamicFormField, i: number) => (f.order = i + 1));
+
+    // 更新 config.fields
+    config.fields = fields;
   }
 
   previewForm(config: DynamicFormConfig): void {
@@ -355,8 +515,17 @@ export class FormBuilderComponent implements OnInit {
   }
 
   deleteConfig(id: string): void {
-    this.formConfigs = this.formConfigs.filter((c) => c.id !== id);
-    this.message.success('表单配置已删除');
+    this.formService.deleteFormConfig(Number(id)).subscribe({
+      next: () => {
+        this.formConfigs = this.formConfigs.filter((c) => c.id !== id);
+        this.message.success('表单配置已删除');
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        console.error('删除表单配置失败:', error);
+        this.message.error(error.error?.message || '删除表单配置失败');
+      },
+    });
   }
 
   needsOptions(type: FieldType): boolean {
@@ -368,5 +537,22 @@ export class FormBuilderComponent implements OnInit {
   getFieldTypeLabel(type: FieldType): string {
     const fieldType = this.fieldTypes.find((t) => t.value === type);
     return fieldType ? fieldType.label : type;
+  }
+
+  // 获取配置的字段数组
+  getConfigFields(config: DynamicFormConfig): any[] {
+    if (!config.fields) return [];
+    // 如果已经是数组，直接返回，避免创建新引用
+    if (Array.isArray(config.fields)) {
+      return config.fields;
+    }
+    // 如果不是数组，返回空数组（只在必要时创建新数组）
+    return [];
+  }
+
+  // 获取字段数组的长度
+  getFieldsLength(config: DynamicFormConfig): number {
+    if (!config.fields) return 0;
+    return Array.isArray(config.fields) ? config.fields.length : 0;
   }
 }

@@ -71,10 +71,14 @@ ModuleRegistry.registerModules([
     NzInputModule,
     NzModalModule,
     TranslateModule,
-    AgGridAngular,
   ],
-  templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.css'],
+  template: `
+    <div>
+      <h1>Dashboard</h1>
+      <p>Dashboard content coming soon...</p>
+    </div>
+  `,
+  styles: [],
 })
 export class DashboardComponent implements OnInit {
   private gridApi!: GridApi;

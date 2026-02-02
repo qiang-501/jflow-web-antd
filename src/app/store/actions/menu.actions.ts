@@ -8,6 +8,6 @@ export const MenuActions = createActionGroup({
     'Menus Loaded Success': props<{ payload: MenuNode[] }>(),
     'Menus Loaded Error': props<{ payload: any }>(),
     'Add Menu': props<{ menu: MenuNode }>(),
-    'Delete Menu': props<{ id: string }>(),
+    'Delete Menu': props<{ id: number }>(),
   },
 });

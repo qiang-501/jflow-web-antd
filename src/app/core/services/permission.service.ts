@@ -49,11 +49,11 @@ export class PermissionService {
   /**
    * 更新权限信息
    */
-  updatePermission(permission: UpdatePermissionDto): Observable<Permission> {
-    return this.http.put<Permission>(
-      `${this.apiUrl}/${permission.id}`,
-      permission,
-    );
+  updatePermission(
+    id: string,
+    permission: UpdatePermissionDto,
+  ): Observable<Permission> {
+    return this.http.put<Permission>(`${this.apiUrl}/${id}`, permission);
   }
 
   /**

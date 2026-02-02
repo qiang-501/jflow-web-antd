@@ -12,17 +12,14 @@ export interface WorkFlowState {
 }
 
 const initialWorkFlow: WorkFlow = {
-  id: '',
-  d_workflow_id: '',
+  id: 0,
+  dWorkflowId: '',
   name: '',
   description: '',
   status: WorkflowStatus.DRAFT,
-  important: '',
-  process_id: '',
-  due_date: '',
-  created_by: '',
-  created_on: '',
   priority: WorkflowPriority.MEDIUM,
+  createdAt: '',
+  updatedAt: '',
 };
 
 export const initialState: WorkFlowState = {
@@ -52,7 +49,7 @@ export const workFlowReducer = createReducer(
   })),
   on(WorkFlowActions.setCurrentWorkFlow, (state, { id }) => ({
     ...state,
-    currentWorkFlow: state.workFlows.find((w) => w.id === id) || null,
+    currentWorkFlow: state.workFlows.find((w) => w.id === Number(id)) || null,
   })),
   on(WorkFlowActions.clearCurrentWorkFlow, (state) => ({
     ...state,

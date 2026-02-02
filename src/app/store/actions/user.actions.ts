@@ -21,7 +21,7 @@ export const UserActions = createActionGroup({
     'Create User Error': props<{ payload: any }>(),
 
     // 更新用户
-    'Update User': props<{ user: UpdateUserDto }>(),
+    'Update User': props<{ id: string; user: UpdateUserDto }>(),
     'Update User Success': props<{ payload: User }>(),
     'Update User Error': props<{ payload: any }>(),
 

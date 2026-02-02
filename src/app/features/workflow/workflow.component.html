@@ -37,7 +37,7 @@
     </thead>
     <tbody>
       <tr *ngFor="let workflow of workflowTable.data">
-        <td>{{ workflow.d_workflow_id }}</td>
+        <td>{{ workflow.dWorkflowId }}</td>
         <td>
           <div class="workflow-info">
             <div class="workflow-name">{{ workflow.name }}</div>
@@ -58,9 +58,9 @@
           >
           </nz-badge>
         </td>
-        <td>{{ workflow.assignee || "-" }}</td>
-        <td>{{ workflow.due_date | date: "yyyy-MM-dd" }}</td>
-        <td>{{ workflow.created_on | date: "yyyy-MM-dd HH:mm" }}</td>
+        <td>{{ getUserName(workflow.assignedTo) }}</td>
+        <td>{{ workflow.dueDate | date: "yyyy-MM-dd" }}</td>
+        <td>{{ workflow.createdAt | date: "yyyy-MM-dd HH:mm" }}</td>
         <td>
           <nz-space>
             <button
@@ -69,7 +69,7 @@
               nzType="link"
               nzSize="small"
               (click)="openDynamicForm(workflow)"
-              [disabled]="!workflow.form_config_id"
+              [disabled]="!workflow.formConfigId"
             >
               <span nz-icon nzType="form"></span>
               打开表单
@@ -146,6 +146,17 @@
   <ng-container *nzModalContent>
     <form nz-form [formGroup]="createForm" nzLayout="vertical">
       <nz-form-item>
+        <nz-form-label nzRequired>工作流ID</nz-form-label>
+        <nz-form-control nzErrorTip="请输入工作流ID">
+          <input
+            nz-input
+            formControlName="dWorkflowId"
+            placeholder="请输入工作流ID"
+          />
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
         <nz-form-label nzRequired>工作流名称</nz-form-label>
         <nz-form-control nzErrorTip="请输入工作流名称">
           <input
@@ -184,11 +195,24 @@
       <nz-form-item>
         <nz-form-label>负责人</nz-form-label>
         <nz-form-control>
-          <input
-            nz-input
-            formControlName="assignee"
-            placeholder="请输入负责人"
-          />
+          <nz-select
+            formControlName="assignedTo"
+            nzPlaceHolder="请选择负责人"
+            nzShowSearch
+            nzAllowClear
+            [nzLoading]="usersLoading"
+          >
+            <nz-option
+              *ngFor="let user of users"
+              [nzValue]="user.id"
+              [nzLabel]="user.fullName || user.username"
+            >
+              <span>{{ user.fullName || user.username }}</span>
+              <span style="color: #999; margin-left: 8px"
+                >({{ user.email }})</span
+              >
+            </nz-option>
+          </nz-select>
         </nz-form-control>
       </nz-form-item>
 
@@ -196,11 +220,64 @@
         <nz-form-label nzRequired>截止日期</nz-form-label>
         <nz-form-control nzErrorTip="请选择截止日期">
           <nz-date-picker
-            formControlName="due_date"
+            formControlName="dueDate"
             nzPlaceHolder="请选择截止日期"
             style="width: 100%"
           >
           </nz-date-picker>
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label>关联表单</nz-form-label>
+        <nz-form-control>
+          <nz-input-group [nzSuffix]="suffixTemplate">
+            <nz-select
+              formControlName="formConfigId"
+              nzPlaceHolder="请选择表单配置"
+              nzShowSearch
+              nzAllowClear
+              [nzLoading]="formConfigsLoading"
+            >
+              <nz-option
+                *ngFor="let form of formConfigs"
+                [nzValue]="form.id"
+                [nzLabel]="form.name"
+              >
+                <span>{{ form.name }}</span>
+                <span
+                  *ngIf="form.description"
+                  style="color: #999; margin-left: 8px"
+                  >({{ form.description }})</span
+                >
+              </nz-option>
+            </nz-select>
+          </nz-input-group>
+          <ng-template #suffixTemplate>
+            <button
+              nz-button
+              nzType="link"
+              nzSize="small"
+              (click)="createNewFormConfig()"
+              *ngIf="canManageForms"
+            >
+              <span nz-icon nzType="plus"></span>
+              新建表单
+            </button>
+          </ng-template>
+          <div style="margin-top: 8px">
+            <button
+              nz-button
+              nzType="link"
+              nzSize="small"
+              (click)="editFormConfigInCreate()"
+              [disabled]="!createForm.get('formConfigId')?.value"
+              *ngIf="canManageForms"
+            >
+              <span nz-icon nzType="edit"></span>
+              编辑选中表单
+            </button>
+          </div>
         </nz-form-control>
       </nz-form-item>
     </form>
@@ -256,11 +333,24 @@
       <nz-form-item>
         <nz-form-label>负责人</nz-form-label>
         <nz-form-control>
-          <input
-            nz-input
-            formControlName="assignee"
-            placeholder="请输入负责人"
-          />
+          <nz-select
+            formControlName="assignedTo"
+            nzPlaceHolder="请选择负责人"
+            nzShowSearch
+            nzAllowClear
+            [nzLoading]="usersLoading"
+          >
+            <nz-option
+              *ngFor="let user of users"
+              [nzValue]="user.id"
+              [nzLabel]="user.fullName || user.username"
+            >
+              <span>{{ user.fullName || user.username }}</span>
+              <span style="color: #999; margin-left: 8px"
+                >({{ user.email }})</span
+              >
+            </nz-option>
+          </nz-select>
         </nz-form-control>
       </nz-form-item>
 
@@ -268,7 +358,7 @@
         <nz-form-label nzRequired>截止日期</nz-form-label>
         <nz-form-control nzErrorTip="请选择截止日期">
           <nz-date-picker
-            formControlName="due_date"
+            formControlName="dueDate"
             nzPlaceHolder="请选择截止日期"
             style="width: 100%"
           >
@@ -290,7 +380,7 @@
   <ng-container *nzModalContent>
     <div class="history-header" *ngIf="selectedWorkflow">
       <h3>{{ selectedWorkflow.name }}</h3>
-      <p>工作流ID: {{ selectedWorkflow.d_workflow_id }}</p>
+      <p>工作流ID: {{ selectedWorkflow.dWorkflowId }}</p>
     </div>
     <nz-timeline>
       <nz-timeline-item
@@ -345,7 +435,7 @@
       "
     >
       <div>
-        <strong>工作流ID:</strong> {{ selectedWorkflow?.d_workflow_id }}
+        <strong>工作流ID:</strong> {{ selectedWorkflow?.dWorkflowId }}
         <span style="margin-left: 16px; color: #999; font-size: 12px">
           (权限: canEditForm={{ canEditForm }})
         </span>
@@ -383,13 +473,22 @@
 <!-- 表单构建器模态框 -->
 <nz-modal
   [nzVisible]="isFormBuilderModalVisible"
-  nzTitle="动态表单管理"
+  [nzTitle]="
+    isCreatingNewForm
+      ? '创建新表单'
+      : selectedWorkflow
+        ? '编辑工作流表单: ' + selectedWorkflow.name
+        : '动态表单管理'
+  "
   (nzOnCancel)="handleFormBuilderClose()"
   [nzFooter]="null"
   nzWidth="1200px"
   [nzBodyStyle]="{ padding: '0' }"
 >
   <ng-container *nzModalContent>
-    <app-form-builder></app-form-builder>
+    <app-form-builder
+      [formConfigId]="selectedWorkflow?.formConfigId"
+      [createMode]="isCreatingNewForm"
+    ></app-form-builder>
   </ng-container>
 </nz-modal>

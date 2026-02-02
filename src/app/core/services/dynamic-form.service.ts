@@ -14,26 +14,28 @@ import {
 })
 export class DynamicFormService {
   private http = inject(HttpClient);
-  private apiUrl = 'api/dynamic-forms';
+  private apiUrl = 'api/forms';
 
   /**
    * 获取所有表单配置
    */
-  getFormConfigs(): Observable<DynamicFormConfig[]> {
-    return this.http.get<DynamicFormConfig[]>(this.apiUrl);
+  getFormConfigs(): Observable<{ data: DynamicFormConfig[]; total: number }> {
+    return this.http.get<{ data: DynamicFormConfig[]; total: number }>(
+      this.apiUrl,
+    );
   }
 
   /**
    * 根据ID获取表单配置
    */
-  getFormConfigById(id: string): Observable<DynamicFormConfig> {
+  getFormConfigById(id: number): Observable<DynamicFormConfig> {
     return this.http.get<DynamicFormConfig>(`${this.apiUrl}/${id}`);
   }
 
   /**
    * 获取表单配置（别名方法）
    */
-  getFormConfig(id: string): Observable<DynamicFormConfig> {
+  getFormConfig(id: number): Observable<DynamicFormConfig> {
     return this.getFormConfigById(id);
   }
 
@@ -48,7 +50,7 @@ export class DynamicFormService {
    * 更新表单配置
    */
   updateFormConfig(
-    id: string,
+    id: number,
     config: UpdateFormConfigDto,
   ): Observable<DynamicFormConfig> {
     return this.http.put<DynamicFormConfig>(`${this.apiUrl}/${id}`, config);
@@ -57,7 +59,7 @@ export class DynamicFormService {
   /**
    * 删除表单配置
    */
-  deleteFormConfig(id: string): Observable<void> {
+  deleteFormConfig(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
@@ -74,7 +76,7 @@ export class DynamicFormService {
   /**
    * 获取表单提交记录
    */
-  getFormSubmissions(formConfigId: string): Observable<FormSubmission[]> {
+  getFormSubmissions(formConfigId: number): Observable<FormSubmission[]> {
     return this.http.get<FormSubmission[]>(
       `${this.apiUrl}/${formConfigId}/submissions`,
     );

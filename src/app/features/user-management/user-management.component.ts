@@ -137,14 +137,15 @@ export class UserManagementComponent implements OnInit {
 
       if (this.isEditMode && this.currentUserId) {
         const updateDto: UpdateUserDto = {
-          id: this.currentUserId,
+          username: formValue.username,
           email: formValue.email,
           fullName: formValue.fullName,
-          phone: formValue.phone,
           status: formValue.status,
           roleIds: formValue.roleIds,
         };
-        this.store.dispatch(UserActions.updateUser({ user: updateDto }));
+        this.store.dispatch(
+          UserActions.updateUser({ id: this.currentUserId, user: updateDto }),
+        );
         this.message.success('用户更新成功');
       } else {
         const createDto: CreateUserDto = {
@@ -152,7 +153,7 @@ export class UserManagementComponent implements OnInit {
           email: formValue.email,
           password: formValue.password,
           fullName: formValue.fullName,
-          phone: formValue.phone,
+          status: formValue.status,
           roleIds: formValue.roleIds,
         };
         this.store.dispatch(UserActions.createUser({ user: createDto }));

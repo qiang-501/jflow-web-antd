@@ -19,17 +19,18 @@ export interface CreateRoleDto {
   name: string;
   code: string;
   description?: string;
-  parentId?: string;
-  permissionIds: string[];
+  parentId?: number;
+  level?: number;
+  permissionIds?: number[];
 }
 
 export interface UpdateRoleDto {
-  id: string;
   name?: string;
   code?: string;
   description?: string;
-  parentId?: string;
-  permissionIds?: string[];
+  parentId?: number;
+  level?: number;
+  permissionIds?: number[];
 }
 
 export interface RoleState {

@@ -14,7 +14,7 @@ export const selectAllWorkFlows = createSelector(
   (state) => state.workFlows,
 );
 
-export const selectWorkFlowById = (id: string) =>
+export const selectWorkFlowById = (id: number) =>
   createSelector(selectAllWorkFlows, (workflows) =>
     workflows.find((workflow) => workflow.id === id),
   );

@@ -38,20 +38,21 @@ export interface ActionPermission {
 }
 
 export interface CreatePermissionDto {
-  name: string;
   code: string;
-  type: PermissionType;
-  menuId?: string;
-  actionId?: string;
+  name: string;
+  type?: PermissionType;
   description?: string;
+  resource?: string;
+  action?: string;
 }
 
 export interface UpdatePermissionDto {
-  id: string;
-  name?: string;
   code?: string;
+  name?: string;
   type?: PermissionType;
   description?: string;
+  resource?: string;
+  action?: string;
 }
 
 export interface PermissionState {

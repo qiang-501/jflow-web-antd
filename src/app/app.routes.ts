@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: '/main' },
+  { path: '', pathMatch: 'full', redirectTo: '/system' },
   {
     path: 'login',
     loadComponent: () =>
@@ -9,6 +9,12 @@ export const routes: Routes = [
   },
   {
     path: 'main',
+    loadComponent: () =>
+      import('./layout/shell/shell.component').then((m) => m.ShellComponent),
+  },
+
+  {
+    path: 'system',
     loadComponent: () =>
       import('./layout/shell/shell.component').then((m) => m.ShellComponent),
     children: [

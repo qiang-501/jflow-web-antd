@@ -92,7 +92,7 @@ export class RoleManagementComponent implements OnInit {
 
     // 转换 RoleTree 为 NzTreeNodeOptions
     this.roleTreeNodes$ = this.roleTree$.pipe(
-      map((tree) => this.convertToTreeNodes(tree))
+      map((tree) => this.convertToTreeNodes(tree)),
     );
   }
 
@@ -160,13 +160,14 @@ export class RoleManagementComponent implements OnInit {
 
       if (this.isEditMode && this.currentRoleId) {
         const updateDto: UpdateRoleDto = {
-          id: this.currentRoleId,
           name: formValue.name,
           code: formValue.code,
           description: formValue.description,
           parentId: formValue.parentId,
         };
-        this.store.dispatch(RoleActions.updateRole({ role: updateDto }));
+        this.store.dispatch(
+          RoleActions.updateRole({ id: this.currentRoleId, role: updateDto }),
+        );
         this.message.success('角色更新成功');
       } else {
         const createDto: CreateRoleDto = {

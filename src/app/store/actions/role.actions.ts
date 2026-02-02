@@ -32,7 +32,7 @@ export const RoleActions = createActionGroup({
     'Create Role Error': props<{ payload: any }>(),
 
     // 更新角色
-    'Update Role': props<{ role: UpdateRoleDto }>(),
+    'Update Role': props<{ id: string; role: UpdateRoleDto }>(),
     'Update Role Success': props<{ payload: Role }>(),
     'Update Role Error': props<{ payload: any }>(),
 

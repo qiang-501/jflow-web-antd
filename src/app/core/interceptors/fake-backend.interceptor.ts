@@ -308,7 +308,7 @@ export function FakeBackendInterceptor(
     }
 
     if (url.match(/api\/workflows\/\w+$/) && method === 'GET') {
-      const id = url.split('/').pop();
+      const id = Number(url.split('/').pop());
       const workflow = mockWorkflows.find((w) => w.id === id);
       return of(new HttpResponse({ status: 200, body: workflow }));
     }
@@ -316,29 +316,29 @@ export function FakeBackendInterceptor(
     if (url.endsWith('api/workflows') && method === 'POST') {
       const newWorkflow = body as any;
       const workflow: WorkFlow = {
-        id: String(mockWorkflows.length + 1),
-        d_workflow_id: `WF-${String(mockWorkflows.length + 1).padStart(3, '0')}`,
+        id: mockWorkflows.length + 1,
+        dWorkflowId:
+          newWorkflow.dWorkflowId ||
+          `WF-${String(mockWorkflows.length + 1).padStart(3, '0')}`,
         ...newWorkflow,
-        status: WorkflowStatus.DRAFT,
-        important: 'no',
-        process_id: `P${String(mockWorkflows.length + 1).padStart(3, '0')}`,
-        created_by: 'current_user',
-        created_on: new Date().toISOString(),
+        status: newWorkflow.status || WorkflowStatus.DRAFT,
+        priority: newWorkflow.priority || WorkflowPriority.MEDIUM,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
       mockWorkflows.push(workflow);
       return of(new HttpResponse({ status: 201, body: workflow }));
     }
 
     if (url.match(/api\/workflows\/\w+$/) && method === 'PUT') {
-      const id = url.split('/').pop();
+      const id = Number(url.split('/').pop());
       const updateData = body as any;
       const index = mockWorkflows.findIndex((w) => w.id === id);
       if (index !== -1) {
         mockWorkflows[index] = {
           ...mockWorkflows[index],
           ...updateData,
-          updated_on: new Date().toISOString(),
-          updated_by: 'current_user',
+          updatedAt: new Date().toISOString(),
         };
         return of(
           new HttpResponse({ status: 200, body: mockWorkflows[index] }),
@@ -348,25 +348,24 @@ export function FakeBackendInterceptor(
     }
 
     if (url.match(/api\/workflows\/\w+$/) && method === 'DELETE') {
-      const id = url.split('/').pop();
+      const id = Number(url.split('/').pop());
       mockWorkflows = mockWorkflows.filter((w) => w.id !== id);
       return of(new HttpResponse({ status: 204 }));
     }
 
     if (url.match(/api\/workflows\/\w+\/status$/) && method === 'PATCH') {
-      const id = url.split('/')[url.split('/').length - 2];
+      const id = Number(url.split('/')[url.split('/').length - 2]);
       const { status, comment } = body as any;
       const index = mockWorkflows.findIndex((w) => w.id === id);
       if (index !== -1) {
         const oldStatus = mockWorkflows[index].status;
         mockWorkflows[index].status = status;
-        mockWorkflows[index].updated_on = new Date().toISOString();
-        mockWorkflows[index].updated_by = 'current_user';
+        mockWorkflows[index].updatedAt = new Date().toISOString();
 
         // 添加历史记录
         const history: WorkflowStatusHistory = {
           id: String(mockWorkflowHistory.length + 1),
-          workflow_id: id!,
+          workflow_id: String(id),
           from_status: oldStatus,
           to_status: status,
           changed_by: 'current_user',
@@ -389,13 +388,12 @@ export function FakeBackendInterceptor(
     }
 
     if (url.match(/api\/workflows\/\w+\/assign$/) && method === 'PATCH') {
-      const id = url.split('/')[url.split('/').length - 2];
+      const id = Number(url.split('/')[url.split('/').length - 2]);
       const { assignee } = body as any;
       const index = mockWorkflows.findIndex((w) => w.id === id);
       if (index !== -1) {
-        mockWorkflows[index].assignee = assignee;
-        mockWorkflows[index].updated_on = new Date().toISOString();
-        mockWorkflows[index].updated_by = 'current_user';
+        mockWorkflows[index].assignedTo = assignee;
+        mockWorkflows[index].updatedAt = new Date().toISOString();
         return of(
           new HttpResponse({ status: 200, body: mockWorkflows[index] }),
         );
@@ -404,9 +402,7 @@ export function FakeBackendInterceptor(
     }
 
     if (url.endsWith('api/workflows/my-workflows') && method === 'GET') {
-      const myWorkflows = mockWorkflows.filter(
-        (w) => w.assignee === 'current_user',
-      );
+      const myWorkflows = mockWorkflows.filter((w) => w.assignedTo === 1);
       return of(
         new HttpResponse({
           status: 200,
@@ -423,11 +419,11 @@ export function FakeBackendInterceptor(
     }
 
     // 动态表单API
-    if (url.endsWith('api/dynamic-forms') && method === 'GET') {
+    if (url.endsWith('api/forms') && method === 'GET') {
       return of(new HttpResponse({ status: 200, body: mockFormConfigs }));
     }
 
-    if (url.match(/api\/dynamic-forms\/[\w-]+$/) && method === 'GET') {
+    if (url.match(/api\/forms\/[\w-]+$/) && method === 'GET') {
       const id = url.split('/').pop();
       const formConfig = mockFormConfigs.find((f) => f.id === id);
       if (formConfig) {
@@ -441,7 +437,7 @@ export function FakeBackendInterceptor(
       );
     }
 
-    if (url.endsWith('api/dynamic-forms') && method === 'POST') {
+    if (url.endsWith('api/forms') && method === 'POST') {
       const newConfig = body as any;
       const formConfig: DynamicFormConfig = {
         id: `form-${mockFormConfigs.length + 1}`,
@@ -453,7 +449,7 @@ export function FakeBackendInterceptor(
       return of(new HttpResponse({ status: 201, body: formConfig }));
     }
 
-    if (url.match(/api\/dynamic-forms\/[\w-]+$/) && method === 'PUT') {
+    if (url.match(/api\/forms\/[\w-]+$/) && method === 'PUT') {
       const id = url.split('/').pop();
       const index = mockFormConfigs.findIndex((f) => f.id === id);
       if (index !== -1) {
@@ -475,7 +471,7 @@ export function FakeBackendInterceptor(
       );
     }
 
-    if (url.match(/api\/dynamic-forms\/[\w-]+$/) && method === 'DELETE') {
+    if (url.match(/api\/forms\/[\w-]+$/) && method === 'DELETE') {
       const id = url.split('/').pop();
       const index = mockFormConfigs.findIndex((f) => f.id === id);
       if (index !== -1) {
