@@ -1,0 +1,142 @@
+<div style="padding: 24px">
+  <h1 style="margin-bottom: 24px">工作流仪表板</h1>
+
+  <nz-spin [nzSpinning]="loading">
+    <div nz-row [nzGutter]="16">
+      <!-- 草稿状态 -->
+      <div nz-col [nzSpan]="6">
+        <nz-card>
+          <nz-statistic
+            [nzValue]="statistics.draft"
+            [nzTitle]="'草稿'"
+            [nzPrefix]="draftIcon"
+            [nzValueStyle]="{ color: '#999' }"
+          >
+          </nz-statistic>
+          <ng-template #draftIcon>
+            <span nz-icon nzType="file-text" nzTheme="outline"></span>
+          </ng-template>
+        </nz-card>
+      </div>
+
+      <!-- 待处理状态 -->
+      <div nz-col [nzSpan]="6">
+        <nz-card>
+          <nz-statistic
+            [nzValue]="statistics.pending"
+            [nzTitle]="'待处理'"
+            [nzPrefix]="pendingIcon"
+            [nzValueStyle]="{ color: '#faad14' }"
+          >
+          </nz-statistic>
+          <ng-template #pendingIcon>
+            <span nz-icon nzType="clock-circle" nzTheme="outline"></span>
+          </ng-template>
+        </nz-card>
+      </div>
+
+      <!-- 进行中状态 -->
+      <div nz-col [nzSpan]="6">
+        <nz-card>
+          <nz-statistic
+            [nzValue]="statistics.inProgress"
+            [nzTitle]="'进行中'"
+            [nzPrefix]="inProgressIcon"
+            [nzValueStyle]="{ color: '#1890ff' }"
+          >
+          </nz-statistic>
+          <ng-template #inProgressIcon>
+            <span
+              nz-icon
+              nzType="sync"
+              nzTheme="outline"
+              [nzSpin]="true"
+            ></span>
+          </ng-template>
+        </nz-card>
+      </div>
+
+      <!-- 审核中状态 -->
+      <div nz-col [nzSpan]="6">
+        <nz-card>
+          <nz-statistic
+            [nzValue]="statistics.review"
+            [nzTitle]="'审核中'"
+            [nzPrefix]="reviewIcon"
+            [nzValueStyle]="{ color: '#722ed1' }"
+          >
+          </nz-statistic>
+          <ng-template #reviewIcon>
+            <span nz-icon nzType="audit" nzTheme="outline"></span>
+          </ng-template>
+        </nz-card>
+      </div>
+    </div>
+
+    <div nz-row [nzGutter]="16" style="margin-top: 16px">
+      <!-- 已完成状态 -->
+      <div nz-col [nzSpan]="6">
+        <nz-card>
+          <nz-statistic
+            [nzValue]="statistics.completed"
+            [nzTitle]="'已完成'"
+            [nzPrefix]="completedIcon"
+            [nzValueStyle]="{ color: '#52c41a' }"
+          >
+          </nz-statistic>
+          <ng-template #completedIcon>
+            <span nz-icon nzType="check-circle" nzTheme="outline"></span>
+          </ng-template>
+        </nz-card>
+      </div>
+
+      <!-- 已取消状态 -->
+      <div nz-col [nzSpan]="6">
+        <nz-card>
+          <nz-statistic
+            [nzValue]="statistics.cancelled"
+            [nzTitle]="'已取消'"
+            [nzPrefix]="cancelledIcon"
+            [nzValueStyle]="{ color: '#f5222d' }"
+          >
+          </nz-statistic>
+          <ng-template #cancelledIcon>
+            <span nz-icon nzType="close-circle" nzTheme="outline"></span>
+          </ng-template>
+        </nz-card>
+      </div>
+
+      <!-- 总计 -->
+      <div nz-col [nzSpan]="6">
+        <nz-card>
+          <nz-statistic
+            [nzValue]="statistics.total"
+            [nzTitle]="'总计'"
+            [nzPrefix]="totalIcon"
+            [nzValueStyle]="{ color: '#13c2c2' }"
+          >
+          </nz-statistic>
+          <ng-template #totalIcon>
+            <span nz-icon nzType="dashboard" nzTheme="outline"></span>
+          </ng-template>
+        </nz-card>
+      </div>
+
+      <!-- 刷新按钮 -->
+      <div nz-col [nzSpan]="6">
+        <nz-card style="text-align: center">
+          <button
+            nz-button
+            nzType="primary"
+            (click)="loadWorkflowStatistics()"
+            [nzLoading]="loading"
+            style="width: 100%"
+          >
+            <span nz-icon nzType="reload"></span>
+            刷新数据
+          </button>
+        </nz-card>
+      </div>
+    </div>
+  </nz-spin>
+</div>

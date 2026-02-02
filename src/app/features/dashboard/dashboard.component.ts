@@ -32,6 +32,10 @@ import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzModalService } from 'ng-zorro-antd/modal';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NzModalModule } from 'ng-zorro-antd/modal';
+import { NzCardModule } from 'ng-zorro-antd/card';
+import { NzStatisticModule } from 'ng-zorro-antd/statistic';
+import { NzGridModule } from 'ng-zorro-antd/grid';
+import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { Store } from '@ngrx/store';
 import { HttpClient } from '@angular/common/http';
 
@@ -45,8 +49,13 @@ import {
 import { allColumns, allGridColumns } from './allGridColumns';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { Valve } from '../../models/valves';
-import { WorkflowStatus, WorkflowPriority } from '../../models/work-flow';
+import {
+  WorkFlow,
+  WorkflowStatus,
+  WorkflowPriority,
+} from '../../models/work-flow';
 import { MenuActions } from '../../store/actions/menu.actions';
+import { WorkflowService } from '../../core/services/workflow.service';
 ModuleRegistry.registerModules([
   ClientSideRowModelModule,
   ColumnsToolPanelModule,
@@ -70,14 +79,13 @@ ModuleRegistry.registerModules([
     NzFormModule,
     NzInputModule,
     NzModalModule,
+    NzCardModule,
+    NzStatisticModule,
+    NzGridModule,
+    NzSpinModule,
     TranslateModule,
   ],
-  template: `
-    <div>
-      <h1>Dashboard</h1>
-      <p>Dashboard content coming soon...</p>
-    </div>
-  `,
+  templateUrl: './dashboard.component.html',
   styles: [],
 })
 export class DashboardComponent implements OnInit {
@@ -100,6 +108,17 @@ export class DashboardComponent implements OnInit {
   @ViewChild('addUserModal', { static: false }) addUserModal!: TemplateRef<any>;
   addUserForm!: FormGroup;
 
+  // 工作流统计数据
+  statistics = {
+    draft: 0,
+    pending: 0,
+    inProgress: 0,
+    review: 0,
+    completed: 0,
+    cancelled: 0,
+    total: 0,
+  };
+
   constructor(
     private modal: NzModalService,
     private fb: FormBuilder,
@@ -107,6 +126,7 @@ export class DashboardComponent implements OnInit {
     private http: HttpClient,
     private translate: TranslateService,
     private valveStore: Store<{ valves: Valve[] }>,
+    private workflowService: WorkflowService,
   ) {
     this.addUserForm = this.fb.group({
       name: ['', [Validators.required]],
@@ -119,6 +139,9 @@ export class DashboardComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     this.columnDefs = await allColumns(this.translate);
+
+    // 加载工作流统计数据
+    this.loadWorkflowStatistics();
 
     // 订阅valve state变化
     this.valveStore.select(selectValveState).subscribe((state: any) => {
@@ -190,30 +213,24 @@ export class DashboardComponent implements OnInit {
     this.store.dispatch(
       WorkFlowActions.addWorkFlows({
         workflow: {
-          id: '',
-          d_workflow_id: 'WF-TEST',
+          id: 0,
+          dWorkflowId: 'WF-TEST',
           name: 'Test Workflow',
           description: 'Test workflow description',
           status: WorkflowStatus.DRAFT,
-          important: 'no',
-          process_id: 'P-TEST',
-          due_date: new Date().toISOString(),
-          created_by: 'test_user',
-          created_on: new Date().toISOString(),
           priority: WorkflowPriority.MEDIUM,
-        },
+        } as any,
       }),
     );
     this.store.dispatch(
       MenuActions.addMenu({
         menu: {
-          id: '6',
+          id: 6,
+          name: 'abc',
           title: 'abc',
           icon: 'user',
-          level: 2,
-          parent_id: '3',
-          link: 'main/workflow1',
-        },
+          path: 'main/workflow1',
+        } as any,
       }),
     );
 
@@ -238,5 +255,59 @@ export class DashboardComponent implements OnInit {
   onDelete() {
     // TODO: 实现删除逻辑
     console.log('删除按钮点击');
+  }
+
+  /**
+   * 加载工作流统计数据
+   */
+  loadWorkflowStatistics() {
+    this.loading = true;
+    this.workflowService.getWorkflows().subscribe({
+      next: (response) => {
+        const workflows = response.data || [];
+
+        // 重置统计数据
+        this.statistics = {
+          draft: 0,
+          pending: 0,
+          inProgress: 0,
+          review: 0,
+          completed: 0,
+          cancelled: 0,
+          total: workflows.length,
+        };
+
+        // 统计各状态的工作流数量
+        workflows.forEach((workflow: WorkFlow) => {
+          switch (workflow.status) {
+            case WorkflowStatus.DRAFT:
+              this.statistics.draft++;
+              break;
+            case WorkflowStatus.PENDING:
+              this.statistics.pending++;
+              break;
+            case WorkflowStatus.IN_PROGRESS:
+              this.statistics.inProgress++;
+              break;
+            case WorkflowStatus.REVIEW:
+              this.statistics.review++;
+              break;
+            case WorkflowStatus.COMPLETED:
+              this.statistics.completed++;
+              break;
+            case WorkflowStatus.CANCELLED:
+              this.statistics.cancelled++;
+              break;
+          }
+        });
+
+        this.loading = false;
+        console.log('Workflow statistics loaded:', this.statistics);
+      },
+      error: (error) => {
+        console.error('Error loading workflow statistics:', error);
+        this.loading = false;
+      },
+    });
   }
 }

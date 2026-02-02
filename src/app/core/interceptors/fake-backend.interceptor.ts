@@ -107,9 +107,14 @@ export function FakeBackendInterceptor(
     .pipe(dematerialize());
 
   function handleRoute() {
-    // 菜单API
+    // 菜单API - 返回带children的树形结构
     if (url.endsWith('api/menus') && method === 'GET') {
-      return of(new HttpResponse({ status: 200, body: menuList }));
+      return of(
+        new HttpResponse({
+          status: 200,
+          body: { data: menuList, total: menuList.length },
+        }),
+      );
     }
 
     if (url.endsWith('api/menus/actions') && method === 'GET') {

@@ -18,14 +18,66 @@ export class MenusService {
     page = 1,
     limit = 100,
   ): Promise<{ data: Menu[]; total: number }> {
-    const [data, total] = await this.menusRepository.findAndCount({
-      skip: (page - 1) * limit,
-      take: limit,
-      relations: ['permissions', 'parent'],
+    // 获取所有菜单
+    const allMenus = await this.menusRepository.find({
+      relations: ['permissions'],
       order: { sortOrder: 'ASC', id: 'ASC' },
     });
 
-    return { data, total };
+    // 构建树形结构
+    const menuTree = this.buildMenuTree(allMenus);
+
+    // 返回树形结构和总数
+    return {
+      data: menuTree,
+      total: allMenus.length,
+    };
+  }
+
+  // 辅助方法：构建菜单树
+  private buildMenuTree(menus: Menu[]): any[] {
+    const menuMap = new Map<number, any>();
+    const rootMenus: any[] = [];
+
+    // 初始化所有菜单
+    menus.forEach((menu) => {
+      menuMap.set(menu.id, {
+        ...menu,
+        children: [],
+      });
+    });
+
+    // 构建树形结构
+    menus.forEach((menu) => {
+      const menuWithChildren = menuMap.get(menu.id);
+      if (menu.parentId) {
+        const parent = menuMap.get(menu.parentId);
+        if (parent) {
+          parent.children.push(menuWithChildren);
+        }
+      } else {
+        rootMenus.push(menuWithChildren);
+      }
+    });
+
+    // 清理空的children数组
+    const cleanEmptyChildren = (items: any[]): any[] => {
+      return items.map((item) => {
+        if (item.children && item.children.length === 0) {
+          const { children, ...rest } = item;
+          return rest;
+        }
+        if (item.children && item.children.length > 0) {
+          return {
+            ...item,
+            children: cleanEmptyChildren(item.children),
+          };
+        }
+        return item;
+      });
+    };
+
+    return cleanEmptyChildren(rootMenus);
   }
 
   async findTree(): Promise<Menu[]> {
