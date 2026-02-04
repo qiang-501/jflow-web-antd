@@ -5,12 +5,18 @@ import { WorkflowsService } from './workflows.service';
 import { Workflow } from './workflow.entity';
 import { WorkflowHistory } from './workflow-history.entity';
 import { WorkflowTemplate } from './workflow-template.entity';
+import { WorkflowFormData } from './workflow-form-data.entity';
 import { WorkflowTemplatesController } from './workflow-templates.controller';
 import { WorkflowTemplatesService } from './workflow-templates.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Workflow, WorkflowHistory, WorkflowTemplate]),
+    TypeOrmModule.forFeature([
+      Workflow,
+      WorkflowHistory,
+      WorkflowTemplate,
+      WorkflowFormData,
+    ]),
   ],
   controllers: [WorkflowsController, WorkflowTemplatesController],
   providers: [WorkflowsService, WorkflowTemplatesService],

@@ -145,6 +145,30 @@
 >
   <ng-container *nzModalContent>
     <form nz-form [formGroup]="createForm" nzLayout="vertical">
+      <!-- 模板选择（新增） -->
+      <nz-form-item>
+        <nz-form-label>从模板创建（可选）</nz-form-label>
+        <nz-form-control nzExtra="选择模板后将自动填充部分字段">
+          <nz-select
+            formControlName="templateId"
+            nzPlaceHolder="请选择工作流模板（可选）"
+            nzAllowClear
+            [nzLoading]="templatesLoading"
+          >
+            <nz-option
+              *ngFor="let template of workflowTemplates"
+              [nzValue]="template.id"
+              [nzLabel]="template.name"
+            >
+              <span>{{ template.name }}</span>
+              <span *ngIf="template.category" nz-typography nzType="secondary">
+                ({{ template.category }})
+              </span>
+            </nz-option>
+          </nz-select>
+        </nz-form-control>
+      </nz-form-item>
+
       <nz-form-item>
         <nz-form-label nzRequired>工作流ID</nz-form-label>
         <nz-form-control nzErrorTip="请输入工作流ID">

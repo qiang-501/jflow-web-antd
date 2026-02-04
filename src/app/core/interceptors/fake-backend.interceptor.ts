@@ -429,7 +429,7 @@ export function FakeBackendInterceptor(
     }
 
     if (url.match(/api\/forms\/[\w-]+$/) && method === 'GET') {
-      const id = url.split('/').pop();
+      const id = parseInt(url.split('/').pop() || '0', 10);
       const formConfig = mockFormConfigs.find((f) => f.id === id);
       if (formConfig) {
         return of(new HttpResponse({ status: 200, body: formConfig }));
@@ -445,7 +445,10 @@ export function FakeBackendInterceptor(
     if (url.endsWith('api/forms') && method === 'POST') {
       const newConfig = body as any;
       const formConfig: DynamicFormConfig = {
-        id: `form-${mockFormConfigs.length + 1}`,
+        id:
+          mockFormConfigs.length > 0
+            ? Math.max(...mockFormConfigs.map((f) => f.id)) + 1
+            : 1,
         ...newConfig,
         created_by: 'admin',
         created_on: new Date().toISOString(),
@@ -455,7 +458,7 @@ export function FakeBackendInterceptor(
     }
 
     if (url.match(/api\/forms\/[\w-]+$/) && method === 'PUT') {
-      const id = url.split('/').pop();
+      const id = parseInt(url.split('/').pop() || '0', 10);
       const index = mockFormConfigs.findIndex((f) => f.id === id);
       if (index !== -1) {
         mockFormConfigs[index] = {
@@ -477,7 +480,7 @@ export function FakeBackendInterceptor(
     }
 
     if (url.match(/api\/forms\/[\w-]+$/) && method === 'DELETE') {
-      const id = url.split('/').pop();
+      const id = parseInt(url.split('/').pop() || '0', 10);
       const index = mockFormConfigs.findIndex((f) => f.id === id);
       if (index !== -1) {
         mockFormConfigs.splice(index, 1);

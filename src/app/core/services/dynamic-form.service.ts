@@ -2,8 +2,11 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
+import { map } from 'rxjs/operators';
 import {
   DynamicFormConfig,
+  DynamicFormField,
+  FormField,
   FormSubmission,
   CreateFormConfigDto,
   UpdateFormConfigDto,
@@ -159,5 +162,56 @@ export class DynamicFormService {
     }
 
     return { valid: true };
+  }
+
+  /**
+   * 将后端的FormField数组转换为前端DynamicFormField格式
+   */
+  convertFormFieldsToDynamicFields(fields: FormField[]): DynamicFormField[] {
+    return fields.map((field, index) => ({
+      id: field.id?.toString() || field.fieldKey,
+      name: field.fieldKey,
+      label: field.label,
+      type: field.fieldType as any,
+      defaultValue: field.defaultValue,
+      placeholder: field.placeholder,
+      validation: field.validators
+        ? {
+            required: field.required,
+            ...field.validators,
+          }
+        : { required: field.required },
+      options: field.options?.items || field.options,
+      disabled: field.disabled,
+      hidden: false,
+      order: field.orderIndex ?? index,
+      width: field.span,
+    }));
+  }
+
+  /**
+   * 将前端DynamicFormField转换为后端FormField格式
+   */
+  convertDynamicFieldsToFormFields(
+    fields: DynamicFormField[],
+    formConfigId?: number,
+  ): FormField[] {
+    return fields.map((field, index) => ({
+      formConfigId,
+      fieldKey: field.name,
+      fieldType: field.type,
+      label: field.label,
+      placeholder: field.placeholder,
+      defaultValue: field.defaultValue?.toString(),
+      required: field.validation?.required || false,
+      disabled: field.disabled || false,
+      readonly: false,
+      orderIndex: field.order ?? index,
+      span: field.width || 24,
+      options: field.options
+        ? { items: Array.isArray(field.options) ? field.options : [] }
+        : null,
+      validators: field.validation || null,
+    }));
   }
 }

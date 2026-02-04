@@ -1,6 +1,7 @@
 export interface WorkFlow {
   id: number;
   dWorkflowId: string;
+  templateId?: number; // 新增：关联的模板ID
   name: string;
   description?: string;
   status: WorkflowStatus;
@@ -41,6 +42,7 @@ export interface WorkflowStatusHistory {
 
 export interface CreateWorkflowDto {
   dWorkflowId: string;
+  templateId?: number; // 新增：从模板创建时的模板ID
   name: string;
   description?: string;
   status?: WorkflowStatus;

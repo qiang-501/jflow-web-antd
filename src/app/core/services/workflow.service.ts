@@ -116,4 +116,59 @@ export class WorkflowService {
   getPendingWorkflows(): Observable<WorkFlow[]> {
     return this.http.get<WorkFlow[]>(`${this.apiUrl}/pending`);
   }
+
+  /**
+   * 保存工作流表单数据
+   */
+  saveWorkflowFormData(
+    workflowId: number,
+    formData: {
+      formConfigId: number;
+      formData: Record<string, any>;
+      submittedBy?: number;
+    },
+  ): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${workflowId}/form-data`, formData);
+  }
+
+  /**
+   * 获取工作流表单数据
+   */
+  getWorkflowFormData(workflowId: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/${workflowId}/form-data`);
+  }
+
+  /**
+   * 更新工作流表单数据
+   */
+  updateWorkflowFormData(
+    workflowId: number,
+    formData: {
+      formConfigId?: number;
+      formData?: Record<string, any>;
+      submittedBy?: number;
+    },
+  ): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${workflowId}/form-data`, formData);
+  }
+
+  /**
+   * 删除工作流表单数据
+   */
+  deleteWorkflowFormData(workflowId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${workflowId}/form-data`);
+  }
+
+  /**
+   * 从模板创建工作流
+   */
+  createFromTemplate(
+    templateId: number,
+    overrides: Partial<CreateWorkflowDto>,
+  ): Observable<WorkFlow> {
+    return this.http.post<WorkFlow>(
+      `${this.apiUrl}/from-template/${templateId}`,
+      overrides,
+    );
+  }
 }

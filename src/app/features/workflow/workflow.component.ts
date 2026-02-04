@@ -27,6 +27,7 @@ import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzStatisticModule } from 'ng-zorro-antd/statistic';
 import { NzGridModule } from 'ng-zorro-antd/grid';
+import { NzTypographyModule } from 'ng-zorro-antd/typography';
 import {
   WorkFlow,
   WorkflowStatus,
@@ -35,8 +36,10 @@ import {
   CreateWorkflowDto,
   UpdateWorkflowDto,
 } from '../../models/work-flow';
+import { WorkflowTemplate } from '../../models/workflow-template.model';
 import { PermissionService } from '../../core/services/permission.service';
 import { WorkflowService } from '../../core/services/workflow.service';
+import { WorkflowTemplateService } from '../../core/services/workflow-template.service';
 import { UserService } from '../../core/services/user.service';
 import { User } from '../../models/user.model';
 import { DynamicFormConfig } from '../../models/dynamic-form.model';
@@ -70,6 +73,7 @@ import { DynamicFormService } from '../../core/services/dynamic-form.service';
     NzCardModule,
     NzStatisticModule,
     NzGridModule,
+    NzTypographyModule,
     DynamicFormRendererComponent,
     FormBuilderComponent,
   ],
@@ -81,6 +85,7 @@ export class WorkflowComponent implements OnInit {
   private message = inject(NzMessageService);
   private permissionService = inject(PermissionService);
   private workflowService = inject(WorkflowService);
+  private workflowTemplateService = inject(WorkflowTemplateService);
   private userService = inject(UserService);
   private dynamicFormService = inject(DynamicFormService);
   private cdr = inject(ChangeDetectorRef);
@@ -108,6 +113,11 @@ export class WorkflowComponent implements OnInit {
   // 表单配置列表
   formConfigs: DynamicFormConfig[] = [];
   formConfigsLoading = false;
+
+  // 工作流模板列表
+  workflowTemplates: WorkflowTemplate[] = [];
+  templatesLoading = false;
+  selectedTemplateId: number | null = null;
 
   // 筛选条件
   filterStatus: WorkflowStatus | null = null;
@@ -168,10 +178,12 @@ export class WorkflowComponent implements OnInit {
     this.loadWorkflows();
     this.loadUsers();
     this.loadFormConfigs();
+    this.loadWorkflowTemplates();
   }
 
   initForms(): void {
     this.createForm = this.fb.group({
+      templateId: [null], // 新增：模板选择
       dWorkflowId: ['', [Validators.required]],
       name: ['', [Validators.required, Validators.minLength(3)]],
       description: [''],
@@ -187,6 +199,13 @@ export class WorkflowComponent implements OnInit {
       priority: [WorkflowPriority.MEDIUM, [Validators.required]],
       assignedTo: [null],
       dueDate: [null, [Validators.required]],
+    });
+
+    // 监听模板选择变化，自动填充表单
+    this.createForm.get('templateId')?.valueChanges.subscribe((templateId) => {
+      if (templateId) {
+        this.onTemplateSelected(templateId);
+      }
     });
   }
 
@@ -300,6 +319,55 @@ export class WorkflowComponent implements OnInit {
     });
   }
 
+  // 加载工作流模板
+  loadWorkflowTemplates(): void {
+    this.templatesLoading = true;
+    this.workflowTemplateService.getActiveTemplates().subscribe({
+      next: (templates) => {
+        this.workflowTemplates = templates;
+        this.templatesLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        console.error('加载工作流模板失败:', error);
+        this.message.error('加载工作流模板失败');
+        this.templatesLoading = false;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  // 当选择模板时，自动填充表单
+  onTemplateSelected(templateId: number): void {
+    const template = this.workflowTemplates.find((t) => t.id === templateId);
+    if (template) {
+      this.selectedTemplateId = templateId;
+
+      // 自动填充优先级
+      if (template.defaultPriority) {
+        this.createForm.patchValue({
+          priority: template.defaultPriority,
+        });
+      }
+
+      // 自动填充表单配置
+      if (template.formConfigId) {
+        this.createForm.patchValue({
+          formConfigId: template.formConfigId,
+        });
+      }
+
+      // 自动填充描述（如果用户还没填写）
+      if (template.description && !this.createForm.get('description')?.value) {
+        this.createForm.patchValue({
+          description: template.description,
+        });
+      }
+
+      this.message.success(`已选择模板：${template.name}`);
+    }
+  }
+
   applyFilters(): void {
     let filtered = [...this.workflows];
 
@@ -375,35 +443,13 @@ export class WorkflowComponent implements OnInit {
   handleCreateOk(): void {
     if (this.createForm.valid) {
       const formValue = this.createForm.value;
-      const newWorkflow: CreateWorkflowDto = {
-        dWorkflowId: formValue.dWorkflowId,
-        name: formValue.name,
-        description: formValue.description,
-        priority: formValue.priority,
-        assignedTo: formValue.assignedTo,
-        dueDate: formValue.dueDate?.toISOString(),
-        formConfigId: formValue.formConfigId, // 添加表单配置ID
-      };
 
-      this.loading = true;
-      this.workflowService.createWorkflow(newWorkflow).subscribe({
-        next: (workflow) => {
-          this.message.success('工作流创建成功');
-          this.isCreateModalVisible = false;
-          this.createForm.reset();
-          this.loadWorkflows();
-        },
-        error: (error) => {
-          console.error('创建工作流失败:', error);
-          this.message.error(
-            error.error?.message || '创建工作流失败，请稍后重试',
-          );
-          this.loading = false;
-        },
-        complete: () => {
-          this.loading = false;
-        },
-      });
+      // 如果选择了模板，使用从模板创建的API
+      if (formValue.templateId) {
+        this.createFromTemplate(formValue);
+      } else {
+        this.createWorkflowDirectly(formValue);
+      }
     } else {
       Object.values(this.createForm.controls).forEach((control) => {
         if (control.invalid) {
@@ -414,8 +460,83 @@ export class WorkflowComponent implements OnInit {
     }
   }
 
+  // 直接创建工作流（不使用模板）
+  private createWorkflowDirectly(formValue: any): void {
+    const newWorkflow: CreateWorkflowDto = {
+      dWorkflowId: formValue.dWorkflowId,
+      name: formValue.name,
+      description: formValue.description,
+      priority: formValue.priority,
+      assignedTo: formValue.assignedTo,
+      dueDate: formValue.dueDate?.toISOString(),
+      formConfigId: formValue.formConfigId,
+    };
+
+    this.loading = true;
+    this.workflowService.createWorkflow(newWorkflow).subscribe({
+      next: (workflow) => {
+        this.message.success('工作流创建成功');
+        this.isCreateModalVisible = false;
+        this.createForm.reset();
+        this.selectedTemplateId = null;
+        this.loadWorkflows();
+      },
+      error: (error) => {
+        console.error('创建工作流失败:', error);
+        this.message.error(
+          error.error?.message || '创建工作流失败，请稍后重试',
+        );
+        this.loading = false;
+      },
+      complete: () => {
+        this.loading = false;
+      },
+    });
+  }
+
+  // 从模板创建工作流
+  private createFromTemplate(formValue: any): void {
+    const overrides: Partial<CreateWorkflowDto> = {
+      dWorkflowId: formValue.dWorkflowId,
+      name: formValue.name,
+      description: formValue.description,
+      priority: formValue.priority,
+      assignedTo: formValue.assignedTo,
+      dueDate: formValue.dueDate?.toISOString(),
+    };
+
+    // 如果用户手动选择了不同的表单配置，覆盖模板的配置
+    if (formValue.formConfigId) {
+      overrides.formConfigId = formValue.formConfigId;
+    }
+
+    this.loading = true;
+    this.workflowService
+      .createFromTemplate(formValue.templateId, overrides)
+      .subscribe({
+        next: (workflow) => {
+          this.message.success('从模板创建工作流成功');
+          this.isCreateModalVisible = false;
+          this.createForm.reset();
+          this.selectedTemplateId = null;
+          this.loadWorkflows();
+        },
+        error: (error) => {
+          console.error('从模板创建工作流失败:', error);
+          this.message.error(
+            error.error?.message || '从模板创建工作流失败，请稍后重试',
+          );
+          this.loading = false;
+        },
+        complete: () => {
+          this.loading = false;
+        },
+      });
+  }
+
   handleCreateCancel(): void {
     this.isCreateModalVisible = false;
+    this.selectedTemplateId = null;
   }
 
   // 编辑工作流
@@ -592,9 +713,43 @@ export class WorkflowComponent implements OnInit {
     console.log('Form submitted:', formData);
     console.log('Workflow:', this.selectedWorkflow);
 
-    // 这里可以将表单数据保存到工作流
-    this.message.success('表单提交成功');
-    this.isDynamicFormModalVisible = false;
+    if (!this.selectedWorkflow) {
+      this.message.error('未选择工作流');
+      return;
+    }
+
+    if (!this.selectedWorkflow.formConfigId) {
+      this.message.error('工作流未关联表单配置');
+      return;
+    }
+
+    // 保存表单数据到数据库
+    const saveData = {
+      formConfigId: this.selectedWorkflow.formConfigId,
+      formData: formData,
+      // 如果需要记录提交人，可以从当前用户获取
+      // submittedBy: this.currentUser?.id
+    };
+
+    this.workflowService
+      .saveWorkflowFormData(this.selectedWorkflow.id, saveData)
+      .subscribe({
+        next: (result) => {
+          console.log('Form data saved:', result);
+          this.message.success('表单数据保存成功');
+          this.isDynamicFormModalVisible = false;
+          this.currentFormConfig = null;
+
+          // 刷新工作流列表以显示最新状态
+          this.loadWorkflows();
+        },
+        error: (error) => {
+          console.error('Failed to save form data:', error);
+          this.message.error(
+            '表单数据保存失败: ' + (error.error?.message || error.message),
+          );
+        },
+      });
   }
 
   // 取消动态表单

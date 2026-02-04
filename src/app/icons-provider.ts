@@ -2,6 +2,7 @@ import { EnvironmentProviders, importProvidersFrom } from '@angular/core';
 import {
   MenuFoldOutline,
   MenuUnfoldOutline,
+  MenuOutline,
   FormOutline,
   DashboardOutline,
   DashboardFill,
@@ -41,6 +42,7 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 const icons = [
   MenuFoldOutline,
   MenuUnfoldOutline,
+  MenuOutline,
   DashboardOutline,
   DashboardFill,
   FormOutline,

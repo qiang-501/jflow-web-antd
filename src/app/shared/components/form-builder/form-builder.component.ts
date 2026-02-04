@@ -204,28 +204,32 @@ export class FormBuilderComponent implements OnInit {
   getMockConfigs(): DynamicFormConfig[] {
     return [
       {
-        id: '1',
+        id: 1,
         name: '员工信息表单',
         description: '用于收集员工基本信息',
         layout: 'vertical',
         fields: [
           {
-            id: 'f1',
-            name: 'name',
+            fieldKey: 'name',
+            fieldType: FieldType.TEXT,
             label: '姓名',
-            type: FieldType.TEXT,
-            validation: { required: true },
-            order: 1,
-            width: 12,
+            required: true,
+            disabled: false,
+            readonly: false,
+            orderIndex: 1,
+            span: 12,
+            validators: { required: true },
           },
           {
-            id: 'f2',
-            name: 'email',
+            fieldKey: 'email',
+            fieldType: FieldType.EMAIL,
             label: '邮箱',
-            type: FieldType.EMAIL,
-            validation: { required: true, email: true },
-            order: 2,
-            width: 12,
+            required: true,
+            disabled: false,
+            readonly: false,
+            orderIndex: 2,
+            span: 12,
+            validators: { required: true, email: true },
           },
         ],
         createdAt: '2026-01-20',
@@ -514,8 +518,8 @@ export class FormBuilderComponent implements OnInit {
     this.isPreviewModalVisible = false;
   }
 
-  deleteConfig(id: string): void {
-    this.formService.deleteFormConfig(Number(id)).subscribe({
+  deleteConfig(id: number): void {
+    this.formService.deleteFormConfig(id).subscribe({
       next: () => {
         this.formConfigs = this.formConfigs.filter((c) => c.id !== id);
         this.message.success('表单配置已删除');

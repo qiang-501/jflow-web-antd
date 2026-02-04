@@ -190,6 +190,24 @@ CREATE TABLE IF NOT EXISTS workflow_history (
 CREATE INDEX idx_workflow_history_workflow_id ON workflow_history(workflow_id);
 CREATE INDEX idx_workflow_history_created_at ON workflow_history(created_at);
 
+-- Workflow form data table - stores dynamic form submissions for workflows
+CREATE TABLE IF NOT EXISTS workflow_form_data (
+  id SERIAL PRIMARY KEY,
+  workflow_id INT NOT NULL UNIQUE,
+  form_config_id INT NOT NULL,
+  form_data JSONB NOT NULL,
+  submitted_by INT NULL,
+  submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (workflow_id) REFERENCES workflows(id) ON DELETE CASCADE,
+  FOREIGN KEY (form_config_id) REFERENCES dynamic_form_configs(id) ON DELETE CASCADE,
+  FOREIGN KEY (submitted_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_workflow_form_data_workflow_id ON workflow_form_data(workflow_id);
+CREATE INDEX idx_workflow_form_data_form_config_id ON workflow_form_data(form_config_id);
+CREATE INDEX idx_workflow_form_data_submitted_at ON workflow_form_data(submitted_at);
+
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -207,3 +225,4 @@ CREATE TRIGGER update_form_configs_updated_at BEFORE UPDATE ON dynamic_form_conf
 CREATE TRIGGER update_form_fields_updated_at BEFORE UPDATE ON form_fields FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_workflow_templates_updated_at BEFORE UPDATE ON workflow_templates FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_workflows_updated_at BEFORE UPDATE ON workflows FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_workflow_form_data_updated_at BEFORE UPDATE ON workflow_form_data FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

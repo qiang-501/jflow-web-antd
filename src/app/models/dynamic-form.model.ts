@@ -37,6 +37,27 @@ export interface FieldValidation {
   };
 }
 
+// 新增：FormField 接口，对应后端数据库表结构
+export interface FormField {
+  id?: number;
+  formConfigId?: number;
+  fieldKey: string;
+  fieldType: string;
+  label: string;
+  placeholder?: string;
+  defaultValue?: string;
+  required: boolean;
+  disabled: boolean;
+  readonly: boolean;
+  orderIndex: number;
+  span: number;
+  options?: any; // JSON 类型，存储下拉选项等
+  validators?: any; // JSON 类型，存储验证规则
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// 保留旧的接口用于向后兼容
 export interface DynamicFormField {
   id: string;
   name: string;
@@ -58,10 +79,10 @@ export interface DynamicFormField {
 }
 
 export interface DynamicFormConfig {
-  id: string;
+  id: number;
   name: string;
   description?: string;
-  fields: any; // 使用 any 匹配后端的 JSON 类型
+  fields: FormField[]; // 修改：从 any 改为 FormField[]
   layout?: string;
   labelWidth?: string;
   labelAlign?: string;
@@ -83,7 +104,7 @@ export interface FormSubmission {
 export interface CreateFormConfigDto {
   name: string;
   description?: string;
-  fields: any;
+  fields?: FormField[]; // 修改：从 any 改为 FormField[]
   layout?: string;
   labelWidth?: string;
   labelAlign?: string;
@@ -94,7 +115,7 @@ export interface CreateFormConfigDto {
 export interface UpdateFormConfigDto {
   name?: string;
   description?: string;
-  fields?: any;
+  fields?: FormField[]; // 修改：从 any 改为 FormField[]
   layout?: string;
   labelWidth?: string;
   labelAlign?: string;

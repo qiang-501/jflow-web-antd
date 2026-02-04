@@ -16,6 +16,7 @@ import { DynamicFormConfig } from '../../modules/forms/form-config.entity';
 import { FormField } from '../../modules/forms/form-field.entity';
 import { WorkflowHistory } from '../../modules/workflows/workflow-history.entity';
 import { WorkflowTemplate } from '../../modules/workflows/workflow-template.entity';
+import { WorkflowFormData } from '../../modules/workflows/workflow-form-data.entity';
 import { Menu, MenuType, MenuStatus } from '../../modules/menus/menu.entity';
 
 async function runSeed() {
@@ -36,6 +37,7 @@ async function runSeed() {
       DynamicFormConfig,
       FormField,
       WorkflowHistory,
+      WorkflowFormData,
       Menu,
     ],
     synchronize: false, // We'll handle schema creation manually
@@ -164,6 +166,16 @@ async function runSeed() {
   );
 
   await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_workflow_form_data_workflow_id ON workflow_form_data(workflow_id)',
+  );
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_workflow_form_data_form_config_id ON workflow_form_data(form_config_id)',
+  );
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_workflow_form_data_submitted_at ON workflow_form_data(submitted_at)',
+  );
+
+  await dataSource.query(
     'CREATE INDEX IF NOT EXISTS idx_menus_name ON menus(name)',
   );
   await dataSource.query(
@@ -238,6 +250,13 @@ async function runSeed() {
   );
   await dataSource.query(
     'CREATE TRIGGER update_workflows_updated_at BEFORE UPDATE ON workflows FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()',
+  );
+
+  await dataSource.query(
+    'DROP TRIGGER IF EXISTS update_workflow_form_data_updated_at ON workflow_form_data',
+  );
+  await dataSource.query(
+    'CREATE TRIGGER update_workflow_form_data_updated_at BEFORE UPDATE ON workflow_form_data FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()',
   );
 
   await dataSource.query(
@@ -618,7 +637,7 @@ async function runSeed() {
       name: 'menu-management',
       title: '菜单管理',
       path: '/system/menus',
-      icon: 'menu',
+      icon: 'menu-outline',
       component: 'MenuManagementComponent',
       type: MenuType.MENU,
       status: MenuStatus.ACTIVE,
@@ -642,38 +661,79 @@ async function runSeed() {
 
   // Seed Workflows
   console.log('Seeding workflows...');
-  await workflowRepo.save([
+  const workflow1 = await workflowRepo.save({
+    dWorkflowId: 'WF-2024-001',
+    name: '张三请假申请',
+    description: '年假3天',
+    status: WorkflowStatus.PENDING,
+    priority: WorkflowPriority.MEDIUM,
+    formConfigId: formConfig1.id,
+    createdBy: adminUser.id,
+    assignedTo: adminUser.id,
+    dueDate: new Date('2024-12-31'),
+  });
+
+  const workflow2 = await workflowRepo.save({
+    dWorkflowId: 'WF-2024-002',
+    name: '办公用品采购',
+    description: '采购笔记本电脑',
+    status: WorkflowStatus.IN_PROGRESS,
+    priority: WorkflowPriority.HIGH,
+    formConfigId: formConfig2.id,
+    createdBy: adminUser.id,
+    assignedTo: normalUser.id,
+    dueDate: new Date('2024-12-25'),
+  });
+
+  const workflow3 = await workflowRepo.save({
+    dWorkflowId: 'WF-2024-003',
+    name: '李四病假申请',
+    description: '病假2天',
+    status: WorkflowStatus.COMPLETED,
+    priority: WorkflowPriority.LOW,
+    formConfigId: formConfig1.id,
+    createdBy: normalUser.id,
+    assignedTo: adminUser.id,
+  });
+
+  // Seed Workflow Form Data
+  console.log('Seeding workflow form data...');
+  const formDataRepo = dataSource.getRepository(WorkflowFormData);
+
+  await formDataRepo.save([
     {
-      dWorkflowId: 'WF-2024-001',
-      name: '张三请假申请',
-      description: '年假3天',
-      status: WorkflowStatus.PENDING,
-      priority: WorkflowPriority.MEDIUM,
+      workflowId: workflow1.id,
       formConfigId: formConfig1.id,
-      createdBy: adminUser.id,
-      assignedTo: adminUser.id,
-      dueDate: new Date('2024-12-31'),
+      formData: {
+        leaveType: 'annual',
+        startDate: '2024-12-20',
+        endDate: '2024-12-22',
+        reason: '家庭事务需要处理',
+      },
+      submittedBy: adminUser.id,
     },
     {
-      dWorkflowId: 'WF-2024-002',
-      name: '办公用品采购',
-      description: '采购笔记本电脑',
-      status: WorkflowStatus.IN_PROGRESS,
-      priority: WorkflowPriority.HIGH,
+      workflowId: workflow2.id,
       formConfigId: formConfig2.id,
-      createdBy: adminUser.id,
-      assignedTo: normalUser.id,
-      dueDate: new Date('2024-12-25'),
+      formData: {
+        itemName: 'MacBook Pro 16寸',
+        quantity: 2,
+        estimatedPrice: 18000,
+        urgency: 'urgent',
+        description: '开发团队需要两台高性能笔记本电脑用于项目开发',
+      },
+      submittedBy: adminUser.id,
     },
     {
-      dWorkflowId: 'WF-2024-003',
-      name: '李四病假申请',
-      description: '病假2天',
-      status: WorkflowStatus.COMPLETED,
-      priority: WorkflowPriority.LOW,
+      workflowId: workflow3.id,
       formConfigId: formConfig1.id,
-      createdBy: normalUser.id,
-      assignedTo: adminUser.id,
+      formData: {
+        leaveType: 'sick',
+        startDate: '2024-12-01',
+        endDate: '2024-12-02',
+        reason: '感冒发烧，需要休息',
+      },
+      submittedBy: normalUser.id,
     },
   ]);
 

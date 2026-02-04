@@ -27,6 +27,7 @@ import { NzInputNumberModule } from 'ng-zorro-antd/input-number';
 import {
   DynamicFormConfig,
   DynamicFormField,
+  FormField,
   FieldType,
 } from '../../../models/dynamic-form.model';
 import { DynamicFormService } from '../../../core/services/dynamic-form.service';
@@ -86,10 +87,22 @@ export class DynamicFormRendererComponent implements OnInit {
   buildForm(): void {
     const group: { [key: string]: any } = {};
 
-    // 确保 fields 是数组
-    const fields = Array.isArray(this.formConfig.fields)
-      ? (this.formConfig.fields as DynamicFormField[])
-      : [];
+    // 转换 FormField 数组为 DynamicFormField 数组
+    let fields: DynamicFormField[] = [];
+
+    if (Array.isArray(this.formConfig.fields)) {
+      // 检查是否是FormField格式 (有fieldKey属性)
+      const firstField = this.formConfig.fields[0];
+      if (firstField && 'fieldKey' in firstField) {
+        // 是FormField格式，需要转换
+        fields = this.formService.convertFormFieldsToDynamicFields(
+          this.formConfig.fields,
+        );
+      } else {
+        // 已经是DynamicFormField格式，但需要正确类型转换
+        fields = this.formConfig.fields as any as DynamicFormField[];
+      }
+    }
 
     fields
       .sort((a: DynamicFormField, b: DynamicFormField) => a.order - b.order)

@@ -12,6 +12,10 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { WorkflowsService } from './workflows.service';
 import { CreateWorkflowDto, UpdateWorkflowDto } from './workflow.dto';
+import {
+  CreateWorkflowFormDataDto,
+  UpdateWorkflowFormDataDto,
+} from './workflow-form-data.dto';
 
 @ApiTags('workflows')
 @Controller('workflows')
@@ -79,5 +83,61 @@ export class WorkflowsController {
   @ApiResponse({ status: 404, description: 'Workflow not found.' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.workflowsService.remove(id);
+  }
+
+  // Workflow Form Data Endpoints
+
+  @Post(':id/form-data')
+  @ApiOperation({ summary: 'Save workflow form data' })
+  @ApiResponse({
+    status: 201,
+    description: 'Form data saved successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'Workflow not found.' })
+  saveFormData(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() formDataDto: Omit<CreateWorkflowFormDataDto, 'workflowId'>,
+  ) {
+    const createDto: CreateWorkflowFormDataDto = {
+      ...formDataDto,
+      workflowId: id,
+    };
+    return this.workflowsService.saveFormData(createDto);
+  }
+
+  @Get(':id/form-data')
+  @ApiOperation({ summary: 'Get workflow form data' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return workflow form data.',
+  })
+  @ApiResponse({ status: 404, description: 'Form data not found.' })
+  getFormData(@Param('id', ParseIntPipe) id: number) {
+    return this.workflowsService.getFormData(id);
+  }
+
+  @Put(':id/form-data')
+  @ApiOperation({ summary: 'Update workflow form data' })
+  @ApiResponse({
+    status: 200,
+    description: 'Form data updated successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'Form data not found.' })
+  updateFormData(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateFormDataDto: UpdateWorkflowFormDataDto,
+  ) {
+    return this.workflowsService.updateFormData(id, updateFormDataDto);
+  }
+
+  @Delete(':id/form-data')
+  @ApiOperation({ summary: 'Delete workflow form data' })
+  @ApiResponse({
+    status: 200,
+    description: 'Form data deleted successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'Form data not found.' })
+  deleteFormData(@Param('id', ParseIntPipe) id: number) {
+    return this.workflowsService.deleteFormData(id);
   }
 }

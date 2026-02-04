@@ -4,7 +4,12 @@ import { Repository } from 'typeorm';
 import { Workflow } from './workflow.entity';
 import { WorkflowHistory } from './workflow-history.entity';
 import { WorkflowTemplate } from './workflow-template.entity';
+import { WorkflowFormData } from './workflow-form-data.entity';
 import { CreateWorkflowDto, UpdateWorkflowDto } from './workflow.dto';
+import {
+  CreateWorkflowFormDataDto,
+  UpdateWorkflowFormDataDto,
+} from './workflow-form-data.dto';
 
 @Injectable()
 export class WorkflowsService {
@@ -15,6 +20,8 @@ export class WorkflowsService {
     private historyRepository: Repository<WorkflowHistory>,
     @InjectRepository(WorkflowTemplate)
     private templatesRepository: Repository<WorkflowTemplate>,
+    @InjectRepository(WorkflowFormData)
+    private formDataRepository: Repository<WorkflowFormData>,
   ) {}
 
   async findAll(
@@ -132,5 +139,75 @@ export class WorkflowsService {
       where: { workflowId },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  // Workflow Form Data Methods
+
+  /**
+   * Save workflow form data (create or update)
+   */
+  async saveFormData(
+    createFormDataDto: CreateWorkflowFormDataDto,
+  ): Promise<WorkflowFormData> {
+    // Check if workflow exists
+    const workflow = await this.findOne(createFormDataDto.workflowId);
+
+    // Check if form data already exists for this workflow
+    const existingFormData = await this.formDataRepository.findOne({
+      where: { workflowId: createFormDataDto.workflowId },
+    });
+
+    if (existingFormData) {
+      // Update existing form data
+      Object.assign(existingFormData, {
+        formConfigId: createFormDataDto.formConfigId,
+        formData: createFormDataDto.formData,
+        submittedBy: createFormDataDto.submittedBy,
+      });
+      return this.formDataRepository.save(existingFormData);
+    } else {
+      // Create new form data
+      const formData = this.formDataRepository.create(createFormDataDto);
+      return this.formDataRepository.save(formData);
+    }
+  }
+
+  /**
+   * Get workflow form data by workflow ID
+   */
+  async getFormData(workflowId: number): Promise<WorkflowFormData> {
+    const formData = await this.formDataRepository.findOne({
+      where: { workflowId },
+      relations: ['workflow', 'formConfig', 'submittedByUser'],
+    });
+
+    if (!formData) {
+      throw new NotFoundException(
+        `Form data for workflow ID ${workflowId} not found`,
+      );
+    }
+
+    return formData;
+  }
+
+  /**
+   * Update workflow form data
+   */
+  async updateFormData(
+    workflowId: number,
+    updateFormDataDto: UpdateWorkflowFormDataDto,
+  ): Promise<WorkflowFormData> {
+    const formData = await this.getFormData(workflowId);
+
+    Object.assign(formData, updateFormDataDto);
+    return this.formDataRepository.save(formData);
+  }
+
+  /**
+   * Delete workflow form data
+   */
+  async deleteFormData(workflowId: number): Promise<void> {
+    const formData = await this.getFormData(workflowId);
+    await this.formDataRepository.remove(formData);
   }
 }
