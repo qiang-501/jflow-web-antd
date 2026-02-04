@@ -4,7 +4,9 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
+import { FormField } from './form-field.entity';
 
 @Entity('dynamic_form_configs')
 export class DynamicFormConfig {
@@ -17,8 +19,8 @@ export class DynamicFormConfig {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ type: 'json' })
-  fields: any;
+  @OneToMany(() => FormField, (field) => field.formConfig, { cascade: true })
+  fields: FormField[];
 
   @Column({ default: 'vertical' })
   layout: string;

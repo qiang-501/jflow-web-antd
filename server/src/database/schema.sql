@@ -84,7 +84,6 @@ CREATE TABLE IF NOT EXISTS dynamic_form_configs (
   id SERIAL PRIMARY KEY,
   name VARCHAR(100) NOT NULL UNIQUE,
   description TEXT,
-  fields JSONB NOT NULL,
   layout VARCHAR(50) DEFAULT 'vertical',
   label_width VARCHAR(50),
   label_align VARCHAR(50) DEFAULT 'right',
@@ -97,10 +96,60 @@ CREATE TABLE IF NOT EXISTS dynamic_form_configs (
 CREATE INDEX idx_form_configs_name ON dynamic_form_configs(name);
 CREATE INDEX idx_form_configs_active ON dynamic_form_configs(active);
 
+-- Form fields table (replaces JSONB fields in dynamic_form_configs)
+CREATE TABLE IF NOT EXISTS form_fields (
+  id SERIAL PRIMARY KEY,
+  form_config_id INT NOT NULL,
+  field_key VARCHAR(100) NOT NULL,
+  field_type VARCHAR(50) NOT NULL,
+  label VARCHAR(200) NOT NULL,
+  placeholder TEXT,
+  default_value TEXT,
+  required BOOLEAN DEFAULT FALSE,
+  disabled BOOLEAN DEFAULT FALSE,
+  readonly BOOLEAN DEFAULT FALSE,
+  order_index INT DEFAULT 0,
+  span INT DEFAULT 24,
+  options JSONB,
+  validators JSONB,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (form_config_id) REFERENCES dynamic_form_configs(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_form_fields_config_id ON form_fields(form_config_id);
+CREATE INDEX idx_form_fields_key ON form_fields(field_key);
+CREATE INDEX idx_form_fields_order ON form_fields(form_config_id, order_index);
+
+-- Workflow templates table
+CREATE TABLE IF NOT EXISTS workflow_templates (
+  id SERIAL PRIMARY KEY,
+  code VARCHAR(50) NOT NULL UNIQUE,
+  name VARCHAR(200) NOT NULL,
+  description TEXT,
+  category VARCHAR(100),
+  form_config_id INT NULL,
+  default_priority workflow_priority DEFAULT 'medium',
+  default_assignee_role_id INT NULL,
+  estimated_duration INT,
+  active BOOLEAN DEFAULT TRUE,
+  created_by INT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (form_config_id) REFERENCES dynamic_form_configs(id) ON DELETE SET NULL,
+  FOREIGN KEY (default_assignee_role_id) REFERENCES roles(id) ON DELETE SET NULL,
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_workflow_templates_code ON workflow_templates(code);
+CREATE INDEX idx_workflow_templates_category ON workflow_templates(category);
+CREATE INDEX idx_workflow_templates_active ON workflow_templates(active);
+
 -- Workflows table
 CREATE TABLE IF NOT EXISTS workflows (
   id SERIAL PRIMARY KEY,
   d_workflow_id VARCHAR(50) NOT NULL UNIQUE,
+  template_id INT NULL,
   name VARCHAR(200) NOT NULL,
   description TEXT,
   status workflow_status DEFAULT 'draft',
@@ -111,12 +160,14 @@ CREATE TABLE IF NOT EXISTS workflows (
   due_date TIMESTAMP NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (template_id) REFERENCES workflow_templates(id) ON DELETE SET NULL,
   FOREIGN KEY (form_config_id) REFERENCES dynamic_form_configs(id) ON DELETE SET NULL,
   FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
   FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE INDEX idx_workflows_d_workflow_id ON workflows(d_workflow_id);
+CREATE INDEX idx_workflows_template_id ON workflows(template_id);
 CREATE INDEX idx_workflows_status ON workflows(status);
 CREATE INDEX idx_workflows_priority ON workflows(priority);
 CREATE INDEX idx_workflows_created_by ON workflows(created_by);
@@ -153,4 +204,6 @@ CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECU
 CREATE TRIGGER update_roles_updated_at BEFORE UPDATE ON roles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_permissions_updated_at BEFORE UPDATE ON permissions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_form_configs_updated_at BEFORE UPDATE ON dynamic_form_configs FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_form_fields_updated_at BEFORE UPDATE ON form_fields FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_workflow_templates_updated_at BEFORE UPDATE ON workflow_templates FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_workflows_updated_at BEFORE UPDATE ON workflows FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

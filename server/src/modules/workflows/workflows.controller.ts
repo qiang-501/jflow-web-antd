@@ -49,6 +49,19 @@ export class WorkflowsController {
     return this.workflowsService.create(createWorkflowDto);
   }
 
+  @Post('from-template/:templateId')
+  @ApiOperation({ summary: 'Create workflow from template' })
+  @ApiResponse({
+    status: 201,
+    description: 'Workflow created from template successfully.',
+  })
+  createFromTemplate(
+    @Param('templateId', ParseIntPipe) templateId: number,
+    @Body() overrides: Partial<CreateWorkflowDto>,
+  ) {
+    return this.workflowsService.createFromTemplate(templateId, overrides);
+  }
+
   @Put(':id')
   @ApiOperation({ summary: 'Update workflow' })
   @ApiResponse({ status: 200, description: 'Workflow updated successfully.' })

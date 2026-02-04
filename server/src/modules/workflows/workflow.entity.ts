@@ -8,22 +8,10 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { DynamicFormConfig } from '../forms/form-config.entity';
+import { WorkflowTemplate } from './workflow-template.entity';
+import { WorkflowStatus, WorkflowPriority } from './workflow.enums';
 
-export enum WorkflowStatus {
-  DRAFT = 'draft',
-  PENDING = 'pending',
-  IN_PROGRESS = 'in_progress',
-  COMPLETED = 'completed',
-  REJECTED = 'rejected',
-  CANCELLED = 'cancelled',
-}
-
-export enum WorkflowPriority {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  URGENT = 'urgent',
-}
+export { WorkflowStatus, WorkflowPriority };
 
 @Entity('workflows')
 export class Workflow {
@@ -32,6 +20,13 @@ export class Workflow {
 
   @Column({ name: 'd_workflow_id', unique: true, length: 50 })
   dWorkflowId: string;
+
+  @Column({ name: 'template_id', nullable: true })
+  templateId: number;
+
+  @ManyToOne(() => WorkflowTemplate, { nullable: true })
+  @JoinColumn({ name: 'template_id' })
+  template: WorkflowTemplate;
 
   @Column({ length: 200 })
   name: string;

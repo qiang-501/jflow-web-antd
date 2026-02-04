@@ -7,13 +7,18 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { WorkflowStatus, WorkflowPriority } from './workflow.entity';
+import { WorkflowStatus, WorkflowPriority } from './workflow.enums';
 
 export class CreateWorkflowDto {
   @ApiProperty()
   @IsNotEmpty()
   @IsString()
   dWorkflowId: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber()
+  templateId?: number;
 
   @ApiProperty()
   @IsNotEmpty()

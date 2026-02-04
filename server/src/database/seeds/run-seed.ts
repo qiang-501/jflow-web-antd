@@ -7,13 +7,15 @@ import {
   Permission,
   PermissionType,
 } from '../../modules/permissions/permission.entity';
+import { Workflow } from '../../modules/workflows/workflow.entity';
 import {
-  Workflow,
   WorkflowStatus,
   WorkflowPriority,
-} from '../../modules/workflows/workflow.entity';
+} from '../../modules/workflows/workflow.enums';
 import { DynamicFormConfig } from '../../modules/forms/form-config.entity';
+import { FormField } from '../../modules/forms/form-field.entity';
 import { WorkflowHistory } from '../../modules/workflows/workflow-history.entity';
+import { WorkflowTemplate } from '../../modules/workflows/workflow-template.entity';
 import { Menu, MenuType, MenuStatus } from '../../modules/menus/menu.entity';
 
 async function runSeed() {
@@ -30,7 +32,9 @@ async function runSeed() {
       Role,
       Permission,
       Workflow,
+      WorkflowTemplate,
       DynamicFormConfig,
+      FormField,
       WorkflowHistory,
       Menu,
     ],
@@ -54,12 +58,24 @@ async function runSeed() {
 
   // Create ENUM types
   console.log('Creating ENUM types...');
-  await dataSource.query(`CREATE TYPE user_status AS ENUM ('active', 'inactive', 'locked')`);
-  await dataSource.query(`CREATE TYPE permission_type AS ENUM ('menu', 'action', 'api')`);
-  await dataSource.query(`CREATE TYPE workflow_status AS ENUM ('draft', 'pending', 'in_progress', 'completed', 'rejected', 'cancelled')`);
-  await dataSource.query(`CREATE TYPE workflow_priority AS ENUM ('low', 'medium', 'high', 'urgent')`);
-  await dataSource.query(`CREATE TYPE menu_type AS ENUM ('menu', 'button', 'link')`);
-  await dataSource.query(`CREATE TYPE menu_status AS ENUM ('active', 'inactive')`);
+  await dataSource.query(
+    `CREATE TYPE user_status AS ENUM ('active', 'inactive', 'locked')`,
+  );
+  await dataSource.query(
+    `CREATE TYPE permission_type AS ENUM ('menu', 'action', 'api')`,
+  );
+  await dataSource.query(
+    `CREATE TYPE workflow_status AS ENUM ('draft', 'pending', 'in_progress', 'completed', 'rejected', 'cancelled')`,
+  );
+  await dataSource.query(
+    `CREATE TYPE workflow_priority AS ENUM ('low', 'medium', 'high', 'urgent')`,
+  );
+  await dataSource.query(
+    `CREATE TYPE menu_type AS ENUM ('menu', 'button', 'link')`,
+  );
+  await dataSource.query(
+    `CREATE TYPE menu_status AS ENUM ('active', 'inactive')`,
+  );
 
   // Synchronize schema (create tables based on entities)
   console.log('Synchronizing database schema...');
@@ -67,34 +83,101 @@ async function runSeed() {
 
   // Create indexes
   console.log('Creating indexes...');
-  await dataSource.query('CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)');
-  await dataSource.query('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)');
-  await dataSource.query('CREATE INDEX IF NOT EXISTS idx_users_status ON users(status)');
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)',
+  );
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)',
+  );
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_users_status ON users(status)',
+  );
 
-  await dataSource.query('CREATE INDEX IF NOT EXISTS idx_roles_code ON roles(code)');
-  await dataSource.query('CREATE INDEX IF NOT EXISTS idx_roles_parent_id ON roles(parent_id)');
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_roles_code ON roles(code)',
+  );
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_roles_parent_id ON roles(parent_id)',
+  );
 
-  await dataSource.query('CREATE INDEX IF NOT EXISTS idx_permissions_code ON permissions(code)');
-  await dataSource.query('CREATE INDEX IF NOT EXISTS idx_permissions_type ON permissions(type)');
-  await dataSource.query('CREATE INDEX IF NOT EXISTS idx_permissions_resource ON permissions(resource)');
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_permissions_code ON permissions(code)',
+  );
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_permissions_type ON permissions(type)',
+  );
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_permissions_resource ON permissions(resource)',
+  );
 
-  await dataSource.query('CREATE INDEX IF NOT EXISTS idx_form_configs_name ON dynamic_form_configs(name)');
-  await dataSource.query('CREATE INDEX IF NOT EXISTS idx_form_configs_active ON dynamic_form_configs(active)');
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_form_configs_name ON dynamic_form_configs(name)',
+  );
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_form_configs_active ON dynamic_form_configs(active)',
+  );
 
-  await dataSource.query('CREATE INDEX IF NOT EXISTS idx_workflows_d_workflow_id ON workflows(d_workflow_id)');
-  await dataSource.query('CREATE INDEX IF NOT EXISTS idx_workflows_status ON workflows(status)');
-  await dataSource.query('CREATE INDEX IF NOT EXISTS idx_workflows_priority ON workflows(priority)');
-  await dataSource.query('CREATE INDEX IF NOT EXISTS idx_workflows_created_by ON workflows(created_by)');
-  await dataSource.query('CREATE INDEX IF NOT EXISTS idx_workflows_assigned_to ON workflows(assigned_to)');
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_form_fields_config_id ON form_fields(form_config_id)',
+  );
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_form_fields_key ON form_fields(field_key)',
+  );
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_form_fields_order ON form_fields(form_config_id, order_index)',
+  );
 
-  await dataSource.query('CREATE INDEX IF NOT EXISTS idx_workflow_history_workflow_id ON workflow_history(workflow_id)');
-  await dataSource.query('CREATE INDEX IF NOT EXISTS idx_workflow_history_created_at ON workflow_history(created_at)');
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_workflow_templates_code ON workflow_templates(code)',
+  );
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_workflow_templates_category ON workflow_templates(category)',
+  );
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_workflow_templates_active ON workflow_templates(active)',
+  );
 
-  await dataSource.query('CREATE INDEX IF NOT EXISTS idx_menus_name ON menus(name)');
-  await dataSource.query('CREATE INDEX IF NOT EXISTS idx_menus_parent_id ON menus(parent_id)');
-  await dataSource.query('CREATE INDEX IF NOT EXISTS idx_menus_type ON menus(type)');
-  await dataSource.query('CREATE INDEX IF NOT EXISTS idx_menus_status ON menus(status)');
-  await dataSource.query('CREATE INDEX IF NOT EXISTS idx_menus_sort_order ON menus(sort_order)');
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_workflows_d_workflow_id ON workflows(d_workflow_id)',
+  );
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_workflows_template_id ON workflows(template_id)',
+  );
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_workflows_status ON workflows(status)',
+  );
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_workflows_priority ON workflows(priority)',
+  );
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_workflows_created_by ON workflows(created_by)',
+  );
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_workflows_assigned_to ON workflows(assigned_to)',
+  );
+
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_workflow_history_workflow_id ON workflow_history(workflow_id)',
+  );
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_workflow_history_created_at ON workflow_history(created_at)',
+  );
+
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_menus_name ON menus(name)',
+  );
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_menus_parent_id ON menus(parent_id)',
+  );
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_menus_type ON menus(type)',
+  );
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_menus_status ON menus(status)',
+  );
+  await dataSource.query(
+    'CREATE INDEX IF NOT EXISTS idx_menus_sort_order ON menus(sort_order)',
+  );
 
   // Create function and triggers for updated_at
   console.log('Creating triggers...');
@@ -108,23 +191,61 @@ async function runSeed() {
     $$ language 'plpgsql'
   `);
 
-  await dataSource.query('DROP TRIGGER IF EXISTS update_users_updated_at ON users');
-  await dataSource.query('CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()');
+  await dataSource.query(
+    'DROP TRIGGER IF EXISTS update_users_updated_at ON users',
+  );
+  await dataSource.query(
+    'CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()',
+  );
 
-  await dataSource.query('DROP TRIGGER IF EXISTS update_roles_updated_at ON roles');
-  await dataSource.query('CREATE TRIGGER update_roles_updated_at BEFORE UPDATE ON roles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()');
+  await dataSource.query(
+    'DROP TRIGGER IF EXISTS update_roles_updated_at ON roles',
+  );
+  await dataSource.query(
+    'CREATE TRIGGER update_roles_updated_at BEFORE UPDATE ON roles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()',
+  );
 
-  await dataSource.query('DROP TRIGGER IF EXISTS update_permissions_updated_at ON permissions');
-  await dataSource.query('CREATE TRIGGER update_permissions_updated_at BEFORE UPDATE ON permissions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()');
+  await dataSource.query(
+    'DROP TRIGGER IF EXISTS update_permissions_updated_at ON permissions',
+  );
+  await dataSource.query(
+    'CREATE TRIGGER update_permissions_updated_at BEFORE UPDATE ON permissions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()',
+  );
 
-  await dataSource.query('DROP TRIGGER IF EXISTS update_form_configs_updated_at ON dynamic_form_configs');
-  await dataSource.query('CREATE TRIGGER update_form_configs_updated_at BEFORE UPDATE ON dynamic_form_configs FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()');
+  await dataSource.query(
+    'DROP TRIGGER IF EXISTS update_form_configs_updated_at ON dynamic_form_configs',
+  );
+  await dataSource.query(
+    'CREATE TRIGGER update_form_configs_updated_at BEFORE UPDATE ON dynamic_form_configs FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()',
+  );
 
-  await dataSource.query('DROP TRIGGER IF EXISTS update_workflows_updated_at ON workflows');
-  await dataSource.query('CREATE TRIGGER update_workflows_updated_at BEFORE UPDATE ON workflows FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()');
+  await dataSource.query(
+    'DROP TRIGGER IF EXISTS update_form_fields_updated_at ON form_fields',
+  );
+  await dataSource.query(
+    'CREATE TRIGGER update_form_fields_updated_at BEFORE UPDATE ON form_fields FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()',
+  );
 
-  await dataSource.query('DROP TRIGGER IF EXISTS update_menus_updated_at ON menus');
-  await dataSource.query('CREATE TRIGGER update_menus_updated_at BEFORE UPDATE ON menus FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()');
+  await dataSource.query(
+    'DROP TRIGGER IF EXISTS update_workflow_templates_updated_at ON workflow_templates',
+  );
+  await dataSource.query(
+    'CREATE TRIGGER update_workflow_templates_updated_at BEFORE UPDATE ON workflow_templates FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()',
+  );
+
+  await dataSource.query(
+    'DROP TRIGGER IF EXISTS update_workflows_updated_at ON workflows',
+  );
+  await dataSource.query(
+    'CREATE TRIGGER update_workflows_updated_at BEFORE UPDATE ON workflows FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()',
+  );
+
+  await dataSource.query(
+    'DROP TRIGGER IF EXISTS update_menus_updated_at ON menus',
+  );
+  await dataSource.query(
+    'CREATE TRIGGER update_menus_updated_at BEFORE UPDATE ON menus FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()',
+  );
 
   console.log('Database schema created successfully!');
 
@@ -132,6 +253,7 @@ async function runSeed() {
   const roleRepo = dataSource.getRepository(Role);
   const userRepo = dataSource.getRepository(User);
   const formRepo = dataSource.getRepository(DynamicFormConfig);
+  const fieldRepo = dataSource.getRepository(FormField);
   const workflowRepo = dataSource.getRepository(Workflow);
   const menuRepo = dataSource.getRepository(Menu);
 
@@ -308,49 +430,63 @@ async function runSeed() {
     labelAlign: 'right',
     version: 1,
     active: true,
-    fields: [
-      {
-        name: 'applicant',
-        label: '申请人',
-        type: 'text',
-        required: true,
-        order: 1,
-      },
-      {
-        name: 'leaveType',
-        label: '请假类型',
-        type: 'select',
-        required: true,
-        order: 2,
-        options: [
+  });
+
+  // Create form fields for 请假申请表
+  await fieldRepo.save([
+    {
+      formConfigId: formConfig1.id,
+      fieldKey: 'applicant',
+      fieldType: 'input',
+      label: '申请人',
+      required: true,
+      orderIndex: 0,
+      span: 24,
+    },
+    {
+      formConfigId: formConfig1.id,
+      fieldKey: 'leaveType',
+      fieldType: 'select',
+      label: '请假类型',
+      required: true,
+      orderIndex: 1,
+      span: 12,
+      options: {
+        items: [
           { label: '病假', value: 'sick' },
           { label: '事假', value: 'personal' },
           { label: '年假', value: 'annual' },
         ],
       },
-      {
-        name: 'startDate',
-        label: '开始日期',
-        type: 'date',
-        required: true,
-        order: 3,
-      },
-      {
-        name: 'endDate',
-        label: '结束日期',
-        type: 'date',
-        required: true,
-        order: 4,
-      },
-      {
-        name: 'reason',
-        label: '请假原因',
-        type: 'textarea',
-        required: true,
-        order: 5,
-      },
-    ],
-  });
+    },
+    {
+      formConfigId: formConfig1.id,
+      fieldKey: 'startDate',
+      fieldType: 'date',
+      label: '开始日期',
+      required: true,
+      orderIndex: 2,
+      span: 12,
+    },
+    {
+      formConfigId: formConfig1.id,
+      fieldKey: 'endDate',
+      fieldType: 'date',
+      label: '结束日期',
+      required: true,
+      orderIndex: 3,
+      span: 12,
+    },
+    {
+      formConfigId: formConfig1.id,
+      fieldKey: 'reason',
+      fieldType: 'textarea',
+      label: '请假原因',
+      required: true,
+      orderIndex: 4,
+      span: 24,
+    },
+  ]);
 
   const formConfig2 = await formRepo.save({
     name: '采购申请表',
@@ -359,49 +495,63 @@ async function runSeed() {
     labelAlign: 'right',
     version: 1,
     active: true,
-    fields: [
-      {
-        name: 'itemName',
-        label: '物品名称',
-        type: 'text',
-        required: true,
-        order: 1,
-      },
-      {
-        name: 'quantity',
-        label: '数量',
-        type: 'number',
-        required: true,
-        order: 2,
-      },
-      {
-        name: 'estimatedPrice',
-        label: '预估价格',
-        type: 'number',
-        required: true,
-        order: 3,
-      },
-      {
-        name: 'urgency',
-        label: '紧急程度',
-        type: 'radio',
-        required: true,
-        order: 4,
-        options: [
+  });
+
+  // Create form fields for 采购申请表
+  await fieldRepo.save([
+    {
+      formConfigId: formConfig2.id,
+      fieldKey: 'itemName',
+      fieldType: 'input',
+      label: '物品名称',
+      required: true,
+      orderIndex: 0,
+      span: 24,
+    },
+    {
+      formConfigId: formConfig2.id,
+      fieldKey: 'quantity',
+      fieldType: 'number',
+      label: '数量',
+      required: true,
+      orderIndex: 1,
+      span: 12,
+    },
+    {
+      formConfigId: formConfig2.id,
+      fieldKey: 'estimatedPrice',
+      fieldType: 'number',
+      label: '预估价格',
+      required: true,
+      orderIndex: 2,
+      span: 12,
+    },
+    {
+      formConfigId: formConfig2.id,
+      fieldKey: 'urgency',
+      fieldType: 'radio',
+      label: '紧急程度',
+      required: true,
+      orderIndex: 3,
+      span: 24,
+      options: {
+        items: [
           { label: '一般', value: 'normal' },
           { label: '紧急', value: 'urgent' },
           { label: '特急', value: 'critical' },
         ],
       },
-      {
-        name: 'description',
-        label: '详细说明',
-        type: 'textarea',
-        required: false,
-        order: 5,
-      },
-    ],
-  });
+    },
+    {
+      formConfigId: formConfig2.id,
+      fieldKey: 'description',
+      fieldType: 'textarea',
+      label: '详细说明',
+      required: false,
+      orderIndex: 4,
+      span: 24,
+    },
+  ]);
 
   // Seed Menus
   console.log('Seeding menus...');
