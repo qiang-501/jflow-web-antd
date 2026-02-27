@@ -88,6 +88,17 @@ let mockFormConfigs: DynamicFormConfig[] = (
   })),
 }));
 
+// Mock 工作流表单数据存储
+let mockWorkflowFormData: Array<{
+  id: number;
+  workflowId: number;
+  formConfigId: number;
+  formData: Record<string, any>;
+  submittedBy?: number;
+  submittedAt?: string;
+  updatedAt?: string;
+}> = [];
+
 export function FakeBackendInterceptor(
   req: HttpRequest<unknown>,
   next: HttpHandlerFn,
@@ -113,6 +124,15 @@ export function FakeBackendInterceptor(
         new HttpResponse({
           status: 200,
           body: { data: menuList, total: menuList.length },
+        }),
+      );
+    }
+
+    if (url.endsWith('api/menus/tree') && method === 'GET') {
+      return of(
+        new HttpResponse({
+          status: 200,
+          body: menuList,
         }),
       );
     }
@@ -167,7 +187,12 @@ export function FakeBackendInterceptor(
 
     // 角色管理API
     if (url.endsWith('api/roles') && method === 'GET') {
-      return of(new HttpResponse({ status: 200, body: mockRoles }));
+      return of(
+        new HttpResponse({
+          status: 200,
+          body: { data: mockRoles, total: mockRoles.length },
+        }),
+      );
     }
 
     if (url.endsWith('api/roles/tree') && method === 'GET') {
@@ -237,13 +262,131 @@ export function FakeBackendInterceptor(
 
     // 权限管理API
     if (url.endsWith('api/permissions') && method === 'GET') {
-      return of(new HttpResponse({ status: 200, body: mockPermissions }));
+      return of(
+        new HttpResponse({
+          status: 200,
+          body: { data: mockPermissions, total: mockPermissions.length },
+        }),
+      );
     }
 
     if (url.endsWith('api/permissions/menus') && method === 'GET') {
       return of(new HttpResponse({ status: 200, body: mockMenuPermissions }));
     }
 
+    // GET /api/permissions/menus/:menuId - 根据菜单ID获取菜单权限
+    if (url.match(/api\/permissions\/menus\/[^/]+$/) && method === 'GET') {
+      const urlParts = url.split('/');
+      const menuId = urlParts[urlParts.length - 1];
+
+      console.log('Fake Backend: Getting menu permission for menuId:', menuId);
+
+      const menuPermission = mockMenuPermissions.find(
+        (mp) => mp.menuId === menuId,
+      );
+
+      if (menuPermission) {
+        console.log('Fake Backend: Found menu permission:', menuPermission);
+        return of(
+          new HttpResponse({
+            status: 200,
+            body: menuPermission,
+          }),
+        );
+      } else {
+        console.log(
+          'Fake Backend: Menu permission not found for menuId:',
+          menuId,
+        );
+        return of(
+          new HttpResponse({
+            status: 404,
+            body: { message: 'Menu permission not found' },
+          }),
+        );
+      }
+    }
+
+    // 菜单操作权限 API
+    if (
+      url.match(/api\/permissions\/menus\/[^/]+\/actions$/) &&
+      method === 'POST'
+    ) {
+      const matches = url.match(/api\/permissions\/menus\/([^/]+)\/actions$/);
+      const menuId = matches ? matches[1] : '';
+      const newAction = body as any;
+      const action: any = {
+        id: `a${Date.now()}`,
+        menuId: menuId,
+        ...newAction,
+      };
+
+      // 添加到对应菜单的 actions 数组中
+      const menuPermission = mockMenuPermissions.find(
+        (mp) => mp.menuId === menuId,
+      );
+      if (menuPermission) {
+        menuPermission.actions.push(action);
+      }
+
+      return of(new HttpResponse({ status: 201, body: action }));
+    }
+
+    if (
+      url.match(/api\/permissions\/menus\/[^/]+\/actions\/[^/]+$/) &&
+      method === 'PUT'
+    ) {
+      const matches = url.match(
+        /api\/permissions\/menus\/([^/]+)\/actions\/([^/]+)$/,
+      );
+      const menuId = matches ? matches[1] : '';
+      const actionId = matches ? matches[2] : '';
+      const updateData = body as any;
+
+      const menuPermission = mockMenuPermissions.find(
+        (mp) => mp.menuId === menuId,
+      );
+      if (menuPermission) {
+        const actionIndex = menuPermission.actions.findIndex(
+          (a) => a.id === actionId,
+        );
+        if (actionIndex !== -1) {
+          menuPermission.actions[actionIndex] = {
+            ...menuPermission.actions[actionIndex],
+            ...updateData,
+          };
+          return of(
+            new HttpResponse({
+              status: 200,
+              body: menuPermission.actions[actionIndex],
+            }),
+          );
+        }
+      }
+      return of(new HttpResponse({ status: 404 }));
+    }
+
+    if (
+      url.match(/api\/permissions\/menus\/[^/]+\/actions\/[^/]+$/) &&
+      method === 'DELETE'
+    ) {
+      const matches = url.match(
+        /api\/permissions\/menus\/([^/]+)\/actions\/([^/]+)$/,
+      );
+      const menuId = matches ? matches[1] : '';
+      const actionId = matches ? matches[2] : '';
+
+      const menuPermission = mockMenuPermissions.find(
+        (mp) => mp.menuId === menuId,
+      );
+      if (menuPermission) {
+        menuPermission.actions = menuPermission.actions.filter(
+          (a) => a.id !== actionId,
+        );
+        return of(new HttpResponse({ status: 204 }));
+      }
+      return of(new HttpResponse({ status: 404 }));
+    }
     if (url.match(/api\/permissions\/\w+$/) && method === 'GET') {
       const id = url.split('/').pop();
       const permission = mockPermissions.find((p) => p.id === id);
@@ -260,46 +403,6 @@ export function FakeBackendInterceptor(
       };
       mockPermissions.push(permission);
       return of(new HttpResponse({ status: 201, body: permission }));
-    }
-
-    if (
-      url.match(/api\/permissions\/menus\/\w+\/actions$/) &&
-      method === 'POST'
-    ) {
-      const menuId = url.split('/')[url.split('/').length - 2];
-      const action = body as any;
-      const menuPermission = mockMenuPermissions.find(
-        (mp) => mp.menuId === menuId,
-      );
-      if (menuPermission) {
-        const newAction = {
-          id: 'a' + (menuPermission.actions.length + 1),
-          ...action,
-          menuId,
-        };
-        menuPermission.actions.push(newAction);
-        return of(new HttpResponse({ status: 201, body: newAction }));
-      }
-      return of(new HttpResponse({ status: 404 }));
-    }
-
-    if (
-      url.match(/api\/permissions\/menus\/\w+\/actions\/\w+$/) &&
-      method === 'DELETE'
-    ) {
-      const parts = url.split('/');
-      const menuId = parts[parts.length - 3];
-      const actionId = parts[parts.length - 1];
-      const menuPermission = mockMenuPermissions.find(
-        (mp) => mp.menuId === menuId,
-      );
-      if (menuPermission) {
-        menuPermission.actions = menuPermission.actions.filter(
-          (a) => a.id !== actionId,
-        );
-        return of(new HttpResponse({ status: 204 }));
-      }
-      return of(new HttpResponse({ status: 404 }));
     }
 
     // 工作流管理API
@@ -421,6 +524,131 @@ export function FakeBackendInterceptor(
         (w) => w.status === WorkflowStatus.PENDING,
       );
       return of(new HttpResponse({ status: 200, body: pending }));
+    }
+
+    // 工作流表单数据API
+    // POST /api/workflows/:id/form-data - 保存表单数据
+    if (url.match(/api\/workflows\/\d+\/form-data$/) && method === 'POST') {
+      const urlParts = url.split('/');
+      const workflowId = Number(urlParts[urlParts.length - 2]);
+      const payload = body as any;
+
+      // 检查工作流是否存在
+      const workflow = mockWorkflows.find((w) => w.id === workflowId);
+      if (!workflow) {
+        return of(
+          new HttpResponse({
+            status: 404,
+            body: { message: 'Workflow not found' },
+          }),
+        );
+      }
+
+      // 创建或更新表单数据
+      const existingIndex = mockWorkflowFormData.findIndex(
+        (d) => d.workflowId === workflowId,
+      );
+
+      const formDataRecord = {
+        id:
+          existingIndex !== -1
+            ? mockWorkflowFormData[existingIndex].id
+            : mockWorkflowFormData.length + 1,
+        workflowId: workflowId,
+        formConfigId: payload.formConfigId,
+        formData: payload.formData,
+        submittedBy: payload.submittedBy,
+        submittedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      if (existingIndex !== -1) {
+        mockWorkflowFormData[existingIndex] = formDataRecord;
+      } else {
+        mockWorkflowFormData.push(formDataRecord);
+      }
+
+      return of(
+        new HttpResponse({
+          status: 201,
+          body: formDataRecord,
+        }),
+      );
+    }
+
+    // GET /api/workflows/:id/form-data - 获取表单数据
+    if (url.match(/api\/workflows\/\d+\/form-data$/) && method === 'GET') {
+      const urlParts = url.split('/');
+      const workflowId = Number(urlParts[urlParts.length - 2]);
+
+      const formData = mockWorkflowFormData.find(
+        (d) => d.workflowId === workflowId,
+      );
+
+      if (formData) {
+        return of(new HttpResponse({ status: 200, body: formData }));
+      }
+
+      return of(
+        new HttpResponse({
+          status: 404,
+          body: { message: 'Form data not found' },
+        }),
+      );
+    }
+
+    // PUT /api/workflows/:id/form-data - 更新表单数据
+    if (url.match(/api\/workflows\/\d+\/form-data$/) && method === 'PUT') {
+      const urlParts = url.split('/');
+      const workflowId = Number(urlParts[urlParts.length - 2]);
+      const payload = body as any;
+
+      const index = mockWorkflowFormData.findIndex(
+        (d) => d.workflowId === workflowId,
+      );
+
+      if (index !== -1) {
+        mockWorkflowFormData[index] = {
+          ...mockWorkflowFormData[index],
+          ...payload,
+          updatedAt: new Date().toISOString(),
+        };
+        return of(
+          new HttpResponse({
+            status: 200,
+            body: mockWorkflowFormData[index],
+          }),
+        );
+      }
+
+      return of(
+        new HttpResponse({
+          status: 404,
+          body: { message: 'Form data not found' },
+        }),
+      );
+    }
+
+    // DELETE /api/workflows/:id/form-data - 删除表单数据
+    if (url.match(/api\/workflows\/\d+\/form-data$/) && method === 'DELETE') {
+      const urlParts = url.split('/');
+      const workflowId = Number(urlParts[urlParts.length - 2]);
+
+      const index = mockWorkflowFormData.findIndex(
+        (d) => d.workflowId === workflowId,
+      );
+
+      if (index !== -1) {
+        mockWorkflowFormData.splice(index, 1);
+        return of(new HttpResponse({ status: 204 }));
+      }
+
+      return of(
+        new HttpResponse({
+          status: 404,
+          body: { message: 'Form data not found' },
+        }),
+      );
     }
 
     // 动态表单API

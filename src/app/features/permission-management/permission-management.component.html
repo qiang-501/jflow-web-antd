@@ -16,16 +16,20 @@
     <!-- 右侧操作权限列表 -->
     <nz-card class="action-list-card">
       <div class="action-header">
-        <div class="menu-info" *ngIf="selectedMenu">
-          <h3>{{ selectedMenu.menuName }}</h3>
-          <p>
-            <nz-tag nzColor="blue">{{ selectedMenu.path }}</nz-tag>
-            <nz-tag *ngIf="selectedMenu.icon" nzColor="purple">
-              <span nz-icon [nzType]="selectedMenu.icon"></span>
-              {{ selectedMenu.icon }}
-            </nz-tag>
-          </p>
-        </div>
+        @if (selectedMenu) {
+          <div class="menu-info">
+            <h3>{{ selectedMenu.menuName }}</h3>
+            <p>
+              <nz-tag nzColor="blue">{{ selectedMenu.path }}</nz-tag>
+              @if (selectedMenu.icon) {
+                <nz-tag nzColor="purple">
+                  <span nz-icon [nzType]="selectedMenu.icon"></span>
+                  {{ selectedMenu.icon }}
+                </nz-tag>
+              }
+            </p>
+          </div>
+        }
         <button
           nz-button
           nzType="primary"
@@ -37,63 +41,68 @@
         </button>
       </div>
 
-      <div *ngIf="!selectedMenu" class="empty-state">
-        <nz-empty nzNotFoundContent="请从左侧选择一个菜单"></nz-empty>
-      </div>
+      @if (!selectedMenu) {
+        <div class="empty-state">
+          <nz-empty nzNotFoundContent="请从左侧选择一个菜单"></nz-empty>
+        </div>
+      }
 
-      <nz-table
-        *ngIf="selectedMenu"
-        [nzData]="selectedMenu.actions"
-        [nzPageSize]="10"
-        [nzShowPagination]="true"
-      >
-        <thead>
-          <tr>
-            <th>操作名称</th>
-            <th>操作编码</th>
-            <th>描述</th>
-            <th nzWidth="150px">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let action of selectedMenu.actions">
-            <td>{{ action.name }}</td>
-            <td>
-              <nz-tag [nzColor]="getActionTypeColor(action.code)">
-                {{ action.code }}
-              </nz-tag>
-            </td>
-            <td>{{ action.description || "-" }}</td>
-            <td>
-              <nz-space>
-                <button
-                  *nzSpaceItem
-                  nz-button
-                  nzType="link"
-                  nzSize="small"
-                  (click)="showEditActionModal(action)"
-                >
-                  <span nz-icon nzType="edit"></span>
-                  编辑
-                </button>
-                <button
-                  *nzSpaceItem
-                  nz-button
-                  nzType="link"
-                  nzSize="small"
-                  nzDanger
-                  nz-popconfirm
-                  nzPopconfirmTitle="确定要删除此操作权限吗?"
-                  (nzOnConfirm)="deleteAction(action)"
-                >
-                  <span nz-icon nzType="delete"></span>
-                  删除
-                </button>
-              </nz-space>
-            </td>
-          </tr>
-        </tbody>
-      </nz-table>
+      @if (selectedMenu) {
+        <nz-table
+          [nzData]="selectedMenu.actions"
+          [nzPageSize]="10"
+          [nzShowPagination]="true"
+        >
+          <thead>
+            <tr>
+              <th>操作名称</th>
+              <th>操作编码</th>
+              <th>描述</th>
+              <th nzWidth="150px">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (action of selectedMenu.actions; track action.id) {
+              <tr>
+                <td>{{ action.name }}</td>
+                <td>
+                  <nz-tag [nzColor]="getActionTypeColor(action.code)">
+                    {{ action.code }}
+                  </nz-tag>
+                </td>
+                <td>{{ action.description || "-" }}</td>
+                <td>
+                  <nz-space>
+                    <button
+                      *nzSpaceItem
+                      nz-button
+                      nzType="link"
+                      nzSize="small"
+                      (click)="showEditActionModal(action)"
+                    >
+                      <span nz-icon nzType="edit"></span>
+                      编辑
+                    </button>
+                    <button
+                      *nzSpaceItem
+                      nz-button
+                      nzType="link"
+                      nzSize="small"
+                      nzDanger
+                      nz-popconfirm
+                      nzPopconfirmTitle="确定要删除此操作权限吗?"
+                      (nzOnConfirm)="deleteAction(action)"
+                    >
+                      <span nz-icon nzType="delete"></span>
+                      删除
+                    </button>
+                  </nz-space>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </nz-table>
+      }
     </nz-card>
   </div>
 
@@ -101,14 +110,18 @@
   <nz-modal
     [(nzVisible)]="isActionModalVisible"
     [nzTitle]="isEditMode ? '编辑操作权限' : '新增操作权限'"
+    [nzMaskClosable]="false"
+    [nzBodyStyle]="{ maxHeight: '60vh', overflowY: 'auto' }"
     (nzOnCancel)="handleActionCancel()"
     (nzOnOk)="handleActionSubmit()"
     [nzOkLoading]="(loading$ | async) || false"
   >
     <ng-container *nzModalContent>
-      <div class="modal-menu-info" *ngIf="selectedMenu">
-        <p><strong>菜单：</strong>{{ selectedMenu.menuName }}</p>
-      </div>
+      @if (selectedMenu) {
+        <div class="modal-menu-info">
+          <p><strong>菜单：</strong>{{ selectedMenu.menuName }}</p>
+        </div>
+      }
 
       <form nz-form [formGroup]="actionForm" nzLayout="vertical">
         <nz-form-item>

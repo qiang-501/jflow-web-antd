@@ -1,4 +1,7 @@
 // permission.model.ts
+import { EntityState } from '@ngrx/entity';
+import { ApiError } from './store.model';
+
 export interface Permission {
   id: string;
   name: string;
@@ -55,12 +58,11 @@ export interface UpdatePermissionDto {
   action?: string;
 }
 
-export interface PermissionState {
-  permissions: Permission[];
+export interface PermissionState extends EntityState<Permission> {
   menuPermissions: MenuPermission[];
-  selectedPermission: Permission | null;
+  selectedPermissionId: string | null;
   loading: boolean;
-  error: any;
+  error: ApiError | null;
 }
 
 // 权限检查结果

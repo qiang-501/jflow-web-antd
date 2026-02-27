@@ -2,6 +2,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import {
   Role,
   RoleTree,
@@ -21,7 +22,9 @@ export class RoleService {
    * 获取所有角色列表
    */
   getRoles(): Observable<Role[]> {
-    return this.http.get<Role[]>(this.apiUrl);
+    return this.http
+      .get<{ data: Role[]; total: number }>(this.apiUrl)
+      .pipe(map((response) => response.data || (response as any)));
   }
 
   /**

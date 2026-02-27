@@ -1,40 +1,43 @@
 <ul class="menu" nz-menu [nzMode]="'inline'" [nzTheme]="'dark'">
-  <ng-container *ngFor="let item of menus">
+  @for (item of menus; track item) {
     <ng-template #recursiveList let-menu>
-      <ng-container *ngFor="let node of menu">
-        <li *ngIf="!node.children" nz-menu-item nzMatchRouter>
-          <a
-            *ngIf="node.link"
-            [routerLink]="node.link"
-            rel="noopener noreferrer"
-          >
-            <span *ngIf="node.icon" nz-icon [nzType]="node.icon"></span>
-            <span>{{ node.title }}</span>
-          </a>
-          <span *ngIf="!node.link">
-            <span *ngIf="node.icon" nz-icon [nzType]="node.icon"></span>
-            <span>{{ node.title }}</span>
-          </span>
-        </li>
-        <li
-          *ngIf="node.children"
-          nz-submenu
-          [nzTitle]="node.title"
-          [nzIcon]="node.icon"
-        >
-          <ul>
-            <ng-container
-              *ngTemplateOutlet="
-                recursiveList;
-                context: { $implicit: node.children }
-              "
-            ></ng-container>
-          </ul>
-        </li>
-      </ng-container>
+      @for (node of menu; track node) {
+        @if (!node.children) {
+          <li nz-menu-item nzMatchRouter>
+            @if (node.link) {
+              <a [routerLink]="node.link" rel="noopener noreferrer">
+                @if (node.icon) {
+                  <span nz-icon [nzType]="node.icon"></span>
+                }
+                <span>{{ node.title }}</span>
+              </a>
+            }
+            @if (!node.link) {
+              <span>
+                @if (node.icon) {
+                  <span nz-icon [nzType]="node.icon"></span>
+                }
+                <span>{{ node.title }}</span>
+              </span>
+            }
+          </li>
+        }
+        @if (node.children) {
+          <li nz-submenu [nzTitle]="node.title" [nzIcon]="node.icon">
+            <ul>
+              <ng-container
+                *ngTemplateOutlet="
+                  recursiveList;
+                  context: { $implicit: node.children }
+                "
+              ></ng-container>
+            </ul>
+          </li>
+        }
+      }
     </ng-template>
     <ng-container
       *ngTemplateOutlet="recursiveList; context: { $implicit: [item] }"
     ></ng-container>
-  </ng-container>
+  }
 </ul>

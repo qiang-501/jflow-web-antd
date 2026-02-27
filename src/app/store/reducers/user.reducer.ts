@@ -1,14 +1,21 @@
 // user.reducer.ts
 import { createReducer, on } from '@ngrx/store';
-import { UserState } from '../../models/user.model';
+import { createEntityAdapter, EntityAdapter } from '@ngrx/entity';
+import { UserState, User } from '../../models/user.model';
 import { UserActions } from '../actions/user.actions';
 
-export const initialState: UserState = {
-  users: [],
-  selectedUser: null,
+// 创建 Entity Adapter
+export const userAdapter: EntityAdapter<User> = createEntityAdapter<User>({
+  selectId: (user: User) => user.id,
+  sortComparer: false, // 不排序，保持服务器返回的顺序
+});
+
+// 使用 adapter 的 getInitialState 方法
+export const initialState: UserState = userAdapter.getInitialState({
+  selectedUserId: null,
   loading: false,
   error: null,
-};
+});
 
 export const userReducer = createReducer(
   initialState,
@@ -19,11 +26,12 @@ export const userReducer = createReducer(
     loading: true,
     error: null,
   })),
-  on(UserActions.usersLoadedSuccess, (state, { payload }) => ({
-    ...state,
-    users: payload,
-    loading: false,
-  })),
+  on(UserActions.usersLoadedSuccess, (state, { payload }) =>
+    userAdapter.setAll(payload, {
+      ...state,
+      loading: false,
+    }),
+  ),
   on(UserActions.usersLoadedError, (state, { payload }) => ({
     ...state,
     loading: false,
@@ -36,11 +44,13 @@ export const userReducer = createReducer(
     loading: true,
     error: null,
   })),
-  on(UserActions.userLoadedSuccess, (state, { payload }) => ({
-    ...state,
-    selectedUser: payload,
-    loading: false,
-  })),
+  on(UserActions.userLoadedSuccess, (state, { payload }) =>
+    userAdapter.upsertOne(payload, {
+      ...state,
+      selectedUserId: payload.id,
+      loading: false,
+    }),
+  ),
   on(UserActions.userLoadedError, (state, { payload }) => ({
     ...state,
     loading: false,
@@ -53,11 +63,12 @@ export const userReducer = createReducer(
     loading: true,
     error: null,
   })),
-  on(UserActions.createUserSuccess, (state, { payload }) => ({
-    ...state,
-    users: [...state.users, payload],
-    loading: false,
-  })),
+  on(UserActions.createUserSuccess, (state, { payload }) =>
+    userAdapter.addOne(payload, {
+      ...state,
+      loading: false,
+    }),
+  ),
   on(UserActions.createUserError, (state, { payload }) => ({
     ...state,
     loading: false,
@@ -70,13 +81,15 @@ export const userReducer = createReducer(
     loading: true,
     error: null,
   })),
-  on(UserActions.updateUserSuccess, (state, { payload }) => ({
-    ...state,
-    users: state.users.map((user) => (user.id === payload.id ? payload : user)),
-    selectedUser:
-      state.selectedUser?.id === payload.id ? payload : state.selectedUser,
-    loading: false,
-  })),
+  on(UserActions.updateUserSuccess, (state, { payload }) =>
+    userAdapter.updateOne(
+      { id: payload.id, changes: payload },
+      {
+        ...state,
+        loading: false,
+      },
+    ),
+  ),
   on(UserActions.updateUserError, (state, { payload }) => ({
     ...state,
     loading: false,
@@ -89,29 +102,31 @@ export const userReducer = createReducer(
     loading: true,
     error: null,
   })),
-  on(UserActions.deleteUserSuccess, (state, { id }) => ({
-    ...state,
-    users: state.users.filter((user) => user.id !== id),
-    selectedUser: state.selectedUser?.id === id ? null : state.selectedUser,
-    loading: false,
-  })),
+  on(UserActions.deleteUserSuccess, (state, { id }) =>
+    userAdapter.removeOne(id, {
+      ...state,
+      selectedUserId: state.selectedUserId === id ? null : state.selectedUserId,
+      loading: false,
+    }),
+  ),
   on(UserActions.deleteUserError, (state, { payload }) => ({
     ...state,
     loading: false,
     error: payload,
   })),
 
-  // Delete Users
+  // Delete Users (批量删除)
   on(UserActions.deleteUsers, (state) => ({
     ...state,
     loading: true,
     error: null,
   })),
-  on(UserActions.deleteUsersSuccess, (state, { ids }) => ({
-    ...state,
-    users: state.users.filter((user) => !ids.includes(user.id)),
-    loading: false,
-  })),
+  on(UserActions.deleteUsersSuccess, (state, { ids }) =>
+    userAdapter.removeMany(ids, {
+      ...state,
+      loading: false,
+    }),
+  ),
   on(UserActions.deleteUsersError, (state, { payload }) => ({
     ...state,
     loading: false,
@@ -124,13 +139,15 @@ export const userReducer = createReducer(
     loading: true,
     error: null,
   })),
-  on(UserActions.assignRolesSuccess, (state, { payload }) => ({
-    ...state,
-    users: state.users.map((user) => (user.id === payload.id ? payload : user)),
-    selectedUser:
-      state.selectedUser?.id === payload.id ? payload : state.selectedUser,
-    loading: false,
-  })),
+  on(UserActions.assignRolesSuccess, (state, { payload }) =>
+    userAdapter.updateOne(
+      { id: payload.id, changes: payload },
+      {
+        ...state,
+        loading: false,
+      },
+    ),
+  ),
   on(UserActions.assignRolesError, (state, { payload }) => ({
     ...state,
     loading: false,
@@ -156,6 +173,6 @@ export const userReducer = createReducer(
   // Select User
   on(UserActions.selectUser, (state, { user }) => ({
     ...state,
-    selectedUser: user,
+    selectedUserId: user?.id ?? null,
   })),
 );

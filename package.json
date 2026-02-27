@@ -25,6 +25,7 @@
     "@ngrx/entity": "^21.0.1",
     "@ngrx/router-store": "^21.0.1",
     "@ngrx/store": "^21.0.1",
+    "@ngrx/store-devtools": "^21.0.1",
     "@ngx-translate/core": "^17.0.0",
     "@ngx-translate/http-loader": "^17.0.0",
     "ag-grid-angular": "^34.0.0",

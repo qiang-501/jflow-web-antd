@@ -11,7 +11,11 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { PermissionsService } from './permissions.service';
-import { CreatePermissionDto, UpdatePermissionDto, CheckPermissionDto } from './permission.dto';
+import {
+  CreatePermissionDto,
+  UpdatePermissionDto,
+  CheckPermissionDto,
+} from './permission.dto';
 
 @ApiTags('permissions')
 @Controller('permissions')
@@ -25,6 +29,57 @@ export class PermissionsController {
   @ApiResponse({ status: 200, description: 'Return all permissions.' })
   findAll(@Query('page') page = 1, @Query('limit') limit = 10) {
     return this.permissionsService.findAll(+page, +limit);
+  }
+
+  @Get('menus')
+  @ApiOperation({ summary: 'Get menu permissions tree' })
+  @ApiResponse({ status: 200, description: 'Return menu permissions tree.' })
+  getMenuPermissions() {
+    return this.permissionsService.getMenuPermissions();
+  }
+
+  @Post('menus/:menuId/actions')
+  @ApiOperation({ summary: 'Create menu action permission' })
+  @ApiResponse({
+    status: 201,
+    description: 'Menu action permission created successfully.',
+  })
+  createMenuAction(
+    @Param('menuId', ParseIntPipe) menuId: number,
+    @Body() createActionDto: any,
+  ) {
+    return this.permissionsService.createMenuAction(menuId, createActionDto);
+  }
+
+  @Put('menus/:menuId/actions/:actionId')
+  @ApiOperation({ summary: 'Update menu action permission' })
+  @ApiResponse({
+    status: 200,
+    description: 'Menu action permission updated successfully.',
+  })
+  updateMenuAction(
+    @Param('menuId', ParseIntPipe) menuId: number,
+    @Param('actionId', ParseIntPipe) actionId: number,
+    @Body() updateActionDto: any,
+  ) {
+    return this.permissionsService.updateMenuAction(
+      menuId,
+      actionId,
+      updateActionDto,
+    );
+  }
+
+  @Delete('menus/:menuId/actions/:actionId')
+  @ApiOperation({ summary: 'Delete menu action permission' })
+  @ApiResponse({
+    status: 200,
+    description: 'Menu action permission deleted successfully.',
+  })
+  deleteMenuAction(
+    @Param('menuId', ParseIntPipe) menuId: number,
+    @Param('actionId', ParseIntPipe) actionId: number,
+  ) {
+    return this.permissionsService.deleteMenuAction(menuId, actionId);
   }
 
   @Get(':id')

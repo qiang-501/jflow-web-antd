@@ -4,9 +4,10 @@ import { PermissionsController } from './permissions.controller';
 import { PermissionsService } from './permissions.service';
 import { Permission } from './permission.entity';
 import { User } from '../users/user.entity';
+import { Menu } from '../menus/menu.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Permission, User])],
+  imports: [TypeOrmModule.forFeature([Permission, User, Menu])],
   controllers: [PermissionsController],
   providers: [PermissionsService],
   exports: [PermissionsService],

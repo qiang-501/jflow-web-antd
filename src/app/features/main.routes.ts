@@ -12,6 +12,13 @@ export const MAIN_ROUTES: Routes = [
       import('./workflow/workflow.component').then((m) => m.WorkflowComponent),
   },
   {
+    path: 'workflow-templates',
+    loadComponent: () =>
+      import('./workflow/workflow-template-management.component').then(
+        (m) => m.WorkflowTemplateManagementComponent,
+      ),
+  },
+  {
     path: 'settings',
     loadComponent: () =>
       import('./system/system.settings.component').then(
@@ -37,6 +44,13 @@ export const MAIN_ROUTES: Routes = [
     loadComponent: () =>
       import('./permission-management/permission-management.component').then(
         (m) => m.PermissionManagementComponent,
+      ),
+  },
+  {
+    path: 'menus',
+    loadComponent: () =>
+      import('./system/menu-management.component').then(
+        (m) => m.MenuManagementComponent,
       ),
   },
 ];

@@ -1,15 +1,22 @@
 // role.reducer.ts
 import { createReducer, on } from '@ngrx/store';
-import { RoleState } from '../../models/role.model';
+import { createEntityAdapter, EntityAdapter } from '@ngrx/entity';
+import { RoleState, Role } from '../../models/role.model';
 import { RoleActions } from '../actions/role.actions';
 
-export const initialState: RoleState = {
-  roles: [],
+// 创建 Entity Adapter
+export const roleAdapter: EntityAdapter<Role> = createEntityAdapter<Role>({
+  selectId: (role: Role) => role.id,
+  sortComparer: false,
+});
+
+// 使用 adapter 的 getInitialState 方法
+export const initialState: RoleState = roleAdapter.getInitialState({
   roleTree: [],
-  selectedRole: null,
+  selectedRoleId: null,
   loading: false,
   error: null,
-};
+});
 
 export const roleReducer = createReducer(
   initialState,
@@ -20,11 +27,12 @@ export const roleReducer = createReducer(
     loading: true,
     error: null,
   })),
-  on(RoleActions.rolesLoadedSuccess, (state, { payload }) => ({
-    ...state,
-    roles: payload,
-    loading: false,
-  })),
+  on(RoleActions.rolesLoadedSuccess, (state, { payload }) =>
+    roleAdapter.setAll(payload, {
+      ...state,
+      loading: false,
+    }),
+  ),
   on(RoleActions.rolesLoadedError, (state, { payload }) => ({
     ...state,
     loading: false,
@@ -54,11 +62,13 @@ export const roleReducer = createReducer(
     loading: true,
     error: null,
   })),
-  on(RoleActions.roleLoadedSuccess, (state, { payload }) => ({
-    ...state,
-    selectedRole: payload,
-    loading: false,
-  })),
+  on(RoleActions.roleLoadedSuccess, (state, { payload }) =>
+    roleAdapter.upsertOne(payload, {
+      ...state,
+      selectedRoleId: payload.id,
+      loading: false,
+    }),
+  ),
   on(RoleActions.roleLoadedError, (state, { payload }) => ({
     ...state,
     loading: false,
@@ -71,11 +81,12 @@ export const roleReducer = createReducer(
     loading: true,
     error: null,
   })),
-  on(RoleActions.createRoleSuccess, (state, { payload }) => ({
-    ...state,
-    roles: [...state.roles, payload],
-    loading: false,
-  })),
+  on(RoleActions.createRoleSuccess, (state, { payload }) =>
+    roleAdapter.addOne(payload, {
+      ...state,
+      loading: false,
+    }),
+  ),
   on(RoleActions.createRoleError, (state, { payload }) => ({
     ...state,
     loading: false,
@@ -88,13 +99,15 @@ export const roleReducer = createReducer(
     loading: true,
     error: null,
   })),
-  on(RoleActions.updateRoleSuccess, (state, { payload }) => ({
-    ...state,
-    roles: state.roles.map((role) => (role.id === payload.id ? payload : role)),
-    selectedRole:
-      state.selectedRole?.id === payload.id ? payload : state.selectedRole,
-    loading: false,
-  })),
+  on(RoleActions.updateRoleSuccess, (state, { payload }) =>
+    roleAdapter.updateOne(
+      { id: payload.id, changes: payload },
+      {
+        ...state,
+        loading: false,
+      },
+    ),
+  ),
   on(RoleActions.updateRoleError, (state, { payload }) => ({
     ...state,
     loading: false,
@@ -107,12 +120,13 @@ export const roleReducer = createReducer(
     loading: true,
     error: null,
   })),
-  on(RoleActions.deleteRoleSuccess, (state, { id }) => ({
-    ...state,
-    roles: state.roles.filter((role) => role.id !== id),
-    selectedRole: state.selectedRole?.id === id ? null : state.selectedRole,
-    loading: false,
-  })),
+  on(RoleActions.deleteRoleSuccess, (state, { id }) =>
+    roleAdapter.removeOne(id, {
+      ...state,
+      selectedRoleId: state.selectedRoleId === id ? null : state.selectedRoleId,
+      loading: false,
+    }),
+  ),
   on(RoleActions.deleteRoleError, (state, { payload }) => ({
     ...state,
     loading: false,
@@ -125,13 +139,15 @@ export const roleReducer = createReducer(
     loading: true,
     error: null,
   })),
-  on(RoleActions.assignPermissionsSuccess, (state, { payload }) => ({
-    ...state,
-    roles: state.roles.map((role) => (role.id === payload.id ? payload : role)),
-    selectedRole:
-      state.selectedRole?.id === payload.id ? payload : state.selectedRole,
-    loading: false,
-  })),
+  on(RoleActions.assignPermissionsSuccess, (state, { payload }) =>
+    roleAdapter.updateOne(
+      { id: payload.id, changes: payload },
+      {
+        ...state,
+        loading: false,
+      },
+    ),
+  ),
   on(RoleActions.assignPermissionsError, (state, { payload }) => ({
     ...state,
     loading: false,
@@ -157,6 +173,6 @@ export const roleReducer = createReducer(
   // Select Role
   on(RoleActions.selectRole, (state, { role }) => ({
     ...state,
-    selectedRole: role,
+    selectedRoleId: role?.id ?? null,
   })),
 );

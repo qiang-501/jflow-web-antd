@@ -28,62 +28,66 @@
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let user of userTable.data">
-        <td>{{ user.username }}</td>
-        <td>{{ user.fullName }}</td>
-        <td>{{ user.email }}</td>
-        <td>{{ user.phone || "-" }}</td>
-        <td>
-          <nz-tag *ngFor="let roleId of user.roleIds" nzColor="blue">
-            {{ roleId }}
-          </nz-tag>
-        </td>
-        <td>
-          <nz-tag [nzColor]="getStatusColor(user.status)">
-            {{ user.status }}
-          </nz-tag>
-        </td>
-        <td>
-          {{ user.lastLoginAt ? (user.lastLoginAt | date: "short") : "-" }}
-        </td>
-        <td>
-          <nz-space>
-            <button
-              *nzSpaceItem
-              nz-button
-              nzType="link"
-              nzSize="small"
-              (click)="showEditModal(user)"
-            >
-              <span nz-icon nzType="edit"></span>
-              编辑
-            </button>
-            <button
-              *nzSpaceItem
-              nz-button
-              nzType="link"
-              nzSize="small"
-              (click)="resetPassword(user)"
-            >
-              <span nz-icon nzType="key"></span>
-              重置密码
-            </button>
-            <button
-              *nzSpaceItem
-              nz-button
-              nzType="link"
-              nzSize="small"
-              nzDanger
-              nz-popconfirm
-              nzPopconfirmTitle="确定要删除此用户吗?"
-              (nzOnConfirm)="deleteUser(user.id)"
-            >
-              <span nz-icon nzType="delete"></span>
-              删除
-            </button>
-          </nz-space>
-        </td>
-      </tr>
+      @for (user of userTable.data; track user.id) {
+        <tr>
+          <td>{{ user.username }}</td>
+          <td>{{ user.fullName }}</td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.phone || "-" }}</td>
+          <td>
+            @for (roleId of user.roleIds; track roleId) {
+              <nz-tag nzColor="blue">
+                {{ roleId }}
+              </nz-tag>
+            }
+          </td>
+          <td>
+            <nz-tag [nzColor]="getStatusColor(user.status)">
+              {{ user.status }}
+            </nz-tag>
+          </td>
+          <td>
+            {{ user.lastLoginAt ? (user.lastLoginAt | date: "short") : "-" }}
+          </td>
+          <td>
+            <nz-space>
+              <button
+                *nzSpaceItem
+                nz-button
+                nzType="link"
+                nzSize="small"
+                (click)="showEditModal(user)"
+              >
+                <span nz-icon nzType="edit"></span>
+                编辑
+              </button>
+              <button
+                *nzSpaceItem
+                nz-button
+                nzType="link"
+                nzSize="small"
+                (click)="resetPassword(user)"
+              >
+                <span nz-icon nzType="key"></span>
+                重置密码
+              </button>
+              <button
+                *nzSpaceItem
+                nz-button
+                nzType="link"
+                nzSize="small"
+                nzDanger
+                nz-popconfirm
+                nzPopconfirmTitle="确定要删除此用户吗?"
+                (nzOnConfirm)="deleteUser(user.id)"
+              >
+                <span nz-icon nzType="delete"></span>
+                删除
+              </button>
+            </nz-space>
+          </td>
+        </tr>
+      }
     </tbody>
   </nz-table>
 
@@ -91,6 +95,8 @@
   <nz-modal
     [(nzVisible)]="isModalVisible"
     [nzTitle]="isEditMode ? '编辑用户' : '新增用户'"
+    [nzMaskClosable]="false"
+    [nzBodyStyle]="{ maxHeight: '60vh', overflowY: 'auto' }"
     (nzOnCancel)="handleCancel()"
     (nzOnOk)="handleSubmit()"
     [nzOkLoading]="(loading$ | async) || false"
@@ -131,17 +137,19 @@
           </nz-form-control>
         </nz-form-item>
 
-        <nz-form-item *ngIf="!isEditMode">
-          <nz-form-label nzRequired>密码</nz-form-label>
-          <nz-form-control nzErrorTip="请输入至少6个字符的密码">
-            <input
-              nz-input
-              formControlName="password"
-              type="password"
-              placeholder="请输入密码"
-            />
-          </nz-form-control>
-        </nz-form-item>
+        @if (!isEditMode) {
+          <nz-form-item>
+            <nz-form-label nzRequired>密码</nz-form-label>
+            <nz-form-control nzErrorTip="请输入至少6个字符的密码">
+              <input
+                nz-input
+                formControlName="password"
+                type="password"
+                placeholder="请输入密码"
+              />
+            </nz-form-control>
+          </nz-form-item>
+        }
 
         <nz-form-item>
           <nz-form-label>电话</nz-form-label>
@@ -159,34 +167,37 @@
               nzPlaceHolder="请选择角色"
               nzShowSearch
             >
-              <nz-option
-                *ngFor="let role of roles$ | async"
-                [nzLabel]="role.name"
-                [nzValue]="role.id"
-              ></nz-option>
+              @for (role of roles$ | async; track role.id) {
+                <nz-option
+                  [nzLabel]="role.name"
+                  [nzValue]="role.id"
+                ></nz-option>
+              }
             </nz-select>
           </nz-form-control>
         </nz-form-item>
 
-        <nz-form-item *ngIf="isEditMode">
-          <nz-form-label>状态</nz-form-label>
-          <nz-form-control>
-            <nz-select formControlName="status" nzPlaceHolder="请选择状态">
-              <nz-option
-                [nzLabel]="'激活'"
-                [nzValue]="UserStatus.Active"
-              ></nz-option>
-              <nz-option
-                [nzLabel]="'未激活'"
-                [nzValue]="UserStatus.Inactive"
-              ></nz-option>
-              <nz-option
-                [nzLabel]="'锁定'"
-                [nzValue]="UserStatus.Locked"
-              ></nz-option>
-            </nz-select>
-          </nz-form-control>
-        </nz-form-item>
+        @if (isEditMode) {
+          <nz-form-item>
+            <nz-form-label>状态</nz-form-label>
+            <nz-form-control>
+              <nz-select formControlName="status" nzPlaceHolder="请选择状态">
+                <nz-option
+                  [nzLabel]="'激活'"
+                  [nzValue]="UserStatus.Active"
+                ></nz-option>
+                <nz-option
+                  [nzLabel]="'未激活'"
+                  [nzValue]="UserStatus.Inactive"
+                ></nz-option>
+                <nz-option
+                  [nzLabel]="'锁定'"
+                  [nzValue]="UserStatus.Locked"
+                ></nz-option>
+              </nz-select>
+            </nz-form-control>
+          </nz-form-item>
+        }
       </form>
     </ng-container>
   </nz-modal>

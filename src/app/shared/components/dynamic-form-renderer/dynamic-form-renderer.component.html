@@ -5,147 +5,155 @@
   (ngSubmit)="onSubmit()"
 >
   <div nz-row [nzGutter]="16">
-    <ng-container *ngFor="let field of getVisibleFields()">
-      <div nz-col [nzSpan]="getFieldWidth(field)" *ngIf="isFieldVisible(field)">
-        <nz-form-item>
-          <nz-form-label [nzRequired]="field.validation?.required">
-            {{ field.label }}
-          </nz-form-label>
-          <nz-form-control [nzErrorTip]="getErrorMessage(field)">
-            <!-- 文本输入框 -->
-            <input
-              *ngIf="
+    @for (field of getVisibleFields(); track field.name) {
+      @if (isFieldVisible(field)) {
+        <div nz-col [nzSpan]="getFieldWidth(field)">
+          <nz-form-item>
+            <nz-form-label [nzRequired]="field.validation?.required">
+              {{ field.label }}
+            </nz-form-label>
+            <nz-form-control [nzErrorTip]="getErrorMessage(field)">
+              <!-- 文本输入框 -->
+              @if (
                 field.type === FieldType.TEXT ||
                 field.type === FieldType.EMAIL ||
                 field.type === FieldType.URL
-              "
-              nz-input
-              [formControlName]="field.name"
-              [placeholder]="field.placeholder || ''"
-              [type]="
-                field.type === FieldType.EMAIL
-                  ? 'email'
-                  : field.type === FieldType.URL
-                    ? 'url'
-                    : 'text'
-              "
-            />
+              ) {
+                <input
+                  nz-input
+                  [formControlName]="field.name"
+                  [placeholder]="field.placeholder || ''"
+                  [type]="
+                    field.type === FieldType.EMAIL
+                      ? 'email'
+                      : field.type === FieldType.URL
+                        ? 'url'
+                        : 'text'
+                  "
+                />
+              }
 
-            <!-- 数字输入框 -->
-            <nz-input-number
-              *ngIf="field.type === FieldType.NUMBER"
-              [formControlName]="field.name"
-              [nzPlaceHolder]="field.placeholder || ''"
-              [nzMin]="field.validation?.min"
-              [nzMax]="field.validation?.max"
-              style="width: 100%"
-            ></nz-input-number>
+              <!-- 数字输入框 -->
+              @if (field.type === FieldType.NUMBER) {
+                <nz-input-number
+                  [formControlName]="field.name"
+                  [nzPlaceHolder]="field.placeholder || ''"
+                  [nzMin]="field.validation?.min"
+                  [nzMax]="field.validation?.max"
+                  style="width: 100%"
+                ></nz-input-number>
+              }
 
-            <!-- 文本域 -->
-            <textarea
-              *ngIf="field.type === FieldType.TEXTAREA"
-              nz-input
-              [formControlName]="field.name"
-              [placeholder]="field.placeholder || ''"
-              [nzAutosize]="{ minRows: 3, maxRows: 6 }"
-            ></textarea>
+              <!-- 文本域 -->
+              @if (field.type === FieldType.TEXTAREA) {
+                <textarea
+                  nz-input
+                  [formControlName]="field.name"
+                  [placeholder]="field.placeholder || ''"
+                  [nzAutosize]="{ minRows: 3, maxRows: 6 }"
+                ></textarea>
+              }
 
-            <!-- 下拉选择 -->
-            <nz-select
-              *ngIf="field.type === FieldType.SELECT"
-              [formControlName]="field.name"
-              [nzPlaceHolder]="field.placeholder || '请选择'"
-              style="width: 100%"
-            >
-              <nz-option
-                *ngFor="let option of field.options"
-                [nzValue]="option.value"
-                [nzLabel]="option.label"
-                [nzDisabled]="option.disabled"
-              ></nz-option>
-            </nz-select>
+              <!-- 下拉选择 -->
+              @if (field.type === FieldType.SELECT) {
+                <nz-select
+                  [formControlName]="field.name"
+                  [nzPlaceHolder]="field.placeholder || '请选择'"
+                  style="width: 100%"
+                >
+                  @for (option of field.options; track option.value) {
+                    <nz-option
+                      [nzValue]="option.value"
+                      [nzLabel]="option.label"
+                      [nzDisabled]="option.disabled"
+                    ></nz-option>
+                  }
+                </nz-select>
+              }
 
-            <!-- 多选下拉 -->
-            <nz-select
-              *ngIf="field.type === FieldType.MULTI_SELECT"
-              [formControlName]="field.name"
-              [nzPlaceHolder]="field.placeholder || '请选择'"
-              nzMode="multiple"
-              style="width: 100%"
-            >
-              <nz-option
-                *ngFor="let option of field.options"
-                [nzValue]="option.value"
-                [nzLabel]="option.label"
-                [nzDisabled]="option.disabled"
-              ></nz-option>
-            </nz-select>
+              <!-- 多选下拉 -->
+              @if (field.type === FieldType.MULTI_SELECT) {
+                <nz-select
+                  [formControlName]="field.name"
+                  [nzPlaceHolder]="field.placeholder || '请选择'"
+                  nzMode="multiple"
+                  style="width: 100%"
+                >
+                  @for (option of field.options; track option.value) {
+                    <nz-option
+                      [nzValue]="option.value"
+                      [nzLabel]="option.label"
+                      [nzDisabled]="option.disabled"
+                    ></nz-option>
+                  }
+                </nz-select>
+              }
 
-            <!-- 日期选择器 -->
-            <nz-date-picker
-              *ngIf="field.type === FieldType.DATE"
-              [formControlName]="field.name"
-              [nzPlaceHolder]="field.placeholder || '请选择日期'"
-              style="width: 100%"
-            ></nz-date-picker>
+              <!-- 日期选择器 -->
+              @if (field.type === FieldType.DATE) {
+                <nz-date-picker
+                  [formControlName]="field.name"
+                  [nzPlaceHolder]="field.placeholder || '请选择日期'"
+                  style="width: 100%"
+                ></nz-date-picker>
+              }
 
-            <!-- 日期范围选择器 -->
-            <nz-range-picker
-              *ngIf="field.type === FieldType.DATE_RANGE"
-              [formControlName]="field.name"
-              style="width: 100%"
-            ></nz-range-picker>
+              <!-- 日期范围选择器 -->
+              @if (field.type === FieldType.DATE_RANGE) {
+                <nz-range-picker
+                  [formControlName]="field.name"
+                  style="width: 100%"
+                ></nz-range-picker>
+              }
 
-            <!-- 复选框 -->
-            <label
-              *ngIf="field.type === FieldType.CHECKBOX"
-              nz-checkbox
-              [formControlName]="field.name"
-            >
-              {{ field.helpText || field.label }}
-            </label>
+              <!-- 复选框 -->
+              @if (field.type === FieldType.CHECKBOX) {
+                <label nz-checkbox [formControlName]="field.name">
+                  {{ field.helpText || field.label }}
+                </label>
+              }
 
-            <!-- 单选按钮组 -->
-            <nz-radio-group
-              *ngIf="field.type === FieldType.RADIO"
-              [formControlName]="field.name"
-            >
-              <label
-                *ngFor="let option of field.options"
-                nz-radio
-                [nzValue]="option.value"
-                [nzDisabled]="option.disabled"
-              >
-                {{ option.label }}
-              </label>
-            </nz-radio-group>
+              <!-- 单选按钮组 -->
+              @if (field.type === FieldType.RADIO) {
+                <nz-radio-group [formControlName]="field.name">
+                  @for (option of field.options; track option.value) {
+                    <label
+                      nz-radio
+                      [nzValue]="option.value"
+                      [nzDisabled]="option.disabled"
+                    >
+                      {{ option.label }}
+                    </label>
+                  }
+                </nz-radio-group>
+              }
 
-            <!-- 开关 -->
-            <nz-switch
-              *ngIf="field.type === FieldType.SWITCH"
-              [formControlName]="field.name"
-            ></nz-switch>
+              <!-- 开关 -->
+              @if (field.type === FieldType.SWITCH) {
+                <nz-switch [formControlName]="field.name"></nz-switch>
+              }
 
-            <!-- 文件上传 -->
-            <nz-upload
-              *ngIf="field.type === FieldType.FILE"
-              [nzAction]="'api/upload'"
-              [nzListType]="'picture'"
-            >
-              <button nz-button>
-                <span nz-icon nzType="upload"></span>
-                上传文件
-              </button>
-            </nz-upload>
+              <!-- 文件上传 -->
+              @if (field.type === FieldType.FILE) {
+                <nz-upload [nzAction]="'api/upload'" [nzListType]="'picture'">
+                  <button nz-button>
+                    <span nz-icon nzType="upload"></span>
+                    上传文件
+                  </button>
+                </nz-upload>
+              }
 
-            <!-- 帮助文本 -->
-            <div *ngIf="field.helpText" class="help-text">
-              {{ field.helpText }}
-            </div>
-          </nz-form-control>
-        </nz-form-item>
-      </div>
-    </ng-container>
+              <!-- 帮助文本 -->
+              @if (field.helpText) {
+                <div class="help-text">
+                  {{ field.helpText }}
+                </div>
+              }
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+      }
+    }
   </div>
 
   <nz-form-item class="form-actions">

@@ -8,13 +8,27 @@ import { Permission } from '../../models/permission.model';
  */
 export class RbacHelper {
   /**
+   * 从角色中提取权限ID列表
+   * 支持两种格式：permissionIds 或 permissions
+   */
+  private static getPermissionIds(role: Role): string[] {
+    if (role.permissionIds) {
+      return role.permissionIds;
+    }
+    if (role.permissions) {
+      return role.permissions.map((p) => String(p.id));
+    }
+    return [];
+  }
+
+  /**
    * 计算角色的所有权限（包括继承的权限）
    * @param role 当前角色
    * @param allRoles 所有角色列表
    * @returns 所有权限ID数组
    */
   static calculateRolePermissions(role: Role, allRoles: Role[]): string[] {
-    const permissions = new Set<string>(role.permissionIds);
+    const permissions = new Set<string>(this.getPermissionIds(role));
 
     // 递归获取父角色的权限
     if (role.parentId) {
@@ -149,7 +163,7 @@ export class RbacHelper {
         inheritances.push({
           roleId: role.id,
           inheritedRoleId: inheritedRole.id,
-          inheritedPermissions: inheritedRole.permissionIds,
+          inheritedPermissions: this.getPermissionIds(inheritedRole),
         });
       });
 

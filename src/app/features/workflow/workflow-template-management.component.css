@@ -1,0 +1,25 @@
+.template-management-container {
+  padding: 24px;
+  background: #fff;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+:host ::ng-deep .ant-table {
+  background: #fff;
+}
+
+:host ::ng-deep .ant-form-item {
+  margin-bottom: 16px;
+}

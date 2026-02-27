@@ -77,4 +77,35 @@ export class RolesService {
     const role = await this.findOne(id);
     await this.rolesRepository.remove(role);
   }
+
+  async getRoleTree(): Promise<Role[]> {
+    // Get all roles
+    const allRoles = await this.rolesRepository.find({
+      relations: ['permissions', 'parent'],
+    });
+
+    // Build tree structure
+    const roleMap = new Map<number, any>();
+    const rootRoles: any[] = [];
+
+    // First pass: create map with children array
+    allRoles.forEach((role) => {
+      roleMap.set(role.id, { ...role, children: [] });
+    });
+
+    // Second pass: build tree
+    allRoles.forEach((role) => {
+      const roleWithChildren = roleMap.get(role.id);
+      if (role.parentId) {
+        const parent = roleMap.get(role.parentId);
+        if (parent) {
+          parent.children.push(roleWithChildren);
+        }
+      } else {
+        rootRoles.push(roleWithChildren);
+      }
+    });
+
+    return rootRoles;
+  }
 }

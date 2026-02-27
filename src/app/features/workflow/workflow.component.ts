@@ -145,6 +145,7 @@ export class WorkflowComponent implements OnInit {
   selectedWorkflow: WorkFlow | null = null;
   workflowHistory: WorkflowStatusHistory[] = [];
   currentFormConfig: DynamicFormConfig | null = null;
+  currentFormData?: { [key: string]: any }; // 存储已保存的表单数据
 
   // 表单
   createForm!: FormGroup;
@@ -690,16 +691,46 @@ export class WorkflowComponent implements OnInit {
   // 打开动态表单
   openDynamicForm(workflow: WorkFlow): void {
     this.selectedWorkflow = workflow;
+    this.currentFormData = undefined; // 清空之前的数据
 
     if (workflow.formConfigId) {
       // 加载表单配置
       this.dynamicFormService.getFormConfig(workflow.formConfigId).subscribe({
         next: (config) => {
           this.currentFormConfig = config;
-          this.isDynamicFormModalVisible = true;
-          this.cdr.detectChanges();
+
+          // 尝试加载已保存的表单数据
+          this.workflowService.getWorkflowFormData(workflow.id).subscribe({
+            next: (savedData) => {
+              console.log('Loaded saved form data:', savedData);
+
+              // 如果有保存的数据，将其设置为初始值
+              if (savedData && savedData.formData) {
+                this.currentFormData = savedData.formData;
+                this.message.info('已加载之前保存的表单数据');
+              }
+
+              this.isDynamicFormModalVisible = true;
+              this.cdr.detectChanges();
+            },
+            error: (error) => {
+              // 如果没有保存的数据（404），这是正常情况
+              if (error.status === 404) {
+                console.log('No saved form data found, showing empty form');
+                this.currentFormData = undefined;
+              } else {
+                console.error('Error loading saved form data:', error);
+                this.message.warning('无法加载已保存的表单数据，显示空白表单');
+                this.currentFormData = undefined;
+              }
+
+              this.isDynamicFormModalVisible = true;
+              this.cdr.detectChanges();
+            },
+          });
         },
-        error: () => {
+        error: (error) => {
+          console.error('Failed to load form config:', error);
           this.message.error('加载表单配置失败');
         },
       });
@@ -710,8 +741,8 @@ export class WorkflowComponent implements OnInit {
 
   // 处理动态表单提交
   handleFormSubmit(formData: any): void {
-    console.log('Form submitted:', formData);
-    console.log('Workflow:', this.selectedWorkflow);
+    console.log('Form submitted with data:', formData);
+    console.log('Selected workflow:', this.selectedWorkflow);
 
     if (!this.selectedWorkflow) {
       this.message.error('未选择工作流');
@@ -723,6 +754,11 @@ export class WorkflowComponent implements OnInit {
       return;
     }
 
+    // 显示加载提示
+    const loadingMessage = this.message.loading('正在保存表单数据...', {
+      nzDuration: 0,
+    }).messageId;
+
     // 保存表单数据到数据库
     const saveData = {
       formConfigId: this.selectedWorkflow.formConfigId,
@@ -731,23 +767,41 @@ export class WorkflowComponent implements OnInit {
       // submittedBy: this.currentUser?.id
     };
 
+    console.log('Saving form data:', saveData);
+
     this.workflowService
       .saveWorkflowFormData(this.selectedWorkflow.id, saveData)
       .subscribe({
         next: (result) => {
-          console.log('Form data saved:', result);
-          this.message.success('表单数据保存成功');
-          this.isDynamicFormModalVisible = false;
-          this.currentFormConfig = null;
+          console.log('Form data saved successfully:', result);
 
-          // 刷新工作流列表以显示最新状态
-          this.loadWorkflows();
+          // 关闭加载提示
+          this.message.remove(loadingMessage);
+
+          // 显示成功消息
+          this.message.success('表单数据保存成功！');
+
+          // 使用 setTimeout 避免 ExpressionChangedAfterItHasBeenCheckedError
+          setTimeout(() => {
+            // 关闭表单模态框
+            this.isDynamicFormModalVisible = false;
+            this.currentFormConfig = null;
+            this.currentFormData = undefined; // 清空表单数据
+
+            // 刷新工作流列表以显示最新状态
+            this.loadWorkflows();
+          }, 0);
         },
         error: (error) => {
           console.error('Failed to save form data:', error);
-          this.message.error(
-            '表单数据保存失败: ' + (error.error?.message || error.message),
-          );
+
+          // 关闭加载提示
+          this.message.remove(loadingMessage);
+
+          // 显示详细的错误信息
+          const errorMessage =
+            error.error?.message || error.message || '未知错误';
+          this.message.error(`表单数据保存失败：${errorMessage}`);
         },
       });
   }
@@ -756,6 +810,7 @@ export class WorkflowComponent implements OnInit {
   handleFormCancel(): void {
     this.isDynamicFormModalVisible = false;
     this.currentFormConfig = null;
+    this.currentFormData = undefined; // 清空表单数据
   }
 
   // 打开表单构建器（仅管理员）

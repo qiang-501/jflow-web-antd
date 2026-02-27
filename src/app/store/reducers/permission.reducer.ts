@@ -1,15 +1,23 @@
 // permission.reducer.ts
 import { createReducer, on } from '@ngrx/store';
-import { PermissionState } from '../../models/permission.model';
+import { createEntityAdapter, EntityAdapter } from '@ngrx/entity';
+import { PermissionState, Permission } from '../../models/permission.model';
 import { PermissionActions } from '../actions/permission.actions';
 
-export const initialState: PermissionState = {
-  permissions: [],
+// 创建 Entity Adapter
+export const permissionAdapter: EntityAdapter<Permission> =
+  createEntityAdapter<Permission>({
+    selectId: (permission: Permission) => permission.id,
+    sortComparer: false,
+  });
+
+// 使用 adapter 的 getInitialState 方法
+export const initialState: PermissionState = permissionAdapter.getInitialState({
   menuPermissions: [],
-  selectedPermission: null,
+  selectedPermissionId: null,
   loading: false,
   error: null,
-};
+});
 
 export const permissionReducer = createReducer(
   initialState,
@@ -20,11 +28,12 @@ export const permissionReducer = createReducer(
     loading: true,
     error: null,
   })),
-  on(PermissionActions.permissionsLoadedSuccess, (state, { payload }) => ({
-    ...state,
-    permissions: payload,
-    loading: false,
-  })),
+  on(PermissionActions.permissionsLoadedSuccess, (state, { payload }) =>
+    permissionAdapter.setAll(payload, {
+      ...state,
+      loading: false,
+    }),
+  ),
   on(PermissionActions.permissionsLoadedError, (state, { payload }) => ({
     ...state,
     loading: false,
@@ -54,11 +63,13 @@ export const permissionReducer = createReducer(
     loading: true,
     error: null,
   })),
-  on(PermissionActions.permissionLoadedSuccess, (state, { payload }) => ({
-    ...state,
-    selectedPermission: payload,
-    loading: false,
-  })),
+  on(PermissionActions.permissionLoadedSuccess, (state, { payload }) =>
+    permissionAdapter.upsertOne(payload, {
+      ...state,
+      selectedPermissionId: payload.id,
+      loading: false,
+    }),
+  ),
   on(PermissionActions.permissionLoadedError, (state, { payload }) => ({
     ...state,
     loading: false,
@@ -71,11 +82,12 @@ export const permissionReducer = createReducer(
     loading: true,
     error: null,
   })),
-  on(PermissionActions.createPermissionSuccess, (state, { payload }) => ({
-    ...state,
-    permissions: [...state.permissions, payload],
-    loading: false,
-  })),
+  on(PermissionActions.createPermissionSuccess, (state, { payload }) =>
+    permissionAdapter.addOne(payload, {
+      ...state,
+      loading: false,
+    }),
+  ),
   on(PermissionActions.createPermissionError, (state, { payload }) => ({
     ...state,
     loading: false,
@@ -88,17 +100,15 @@ export const permissionReducer = createReducer(
     loading: true,
     error: null,
   })),
-  on(PermissionActions.updatePermissionSuccess, (state, { payload }) => ({
-    ...state,
-    permissions: state.permissions.map((permission) =>
-      permission.id === payload.id ? payload : permission,
+  on(PermissionActions.updatePermissionSuccess, (state, { payload }) =>
+    permissionAdapter.updateOne(
+      { id: payload.id, changes: payload },
+      {
+        ...state,
+        loading: false,
+      },
     ),
-    selectedPermission:
-      state.selectedPermission?.id === payload.id
-        ? payload
-        : state.selectedPermission,
-    loading: false,
-  })),
+  ),
   on(PermissionActions.updatePermissionError, (state, { payload }) => ({
     ...state,
     loading: false,
@@ -111,13 +121,14 @@ export const permissionReducer = createReducer(
     loading: true,
     error: null,
   })),
-  on(PermissionActions.deletePermissionSuccess, (state, { id }) => ({
-    ...state,
-    permissions: state.permissions.filter((permission) => permission.id !== id),
-    selectedPermission:
-      state.selectedPermission?.id === id ? null : state.selectedPermission,
-    loading: false,
-  })),
+  on(PermissionActions.deletePermissionSuccess, (state, { id }) =>
+    permissionAdapter.removeOne(id, {
+      ...state,
+      selectedPermissionId:
+        state.selectedPermissionId === id ? null : state.selectedPermissionId,
+      loading: false,
+    }),
+  ),
   on(PermissionActions.deletePermissionError, (state, { payload }) => ({
     ...state,
     loading: false,
@@ -201,6 +212,6 @@ export const permissionReducer = createReducer(
   // Select Permission
   on(PermissionActions.selectPermission, (state, { permission }) => ({
     ...state,
-    selectedPermission: permission,
+    selectedPermissionId: permission?.id ?? null,
   })),
 );

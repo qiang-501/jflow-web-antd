@@ -137,8 +137,11 @@ export class RoleManagementComponent implements OnInit {
 
   showPermissionModal(role: Role): void {
     this.selectedRole = role;
+    // 支持两种格式：permissionIds 数组或 permissions 对象数组
+    const permissionIds =
+      role.permissionIds || role.permissions?.map((p) => String(p.id)) || [];
     this.permissionForm.patchValue({
-      permissionIds: role.permissionIds,
+      permissionIds: permissionIds,
     });
     this.isPermissionModalVisible = true;
   }

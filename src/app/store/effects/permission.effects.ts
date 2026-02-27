@@ -2,20 +2,23 @@
 import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { of } from 'rxjs';
-import { map, catchError, mergeMap } from 'rxjs/operators';
+import { map, catchError, exhaustMap, concatMap, tap } from 'rxjs/operators';
 import { PermissionService } from '../../core/services/permission.service';
 import { PermissionActions } from '../actions/permission.actions';
+import { ApiError } from '../../models/store.model';
+import { NzMessageService } from 'ng-zorro-antd/message';
 
 @Injectable()
 export class PermissionEffects {
   private actions$ = inject(Actions);
   private permissionService = inject(PermissionService);
+  private messageService = inject(NzMessageService);
 
   // 加载权限列表
   loadPermissions$ = createEffect(() => {
     return this.actions$.pipe(
       ofType(PermissionActions.loadPermissions),
-      mergeMap(() => {
+      exhaustMap(() => {
         return this.permissionService.getPermissions().pipe(
           map((permissions) =>
             PermissionActions.permissionsLoadedSuccess({
@@ -23,7 +26,11 @@ export class PermissionEffects {
             }),
           ),
           catchError((error) =>
-            of(PermissionActions.permissionsLoadedError({ payload: error })),
+            of(
+              PermissionActions.permissionsLoadedError({
+                payload: this.handleError(error),
+              }),
+            ),
           ),
         );
       }),
@@ -34,7 +41,7 @@ export class PermissionEffects {
   loadMenuPermissions$ = createEffect(() => {
     return this.actions$.pipe(
       ofType(PermissionActions.loadMenuPermissions),
-      mergeMap(() => {
+      exhaustMap(() => {
         return this.permissionService.getMenuPermissions().pipe(
           map((menuPermissions) =>
             PermissionActions.menuPermissionsLoadedSuccess({
@@ -43,7 +50,9 @@ export class PermissionEffects {
           ),
           catchError((error) =>
             of(
-              PermissionActions.menuPermissionsLoadedError({ payload: error }),
+              PermissionActions.menuPermissionsLoadedError({
+                payload: this.handleError(error),
+              }),
             ),
           ),
         );
@@ -55,13 +64,17 @@ export class PermissionEffects {
   loadPermission$ = createEffect(() => {
     return this.actions$.pipe(
       ofType(PermissionActions.loadPermission),
-      mergeMap(({ id }) => {
+      exhaustMap(({ id }) => {
         return this.permissionService.getPermissionById(id).pipe(
           map((permission) =>
             PermissionActions.permissionLoadedSuccess({ payload: permission }),
           ),
           catchError((error) =>
-            of(PermissionActions.permissionLoadedError({ payload: error })),
+            of(
+              PermissionActions.permissionLoadedError({
+                payload: this.handleError(error),
+              }),
+            ),
           ),
         );
       }),
@@ -72,7 +85,7 @@ export class PermissionEffects {
   createPermission$ = createEffect(() => {
     return this.actions$.pipe(
       ofType(PermissionActions.createPermission),
-      mergeMap(({ permission }) => {
+      concatMap(({ permission }) => {
         return this.permissionService.createPermission(permission).pipe(
           map((newPermission) =>
             PermissionActions.createPermissionSuccess({
@@ -80,7 +93,11 @@ export class PermissionEffects {
             }),
           ),
           catchError((error) =>
-            of(PermissionActions.createPermissionError({ payload: error })),
+            of(
+              PermissionActions.createPermissionError({
+                payload: this.handleError(error),
+              }),
+            ),
           ),
         );
       }),
@@ -91,7 +108,7 @@ export class PermissionEffects {
   updatePermission$ = createEffect(() => {
     return this.actions$.pipe(
       ofType(PermissionActions.updatePermission),
-      mergeMap(({ id, permission }) => {
+      concatMap(({ id, permission }) => {
         return this.permissionService.updatePermission(id, permission).pipe(
           map((updatedPermission) =>
             PermissionActions.updatePermissionSuccess({
@@ -99,7 +116,11 @@ export class PermissionEffects {
             }),
           ),
           catchError((error) =>
-            of(PermissionActions.updatePermissionError({ payload: error })),
+            of(
+              PermissionActions.updatePermissionError({
+                payload: this.handleError(error),
+              }),
+            ),
           ),
         );
       }),
@@ -110,11 +131,15 @@ export class PermissionEffects {
   deletePermission$ = createEffect(() => {
     return this.actions$.pipe(
       ofType(PermissionActions.deletePermission),
-      mergeMap(({ id }) => {
+      concatMap(({ id }) => {
         return this.permissionService.deletePermission(id).pipe(
           map(() => PermissionActions.deletePermissionSuccess({ id })),
           catchError((error) =>
-            of(PermissionActions.deletePermissionError({ payload: error })),
+            of(
+              PermissionActions.deletePermissionError({
+                payload: this.handleError(error),
+              }),
+            ),
           ),
         );
       }),
@@ -125,13 +150,17 @@ export class PermissionEffects {
   createMenuAction$ = createEffect(() => {
     return this.actions$.pipe(
       ofType(PermissionActions.createMenuAction),
-      mergeMap(({ menuId, action }) => {
+      concatMap(({ menuId, action }) => {
         return this.permissionService.createMenuAction(menuId, action).pipe(
           map((menuAction) =>
             PermissionActions.createMenuActionSuccess({ payload: menuAction }),
           ),
           catchError((error) =>
-            of(PermissionActions.createMenuActionError({ payload: error })),
+            of(
+              PermissionActions.createMenuActionError({
+                payload: this.handleError(error),
+              }),
+            ),
           ),
         );
       }),
@@ -142,7 +171,7 @@ export class PermissionEffects {
   updateMenuAction$ = createEffect(() => {
     return this.actions$.pipe(
       ofType(PermissionActions.updateMenuAction),
-      mergeMap(({ menuId, actionId, action }) => {
+      concatMap(({ menuId, actionId, action }) => {
         return this.permissionService
           .updateMenuAction(menuId, actionId, action)
           .pipe(
@@ -152,7 +181,11 @@ export class PermissionEffects {
               }),
             ),
             catchError((error) =>
-              of(PermissionActions.updateMenuActionError({ payload: error })),
+              of(
+                PermissionActions.updateMenuActionError({
+                  payload: this.handleError(error),
+                }),
+              ),
             ),
           );
       }),
@@ -163,16 +196,91 @@ export class PermissionEffects {
   deleteMenuAction$ = createEffect(() => {
     return this.actions$.pipe(
       ofType(PermissionActions.deleteMenuAction),
-      mergeMap(({ menuId, actionId }) => {
+      concatMap(({ menuId, actionId }) => {
         return this.permissionService.deleteMenuAction(menuId, actionId).pipe(
           map(() =>
             PermissionActions.deleteMenuActionSuccess({ menuId, actionId }),
           ),
           catchError((error) =>
-            of(PermissionActions.deleteMenuActionError({ payload: error })),
+            of(
+              PermissionActions.deleteMenuActionError({
+                payload: this.handleError(error),
+              }),
+            ),
           ),
         );
       }),
     );
   });
+
+  // 通知 Effects
+  showCreateSuccessNotification$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(PermissionActions.createPermissionSuccess),
+        tap(() => this.messageService.success('权限创建成功')),
+      ),
+    { dispatch: false },
+  );
+
+  showUpdateSuccessNotification$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(PermissionActions.updatePermissionSuccess),
+        tap(() => this.messageService.success('权限更新成功')),
+      ),
+    { dispatch: false },
+  );
+
+  showDeleteSuccessNotification$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(PermissionActions.deletePermissionSuccess),
+        tap(() => this.messageService.success('权限删除成功')),
+      ),
+    { dispatch: false },
+  );
+
+  showMenuActionSuccessNotification$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(
+          PermissionActions.createMenuActionSuccess,
+          PermissionActions.updateMenuActionSuccess,
+          PermissionActions.deleteMenuActionSuccess,
+        ),
+        tap(() => this.messageService.success('菜单操作更新成功')),
+      ),
+    { dispatch: false },
+  );
+
+  showErrorNotification$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(
+          PermissionActions.permissionsLoadedError,
+          PermissionActions.menuPermissionsLoadedError,
+          PermissionActions.permissionLoadedError,
+          PermissionActions.createPermissionError,
+          PermissionActions.updatePermissionError,
+          PermissionActions.deletePermissionError,
+          PermissionActions.createMenuActionError,
+          PermissionActions.updateMenuActionError,
+          PermissionActions.deleteMenuActionError,
+        ),
+        tap(({ payload }) =>
+          this.messageService.error(payload.message || '操作失败'),
+        ),
+      ),
+    { dispatch: false },
+  );
+
+  private handleError(error: any): ApiError {
+    return {
+      message: error?.message || '操作失败',
+      code: error?.code,
+      status: error?.status,
+      details: error?.details,
+    };
+  }
 }

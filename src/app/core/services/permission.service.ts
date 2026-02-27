@@ -2,6 +2,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import {
   Permission,
   MenuPermission,
@@ -22,7 +23,9 @@ export class PermissionService {
    * 获取所有权限列表
    */
   getPermissions(): Observable<Permission[]> {
-    return this.http.get<Permission[]>(this.apiUrl);
+    return this.http
+      .get<{ data: Permission[]; total: number }>(this.apiUrl)
+      .pipe(map((response) => response.data || (response as any)));
   }
 
   /**
@@ -30,6 +33,13 @@ export class PermissionService {
    */
   getMenuPermissions(): Observable<MenuPermission[]> {
     return this.http.get<MenuPermission[]>(`${this.apiUrl}/menus`);
+  }
+
+  /**
+   * 根据菜单ID获取菜单权限详情
+   */
+  getMenuPermissionByMenuId(menuId: string): Observable<MenuPermission> {
+    return this.http.get<MenuPermission>(`${this.apiUrl}/menus/${menuId}`);
   }
 
   /**

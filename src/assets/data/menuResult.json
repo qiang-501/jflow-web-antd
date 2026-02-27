@@ -38,6 +38,14 @@
         "level": 2,
         "link": "workflow",
         "permission": "view"
+      },
+      {
+        "id": "10",
+        "title": "Workflow Templates",
+        "icon": "project",
+        "level": 2,
+        "link": "workflow-templates",
+        "permission": "workflow-template:view"
       }
     ]
   },
@@ -71,6 +79,14 @@
         "level": 2,
         "link": "permissions",
         "permission": "view"
+      },
+      {
+        "id": "11",
+        "title": "Menus",
+        "icon": "menu",
+        "level": 2,
+        "link": "menus",
+        "permission": "menu:view"
       }
     ]
   }

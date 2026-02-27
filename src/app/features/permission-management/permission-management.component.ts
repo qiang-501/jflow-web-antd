@@ -8,7 +8,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { Store } from '@ngrx/store';
-import { Observable } from 'rxjs';
+import { Observable, take } from 'rxjs';
 
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzButtonModule } from 'ng-zorro-antd/button';
@@ -39,6 +39,8 @@ import {
   selectMenuPermissions,
   selectPermissionLoading,
 } from '../../store/selectors/permission.selectors';
+import { MenuService } from '../../core/services/menu.service';
+import { PermissionService } from '../../core/services/permission.service';
 
 @Component({
   selector: 'app-permission-management',
@@ -67,6 +69,8 @@ export class PermissionManagementComponent implements OnInit {
   private store = inject(Store);
   private fb = inject(FormBuilder);
   private message = inject(NzMessageService);
+  private menuService = inject(MenuService);
+  private permissionService = inject(PermissionService);
 
   menuPermissions$: Observable<MenuPermission[]>;
   loading$: Observable<boolean>;
@@ -80,6 +84,7 @@ export class PermissionManagementComponent implements OnInit {
   selectedAction: ActionPermission | null = null;
 
   treeNodes: NzTreeNodeOptions[] = [];
+  menuPermissions: MenuPermission[] = [];
 
   PermissionType = PermissionType;
 
@@ -89,13 +94,33 @@ export class PermissionManagementComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // 先加载菜单权限数据
     this.store.dispatch(PermissionActions.loadMenuPermissions());
-    this.initForms();
 
-    // Subscribe to menu permissions to build tree
-    this.menuPermissions$.subscribe((menus) => {
-      this.treeNodes = this.buildTree(menus);
+    // 订阅菜单权限数据
+    this.menuPermissions$.subscribe((permissions) => {
+      console.log('Loaded menu permissions:', permissions);
+      this.menuPermissions = permissions;
+
+      // 如果当前有选中的菜单，更新其权限数据
+      if (this.selectedMenu) {
+        const updated = permissions.find(
+          (p) => p.menuId === this.selectedMenu!.menuId,
+        );
+        if (updated) {
+          this.selectedMenu = updated;
+          console.log('Updated selectedMenu with new data:', this.selectedMenu);
+        }
+      }
     });
+
+    // 加载菜单树用于显示
+    this.menuService.getMenuTree().subscribe((menus) => {
+      console.log('Loaded menu tree:', menus);
+      this.treeNodes = this.convertMenusToTreeNodes(menus);
+    });
+
+    this.initForms();
   }
 
   initForms(): void {
@@ -112,6 +137,29 @@ export class PermissionManagementComponent implements OnInit {
       code: ['', [Validators.required]],
       description: [''],
     });
+  }
+
+  convertMenusToTreeNodes(menus: any[]): NzTreeNodeOptions[] {
+    return menus.map((menu) => ({
+      key: String(menu.id),
+      title: menu.title || menu.name,
+      expanded: true,
+      children: menu.children
+        ? this.convertMenusToTreeNodes(menu.children)
+        : [],
+      isLeaf: !menu.children || menu.children.length === 0,
+      icon: menu.icon,
+      data: {
+        id: String(menu.id),
+        menuId: menu.link || String(menu.id), // 使用 link 作为 menuId，如果没有 link 则使用 id
+        menuName: menu.title || menu.name,
+        path: menu.link || menu.path || '',
+        icon: menu.icon,
+        orderNum: menu.level || 0,
+        visible: true,
+        actions: [],
+      },
+    }));
   }
 
   buildTree(menus: MenuPermission[]): NzTreeNodeOptions[] {
@@ -155,7 +203,44 @@ export class PermissionManagementComponent implements OnInit {
   onTreeClick(event: NzFormatEmitEvent): void {
     const node = event.node;
     if (node && node.origin['data']) {
-      this.selectedMenu = node.origin['data'] as MenuPermission;
+      const nodeData = node.origin['data'] as any;
+      const menuId = nodeData.menuId || nodeData.id;
+
+      console.log('Tree node clicked, menuId:', menuId);
+      console.log('Node data:', nodeData);
+
+      // 发送 API 请求获取菜单权限数据
+      this.permissionService.getMenuPermissionByMenuId(menuId).subscribe({
+        next: (menuPermission) => {
+          console.log('API Response - Found menu permission:', menuPermission);
+          console.log('Actions count:', menuPermission.actions?.length || 0);
+          this.selectedMenu = menuPermission;
+        },
+        error: (error) => {
+          console.error('API Error - Failed to load menu permission:', error);
+
+          if (error.status === 404) {
+            // 没有找到权限数据，创建一个默认的菜单权限对象
+            console.log(
+              'No permission found for menuId:',
+              menuId,
+              'creating default',
+            );
+            this.selectedMenu = {
+              id: nodeData.id || menuId,
+              menuId: menuId,
+              menuName: nodeData.menuName || nodeData.title,
+              path: nodeData.path || '',
+              icon: nodeData.icon,
+              orderNum: nodeData.orderNum || 0,
+              visible: nodeData.visible !== false,
+              actions: [],
+            };
+          } else {
+            this.message.error('加载菜单权限失败');
+          }
+        },
+      });
     }
   }
 

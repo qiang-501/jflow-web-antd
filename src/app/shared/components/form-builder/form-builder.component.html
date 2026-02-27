@@ -1,162 +1,174 @@
 <div class="form-builder-container">
   <!-- 只在非单表单模式且非创建模式下显示头部 -->
-  <div class="header" *ngIf="!singleFormMode && formConfigs.length > 0">
-    <h2>动态表单配置</h2>
-    <button nz-button nzType="primary" (click)="showConfigModal()">
-      <span nz-icon nzType="plus"></span>
-      创建表单
-    </button>
-  </div>
+  @if (!singleFormMode && formConfigs.length > 0) {
+    <div class="header">
+      <h2>动态表单配置</h2>
+      <button nz-button nzType="primary" (click)="showConfigModal()">
+        <span nz-icon nzType="plus"></span>
+        创建表单
+      </button>
+    </div>
+  }
 
   <!-- 单表单编辑模式提示 -->
-  <nz-alert
-    *ngIf="singleFormMode && formConfigs.length > 0"
-    nzType="info"
-    nzShowIcon
-    [nzMessage]="'正在编辑表单字段: ' + formConfigs[0].name"
-    nzDescription="您只能编辑此工作流关联的表单字段"
-    style="margin-bottom: 16px"
-  ></nz-alert>
+  @if (singleFormMode && formConfigs.length > 0) {
+    <nz-alert
+      nzType="info"
+      nzShowIcon
+      [nzMessage]="'正在编辑表单字段: ' + formConfigs[0].name"
+      nzDescription="您只能编辑此工作流关联的表单字段"
+      style="margin-bottom: 16px"
+    ></nz-alert>
+  }
 
   <div class="configs-list">
-    <nz-card
-      *ngFor="let config of formConfigs"
-      class="config-card"
-      [nzTitle]="config.name"
-      [nzExtra]="extraTemplate"
-    >
-      <ng-template #extraTemplate>
-        <button
-          *ngIf="!singleFormMode"
-          nz-button
-          nzType="link"
-          nzSize="small"
-          (click)="showConfigModal(config)"
-        >
-          编辑配置
-        </button>
-        <button
-          nz-button
-          nzType="link"
-          nzSize="small"
-          (click)="previewForm(config)"
-        >
-          预览
-        </button>
-        <button
-          *ngIf="!singleFormMode"
-          nz-button
-          nzType="link"
-          nzSize="small"
-          nzDanger
-          nz-popconfirm
-          nzPopconfirmTitle="确定要删除此表单配置吗？"
-          (nzOnConfirm)="deleteConfig(config.id)"
-        >
-          删除
-        </button>
-      </ng-template>
-
-      <p *ngIf="config.description">{{ config.description }}</p>
-      <nz-divider></nz-divider>
-
-      <div class="fields-section">
-        <div class="section-header">
-          <h4>表单字段 ({{ getFieldsLength(config) }})</h4>
+    @for (config of formConfigs; track config.id) {
+      <nz-card
+        class="config-card"
+        [nzTitle]="config.name"
+        [nzExtra]="extraTemplate"
+      >
+        <ng-template #extraTemplate>
+          @if (!singleFormMode) {
+            <button
+              nz-button
+              nzType="link"
+              nzSize="small"
+              (click)="showConfigModal(config)"
+            >
+              编辑配置
+            </button>
+          }
           <button
             nz-button
-            nzType="dashed"
+            nzType="link"
             nzSize="small"
-            (click)="showFieldModal(config)"
+            (click)="previewForm(config)"
           >
-            <span nz-icon nzType="plus"></span>
-            添加字段
+            预览
           </button>
-        </div>
+          @if (!singleFormMode) {
+            <button
+              nz-button
+              nzType="link"
+              nzSize="small"
+              nzDanger
+              nz-popconfirm
+              nzPopconfirmTitle="确定要删除此表单配置吗？"
+              (nzOnConfirm)="deleteConfig(config.id)"
+            >
+              删除
+            </button>
+          }
+        </ng-template>
 
-        <nz-table
-          #fieldTable
-          [nzData]="getConfigFields(config)"
-          [nzShowPagination]="false"
-          [nzSize]="'small'"
-        >
-          <thead>
-            <tr>
-              <th nzWidth="120px">字段名</th>
-              <th>标签</th>
-              <th nzWidth="100px">类型</th>
-              <th nzWidth="80px">必填</th>
-              <th nzWidth="80px">宽度</th>
-              <th nzWidth="200px">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let field of fieldTable.data; let i = index">
-              <td>
-                <code>{{ field.name }}</code>
-              </td>
-              <td>{{ field.label }}</td>
-              <td>
-                <nz-tag [nzColor]="'blue'">
-                  {{ getFieldTypeLabel(field.type) }}
-                </nz-tag>
-              </td>
-              <td>
-                <span
-                  nz-icon
-                  [nzType]="
-                    field.validation?.required ? 'check-circle' : 'close-circle'
-                  "
-                  [style.color]="
-                    field.validation?.required ? '#52c41a' : '#ccc'
-                  "
-                ></span>
-              </td>
-              <td>{{ field.width || 24 }}/24</td>
-              <td>
-                <button
-                  nz-button
-                  nzType="link"
-                  nzSize="small"
-                  (click)="moveField(config, i, 'up')"
-                  [disabled]="i === 0"
-                >
-                  <span nz-icon nzType="up"></span>
-                </button>
-                <button
-                  nz-button
-                  nzType="link"
-                  nzSize="small"
-                  (click)="moveField(config, i, 'down')"
-                  [disabled]="i === config.fields.length - 1"
-                >
-                  <span nz-icon nzType="down"></span>
-                </button>
-                <button
-                  nz-button
-                  nzType="link"
-                  nzSize="small"
-                  (click)="showFieldModal(config, i)"
-                >
-                  编辑
-                </button>
-                <button
-                  nz-button
-                  nzType="link"
-                  nzSize="small"
-                  nzDanger
-                  nz-popconfirm
-                  nzPopconfirmTitle="确定要删除此字段吗？"
-                  (nzOnConfirm)="deleteField(config, i)"
-                >
-                  删除
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </nz-table>
-      </div>
-    </nz-card>
+        @if (config.description) {
+          <p>{{ config.description }}</p>
+        }
+        <nz-divider></nz-divider>
+
+        <div class="fields-section">
+          <div class="section-header">
+            <h4>表单字段 ({{ getFieldsLength(config) }})</h4>
+            <button
+              nz-button
+              nzType="dashed"
+              nzSize="small"
+              (click)="showFieldModal(config)"
+            >
+              <span nz-icon nzType="plus"></span>
+              添加字段
+            </button>
+          </div>
+
+          <nz-table
+            #fieldTable
+            [nzData]="getConfigFields(config)"
+            [nzShowPagination]="false"
+            [nzSize]="'small'"
+          >
+            <thead>
+              <tr>
+                <th nzWidth="120px">字段名</th>
+                <th>标签</th>
+                <th nzWidth="100px">类型</th>
+                <th nzWidth="80px">必填</th>
+                <th nzWidth="80px">宽度</th>
+                <th nzWidth="200px">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (field of fieldTable.data; track field; let i = $index) {
+                <tr>
+                  <td>
+                    <code>{{ field.name }}</code>
+                  </td>
+                  <td>{{ field.label }}</td>
+                  <td>
+                    <nz-tag [nzColor]="'blue'">
+                      {{ getFieldTypeLabel(field.type) }}
+                    </nz-tag>
+                  </td>
+                  <td>
+                    <span
+                      nz-icon
+                      [nzType]="
+                        field.validation?.required
+                          ? 'check-circle'
+                          : 'close-circle'
+                      "
+                      [style.color]="
+                        field.validation?.required ? '#52c41a' : '#ccc'
+                      "
+                    ></span>
+                  </td>
+                  <td>{{ field.width || 24 }}/24</td>
+                  <td>
+                    <button
+                      nz-button
+                      nzType="link"
+                      nzSize="small"
+                      (click)="moveField(config, i, 'up')"
+                      [disabled]="i === 0"
+                    >
+                      <span nz-icon nzType="up"></span>
+                    </button>
+                    <button
+                      nz-button
+                      nzType="link"
+                      nzSize="small"
+                      (click)="moveField(config, i, 'down')"
+                      [disabled]="i === config.fields.length - 1"
+                    >
+                      <span nz-icon nzType="down"></span>
+                    </button>
+                    <button
+                      nz-button
+                      nzType="link"
+                      nzSize="small"
+                      (click)="showFieldModal(config, i)"
+                    >
+                      编辑
+                    </button>
+                    <button
+                      nz-button
+                      nzType="link"
+                      nzSize="small"
+                      nzDanger
+                      nz-popconfirm
+                      nzPopconfirmTitle="确定要删除此字段吗？"
+                      (nzOnConfirm)="deleteField(config, i)"
+                    >
+                      删除
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </nz-table>
+        </div>
+      </nz-card>
+    }
   </div>
 </div>
 
@@ -249,11 +261,12 @@
                 placeholder="请选择字段类型"
                 style="width: 100%"
               >
-                <nz-option
-                  *ngFor="let type of fieldTypes"
-                  [nzValue]="type.value"
-                  [nzLabel]="type.label"
-                ></nz-option>
+                @for (type of fieldTypes; track type.value) {
+                  <nz-option
+                    [nzValue]="type.value"
+                    [nzLabel]="type.label"
+                  ></nz-option>
+                }
               </nz-select>
             </nz-form-control>
           </nz-form-item>
@@ -340,47 +353,51 @@
         </div>
 
         <!-- 选项配置 -->
-        <div nz-col [nzSpan]="24" *ngIf="needsOptions(fieldForm.value.type)">
-          <nz-divider nzText="选项配置"></nz-divider>
-          <div formArrayName="options">
-            <div
-              *ngFor="let option of optionsFormArray.controls; let i = index"
-              [formGroupName]="i"
-              class="option-row"
-            >
-              <input
-                nz-input
-                formControlName="label"
-                placeholder="选项标签"
-                style="width: 45%; margin-right: 8px"
-              />
-              <input
-                nz-input
-                formControlName="value"
-                placeholder="选项值"
-                style="width: 45%; margin-right: 8px"
-              />
-              <button
-                nz-button
-                nzType="link"
-                nzDanger
-                (click)="removeOption(i)"
-              >
-                <span nz-icon nzType="delete"></span>
-              </button>
+        @if (needsOptions(fieldForm.value.type)) {
+          <div nz-col [nzSpan]="24">
+            <nz-divider nzText="选项配置"></nz-divider>
+            <div formArrayName="options">
+              @for (
+                option of optionsFormArray.controls;
+                track option;
+                let i = $index
+              ) {
+                <div [formGroupName]="i" class="option-row">
+                  <input
+                    nz-input
+                    formControlName="label"
+                    placeholder="选项标签"
+                    style="width: 45%; margin-right: 8px"
+                  />
+                  <input
+                    nz-input
+                    formControlName="value"
+                    placeholder="选项值"
+                    style="width: 45%; margin-right: 8px"
+                  />
+                  <button
+                    nz-button
+                    nzType="link"
+                    nzDanger
+                    (click)="removeOption(i)"
+                  >
+                    <span nz-icon nzType="delete"></span>
+                  </button>
+                </div>
+              }
             </div>
+            <button
+              nz-button
+              nzType="dashed"
+              nzBlock
+              (click)="addOption()"
+              style="margin-top: 8px"
+            >
+              <span nz-icon nzType="plus"></span>
+              添加选项
+            </button>
           </div>
-          <button
-            nz-button
-            nzType="dashed"
-            nzBlock
-            (click)="addOption()"
-            style="margin-top: 8px"
-          >
-            <span nz-icon nzType="plus"></span>
-            添加选项
-          </button>
-        </div>
+        }
       </div>
     </form>
   </ng-container>
@@ -395,11 +412,12 @@
   nzWidth="800px"
 >
   <ng-container *nzModalContent>
-    <app-dynamic-form-renderer
-      *ngIf="previewConfig"
-      [formConfig]="previewConfig"
-      (formSubmit)="handlePreviewSubmit($event)"
-      (formCancel)="isPreviewModalVisible = false"
-    ></app-dynamic-form-renderer>
+    @if (previewConfig) {
+      <app-dynamic-form-renderer
+        [formConfig]="previewConfig"
+        (formSubmit)="handlePreviewSubmit($event)"
+        (formCancel)="isPreviewModalVisible = false"
+      ></app-dynamic-form-renderer>
+    }
   </ng-container>
 </nz-modal>

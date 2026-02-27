@@ -39,6 +39,11 @@ export class WorkflowTemplatesController {
     return this.workflowTemplatesService.getCategories();
   }
 
+  @Get('active')
+  async getActiveTemplates() {
+    return this.workflowTemplatesService.getActiveTemplates();
+  }
+
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.workflowTemplatesService.findOne(id);

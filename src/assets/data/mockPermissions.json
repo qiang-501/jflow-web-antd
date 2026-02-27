@@ -52,5 +52,77 @@
     "menuId": "permissions",
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "7",
+    "name": "工作流模板查看",
+    "code": "workflow-template:view",
+    "type": "menu",
+    "menuId": "workflow-templates",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "8",
+    "name": "工作流模板创建",
+    "code": "workflow-template:create",
+    "type": "action",
+    "menuId": "workflow-templates",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "9",
+    "name": "工作流模板编辑",
+    "code": "workflow-template:edit",
+    "type": "action",
+    "menuId": "workflow-templates",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "10",
+    "name": "工作流模板删除",
+    "code": "workflow-template:delete",
+    "type": "action",
+    "menuId": "workflow-templates",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "11",
+    "name": "菜单查看",
+    "code": "menu:view",
+    "type": "menu",
+    "menuId": "menus",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "12",
+    "name": "菜单创建",
+    "code": "menu:create",
+    "type": "action",
+    "menuId": "menus",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "13",
+    "name": "菜单编辑",
+    "code": "menu:edit",
+    "type": "action",
+    "menuId": "menus",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "14",
+    "name": "菜单删除",
+    "code": "menu:delete",
+    "type": "action",
+    "menuId": "menus",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
   }
 ]

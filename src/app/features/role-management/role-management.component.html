@@ -27,55 +27,59 @@
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let role of roleTable.data">
-        <td>{{ role.name }}</td>
-        <td>
-          <nz-tag nzColor="purple">{{ role.code }}</nz-tag>
-        </td>
-        <td>{{ role.description || "-" }}</td>
-        <td>{{ getRoleHierarchy(role, (roles$ | async) || []) }}</td>
-        <td>
-          <nz-tag nzColor="blue">{{ role.permissionIds.length }}</nz-tag>
-        </td>
-        <td>{{ role.createdAt | date: "short" }}</td>
-        <td>
-          <nz-space>
-            <button
-              *nzSpaceItem
-              nz-button
-              nzType="link"
-              nzSize="small"
-              (click)="showEditModal(role)"
-            >
-              <span nz-icon nzType="edit"></span>
-              编辑
-            </button>
-            <button
-              *nzSpaceItem
-              nz-button
-              nzType="link"
-              nzSize="small"
-              (click)="showPermissionModal(role)"
-            >
-              <span nz-icon nzType="safety"></span>
-              分配权限
-            </button>
-            <button
-              *nzSpaceItem
-              nz-button
-              nzType="link"
-              nzSize="small"
-              nzDanger
-              nz-popconfirm
-              nzPopconfirmTitle="确定要删除此角色吗?"
-              (nzOnConfirm)="deleteRole(role.id)"
-            >
-              <span nz-icon nzType="delete"></span>
-              删除
-            </button>
-          </nz-space>
-        </td>
-      </tr>
+      @for (role of roleTable.data; track role.id) {
+        <tr>
+          <td>{{ role.name }}</td>
+          <td>
+            <nz-tag nzColor="purple">{{ role.code }}</nz-tag>
+          </td>
+          <td>{{ role.description || "-" }}</td>
+          <td>{{ getRoleHierarchy(role, (roles$ | async) || []) }}</td>
+          <td>
+            <nz-tag nzColor="blue">{{
+              (role.permissionIds || role.permissions || []).length
+            }}</nz-tag>
+          </td>
+          <td>{{ role.createdAt | date: "short" }}</td>
+          <td>
+            <nz-space>
+              <button
+                *nzSpaceItem
+                nz-button
+                nzType="link"
+                nzSize="small"
+                (click)="showEditModal(role)"
+              >
+                <span nz-icon nzType="edit"></span>
+                编辑
+              </button>
+              <button
+                *nzSpaceItem
+                nz-button
+                nzType="link"
+                nzSize="small"
+                (click)="showPermissionModal(role)"
+              >
+                <span nz-icon nzType="safety"></span>
+                分配权限
+              </button>
+              <button
+                *nzSpaceItem
+                nz-button
+                nzType="link"
+                nzSize="small"
+                nzDanger
+                nz-popconfirm
+                nzPopconfirmTitle="确定要删除此角色吗?"
+                (nzOnConfirm)="deleteRole(role.id)"
+              >
+                <span nz-icon nzType="delete"></span>
+                删除
+              </button>
+            </nz-space>
+          </td>
+        </tr>
+      }
     </tbody>
   </nz-table>
 
@@ -83,6 +87,8 @@
   <nz-modal
     [(nzVisible)]="isModalVisible"
     [nzTitle]="isEditMode ? '编辑角色' : '新增角色'"
+    [nzMaskClosable]="false"
+    [nzBodyStyle]="{ maxHeight: '60vh', overflowY: 'auto' }"
     (nzOnCancel)="handleCancel()"
     (nzOnOk)="handleSubmit()"
     [nzOkLoading]="(loading$ | async) || false"
@@ -144,16 +150,20 @@
   <nz-modal
     [(nzVisible)]="isPermissionModalVisible"
     nzTitle="分配权限"
+    [nzMaskClosable]="false"
+    [nzBodyStyle]="{ maxHeight: '60vh', overflowY: 'auto' }"
     (nzOnCancel)="handlePermissionCancel()"
     (nzOnOk)="handlePermissionSubmit()"
     [nzOkLoading]="(loading$ | async) || false"
     nzWidth="600px"
   >
     <ng-container *nzModalContent>
-      <div *ngIf="selectedRole" class="permission-info">
-        <p><strong>角色：</strong>{{ selectedRole.name }}</p>
-        <p><strong>编码：</strong>{{ selectedRole.code }}</p>
-      </div>
+      @if (selectedRole) {
+        <div class="permission-info">
+          <p><strong>角色：</strong>{{ selectedRole.name }}</p>
+          <p><strong>编码：</strong>{{ selectedRole.code }}</p>
+        </div>
+      }
 
       <form nz-form [formGroup]="permissionForm" nzLayout="vertical">
         <nz-form-item>
@@ -166,23 +176,26 @@
               nzShowSearch
               [nzMaxTagCount]="3"
             >
-              <nz-option
-                *ngFor="let permission of permissions$ | async"
-                [nzLabel]="permission.name + ' (' + permission.code + ')'"
-                [nzValue]="permission.id"
-              ></nz-option>
+              @for (permission of permissions$ | async; track permission.id) {
+                <nz-option
+                  [nzLabel]="permission.name + ' (' + permission.code + ')'"
+                  [nzValue]="permission.id"
+                ></nz-option>
+              }
             </nz-select>
           </nz-form-control>
         </nz-form-item>
       </form>
 
-      <div class="inheritance-info" *ngIf="selectedRole?.parentId">
-        <nz-alert
-          nzType="info"
-          nzMessage="此角色将继承父角色的所有权限"
-          nzShowIcon
-        ></nz-alert>
-      </div>
+      @if (selectedRole?.parentId) {
+        <div class="inheritance-info">
+          <nz-alert
+            nzType="info"
+            nzMessage="此角色将继承父角色的所有权限"
+            nzShowIcon
+          ></nz-alert>
+        </div>
+      }
     </ng-container>
   </nz-modal>
 </div>

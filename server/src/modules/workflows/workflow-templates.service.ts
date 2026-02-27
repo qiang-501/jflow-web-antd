@@ -96,4 +96,12 @@ export class WorkflowTemplatesService {
 
     return result.map((r) => r.category).filter(Boolean);
   }
+
+  async getActiveTemplates(): Promise<WorkflowTemplate[]> {
+    return this.templatesRepository.find({
+      where: { active: true },
+      relations: ['formConfig', 'formConfig.fields', 'defaultAssigneeRole'],
+      order: { createdAt: 'DESC' },
+    });
+  }
 }

@@ -27,6 +27,13 @@ export class RolesController {
     return this.rolesService.findAll(+page, +limit);
   }
 
+  @Get('tree')
+  @ApiOperation({ summary: 'Get roles in tree structure' })
+  @ApiResponse({ status: 200, description: 'Return role tree.' })
+  getRoleTree() {
+    return this.rolesService.getRoleTree();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get role by id' })
   @ApiResponse({ status: 200, description: 'Return the role.' })
