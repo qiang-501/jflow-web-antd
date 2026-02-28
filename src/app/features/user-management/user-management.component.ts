@@ -7,8 +7,7 @@ import {
   FormGroup,
   Validators,
 } from '@angular/forms';
-import { Store } from '@ngrx/store';
-import { Observable } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzButtonModule } from 'ng-zorro-antd/button';
@@ -29,13 +28,8 @@ import {
   UpdateUserDto,
 } from '../../models/user.model';
 import { Role } from '../../models/role.model';
-import { UserActions } from '../../store/actions/user.actions';
-import { RoleActions } from '../../store/actions/role.actions';
-import {
-  selectAllUsers,
-  selectUserLoading,
-} from '../../store/selectors/user.selectors';
-import { selectAllRoles } from '../../store/selectors/role.selectors';
+import { UserService } from '../../core/services/user.service';
+import { RoleService } from '../../core/services/role.service';
 
 @Component({
   selector: 'app-user-management',
@@ -58,14 +52,15 @@ import { selectAllRoles } from '../../store/selectors/role.selectors';
   styleUrls: ['./user-management.component.css'],
 })
 export class UserManagementComponent implements OnInit {
-  private store = inject(Store);
+  private userService = inject(UserService);
+  private roleService = inject(RoleService);
   private fb = inject(FormBuilder);
   private modal = inject(NzModalService);
   private message = inject(NzMessageService);
 
-  users$: Observable<User[]>;
-  roles$: Observable<Role[]>;
-  loading$: Observable<boolean>;
+  users: User[] = [];
+  roles: Role[] = [];
+  loading = false;
 
   userForm!: FormGroup;
   isModalVisible = false;
@@ -74,16 +69,35 @@ export class UserManagementComponent implements OnInit {
 
   UserStatus = UserStatus;
 
-  constructor() {
-    this.users$ = this.store.select(selectAllUsers);
-    this.roles$ = this.store.select(selectAllRoles);
-    this.loading$ = this.store.select(selectUserLoading);
-  }
+  constructor() {}
 
   ngOnInit(): void {
-    this.store.dispatch(UserActions.loadUsers({}));
-    this.store.dispatch(RoleActions.loadRoles({}));
+    this.loadUsers();
+    this.loadRoles();
     this.initForm();
+  }
+
+  async loadUsers(): Promise<void> {
+    this.loading = true;
+    try {
+      const response = await firstValueFrom(this.userService.getUsers());
+      this.users = response.data;
+      this.loading = false;
+    } catch (error) {
+      console.error('Error loading users:', error);
+      this.message.error('加载用户列表失败');
+      this.loading = false;
+    }
+  }
+
+  async loadRoles(): Promise<void> {
+    try {
+      const roles = await firstValueFrom(this.roleService.getRoles());
+      this.roles = roles;
+    } catch (error) {
+      console.error('Error loading roles:', error);
+      this.message.error('加载角色列表失败');
+    }
   }
 
   initForm(): void {
@@ -131,36 +145,41 @@ export class UserManagementComponent implements OnInit {
     this.userForm.get('username')?.enable();
   }
 
-  handleSubmit(): void {
+  async handleSubmit(): Promise<void> {
     if (this.userForm.valid) {
       const formValue = this.userForm.getRawValue();
 
-      if (this.isEditMode && this.currentUserId) {
-        const updateDto: UpdateUserDto = {
-          username: formValue.username,
-          email: formValue.email,
-          fullName: formValue.fullName,
-          status: formValue.status,
-          roleIds: formValue.roleIds,
-        };
-        this.store.dispatch(
-          UserActions.updateUser({ id: this.currentUserId, user: updateDto }),
-        );
-        this.message.success('用户更新成功');
-      } else {
-        const createDto: CreateUserDto = {
-          username: formValue.username,
-          email: formValue.email,
-          password: formValue.password,
-          fullName: formValue.fullName,
-          status: formValue.status,
-          roleIds: formValue.roleIds,
-        };
-        this.store.dispatch(UserActions.createUser({ user: createDto }));
-        this.message.success('用户创建成功');
+      try {
+        if (this.isEditMode && this.currentUserId) {
+          const updateDto: UpdateUserDto = {
+            username: formValue.username,
+            email: formValue.email,
+            fullName: formValue.fullName,
+            status: formValue.status,
+            roleIds: formValue.roleIds,
+          };
+          await firstValueFrom(
+            this.userService.updateUser(this.currentUserId, updateDto),
+          );
+          this.message.success('用户更新成功');
+        } else {
+          const createDto: CreateUserDto = {
+            username: formValue.username,
+            email: formValue.email,
+            password: formValue.password,
+            fullName: formValue.fullName,
+            status: formValue.status,
+            roleIds: formValue.roleIds,
+          };
+          await firstValueFrom(this.userService.createUser(createDto));
+          this.message.success('用户创建成功');
+        }
+        await this.loadUsers();
+        this.handleCancel();
+      } catch (error) {
+        console.error('Error creating/updating user:', error);
+        this.message.error(this.isEditMode ? '用户更新失败' : '用户创建失败');
       }
-
-      this.handleCancel();
     } else {
       Object.values(this.userForm.controls).forEach((control) => {
         if (control.invalid) {
@@ -171,21 +190,32 @@ export class UserManagementComponent implements OnInit {
     }
   }
 
-  deleteUser(id: string): void {
-    this.store.dispatch(UserActions.deleteUser({ id }));
-    this.message.success('用户删除成功');
+  async deleteUser(id: string): Promise<void> {
+    try {
+      await firstValueFrom(this.userService.deleteUser(id));
+      this.message.success('用户删除成功');
+      await this.loadUsers();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      this.message.error('用户删除失败');
+    }
   }
 
   resetPassword(user: User): void {
     this.modal.confirm({
       nzTitle: '重置密码',
       nzContent: `确定要重置用户 ${user.username} 的密码吗？`,
-      nzOnOk: () => {
+      nzOnOk: async () => {
         const newPassword = this.generateRandomPassword();
-        this.store.dispatch(
-          UserActions.resetPassword({ userId: user.id, newPassword }),
-        );
-        this.message.success(`密码已重置为: ${newPassword}`);
+        try {
+          await firstValueFrom(
+            this.userService.resetPassword(user.id, newPassword),
+          );
+          this.message.success(`密码已重置为: ${newPassword}`);
+        } catch (error) {
+          console.error('Error resetting password:', error);
+          this.message.error('密码重置失败');
+        }
       },
     });
   }

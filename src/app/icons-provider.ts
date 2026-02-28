@@ -58,6 +58,11 @@ import {
   StarOutline,
   TagOutline,
   TagsOutline,
+  KeyOutline,
+  UploadOutline,
+  SyncOutline,
+  AuditOutline,
+  ProjectOutline,
 } from '@ant-design/icons-angular/icons';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 
@@ -82,6 +87,7 @@ const icons = [
   TeamOutline,
   SafetyOutline,
   IdcardOutline,
+  KeyOutline,
   LockOutline,
   LockFill,
   SettingOutline,
@@ -120,6 +126,10 @@ const icons = [
   StarOutline,
   TagOutline,
   TagsOutline,
+  UploadOutline,
+  SyncOutline,
+  AuditOutline,
+  ProjectOutline,
 ];
 
 export function provideNzIcons(): EnvironmentProviders {

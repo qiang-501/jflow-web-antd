@@ -27,7 +27,7 @@ export class PermissionsController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Return all permissions.' })
-  findAll(@Query('page') page = 1, @Query('limit') limit = 10) {
+  findAll(@Query('page') page = 1, @Query('limit') limit = 1000) {
     return this.permissionsService.findAll(+page, +limit);
   }
 
@@ -36,6 +36,14 @@ export class PermissionsController {
   @ApiResponse({ status: 200, description: 'Return menu permissions tree.' })
   getMenuPermissions() {
     return this.permissionsService.getMenuPermissions();
+  }
+
+  @Get('menus/:menuId')
+  @ApiOperation({ summary: 'Get menu permission by menu identifier' })
+  @ApiResponse({ status: 200, description: 'Return menu permission details.' })
+  @ApiResponse({ status: 404, description: 'Menu permission not found.' })
+  getMenuPermissionByMenuId(@Param('menuId') menuId: string) {
+    return this.permissionsService.getMenuPermissionByMenuId(menuId);
   }
 
   @Post('menus/:menuId/actions')

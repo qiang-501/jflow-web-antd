@@ -13,6 +13,7 @@ import {
   Validators,
   FormArray,
 } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzFormModule } from 'ng-zorro-antd/form';
 import { NzInputModule } from 'ng-zorro-antd/input';
@@ -157,48 +158,46 @@ export class FormBuilderComponent implements OnInit {
     return this.fieldForm.get('options') as FormArray;
   }
 
-  loadFormConfigs(): void {
+  async loadFormConfigs(): Promise<void> {
     this.loading = true;
-    this.formService.getFormConfigs().subscribe({
-      next: (response) => {
-        // 确保每个配置的 fields 都是数组
-        this.formConfigs = response.data.map((config) => ({
-          ...config,
-          fields: Array.isArray(config.fields) ? config.fields : [],
-        }));
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('加载表单配置失败:', error);
-        this.message.error('加载表单配置失败');
-        this.loading = false;
-      },
-    });
+    try {
+      const response = await firstValueFrom(this.formService.getFormConfigs());
+      // 确保每个配置的 fields 都是数组
+      this.formConfigs = response.data.map((config) => ({
+        ...config,
+        fields: Array.isArray(config.fields) ? config.fields : [],
+      }));
+      this.loading = false;
+    } catch (error) {
+      console.error('加载表单配置失败:', error);
+      this.message.error('加载表单配置失败');
+      this.loading = false;
+    }
   }
 
   // 加载单个表单配置
-  loadSingleFormConfig(id: number): void {
+  async loadSingleFormConfig(id: number): Promise<void> {
     this.loading = true;
-    this.formService.getFormConfigById(id).subscribe({
-      next: (config) => {
-        // 确保 fields 是数组
-        this.formConfigs = [
-          {
-            ...config,
-            fields: Array.isArray(config.fields) ? config.fields : [],
-          },
-        ];
-        // 自动设置为当前编辑的表单
-        this.currentConfig = this.formConfigs[0];
-        this.loading = false;
-        this.cdr.markForCheck();
-      },
-      error: (error) => {
-        console.error('加载表单配置失败:', error);
-        this.message.error('加载表单配置失败');
-        this.loading = false;
-      },
-    });
+    try {
+      const config = await firstValueFrom(
+        this.formService.getFormConfigById(id),
+      );
+      // 确保 fields 是数组
+      this.formConfigs = [
+        {
+          ...config,
+          fields: Array.isArray(config.fields) ? config.fields : [],
+        },
+      ];
+      // 自动设置为当前编辑的表单
+      this.currentConfig = this.formConfigs[0];
+      this.loading = false;
+      this.cdr.markForCheck();
+    } catch (error) {
+      console.error('加载表单配置失败:', error);
+      this.message.error('加载表单配置失败');
+      this.loading = false;
+    }
   }
 
   getMockConfigs(): DynamicFormConfig[] {
@@ -251,7 +250,7 @@ export class FormBuilderComponent implements OnInit {
     this.isConfigModalVisible = true;
   }
 
-  handleConfigOk(): void {
+  async handleConfigOk(): Promise<void> {
     if (this.configForm.valid) {
       const formValue = this.configForm.value;
       if (this.currentConfig) {
@@ -263,26 +262,27 @@ export class FormBuilderComponent implements OnInit {
           fields: this.currentConfig.fields,
         };
 
-        this.formService
-          .updateFormConfig(Number(this.currentConfig.id), updateDto)
-          .subscribe({
-            next: (updatedConfig) => {
-              const index = this.formConfigs.findIndex(
-                (c) => c.id === this.currentConfig!.id,
-              );
-              if (index >= 0) {
-                this.formConfigs[index] = updatedConfig;
-              }
-              this.currentConfig = updatedConfig;
-              this.message.success('表单配置已更新');
-              this.isConfigModalVisible = false;
-              this.cdr.markForCheck();
-            },
-            error: (error) => {
-              console.error('更新表单配置失败:', error);
-              this.message.error(error.error?.message || '更新表单配置失败');
-            },
-          });
+        try {
+          const updatedConfig = await firstValueFrom(
+            this.formService.updateFormConfig(
+              Number(this.currentConfig.id),
+              updateDto,
+            ),
+          );
+          const index = this.formConfigs.findIndex(
+            (c) => c.id === this.currentConfig!.id,
+          );
+          if (index >= 0) {
+            this.formConfigs[index] = updatedConfig;
+          }
+          this.currentConfig = updatedConfig;
+          this.message.success('表单配置已更新');
+          this.isConfigModalVisible = false;
+          this.cdr.markForCheck();
+        } catch (error: any) {
+          console.error('更新表单配置失败:', error);
+          this.message.error(error.error?.message || '更新表单配置失败');
+        }
       } else {
         // 创建新配置
         const createDto = {
@@ -292,19 +292,19 @@ export class FormBuilderComponent implements OnInit {
           fields: [],
         };
 
-        this.formService.createFormConfig(createDto).subscribe({
-          next: (newConfig) => {
-            this.formConfigs.push(newConfig);
-            this.currentConfig = newConfig;
-            this.message.success('表单配置已创建');
-            this.isConfigModalVisible = false;
-            this.cdr.markForCheck();
-          },
-          error: (error) => {
-            console.error('创建表单配置失败:', error);
-            this.message.error(error.error?.message || '创建表单配置失败');
-          },
-        });
+        try {
+          const newConfig = await firstValueFrom(
+            this.formService.createFormConfig(createDto),
+          );
+          this.formConfigs.push(newConfig);
+          this.currentConfig = newConfig;
+          this.message.success('表单配置已创建');
+          this.isConfigModalVisible = false;
+          this.cdr.markForCheck();
+        } catch (error: any) {
+          console.error('创建表单配置失败:', error);
+          this.message.error(error.error?.message || '创建表单配置失败');
+        }
       }
     }
   }
@@ -373,7 +373,7 @@ export class FormBuilderComponent implements OnInit {
     this.optionsFormArray.removeAt(index);
   }
 
-  handleFieldOk(): void {
+  async handleFieldOk(): Promise<void> {
     if (this.fieldForm.valid && this.currentConfig) {
       const formValue = this.fieldForm.value;
       const fields = this.getConfigFields(this.currentConfig);
@@ -429,31 +429,32 @@ export class FormBuilderComponent implements OnInit {
         fields: this.currentConfig.fields,
       };
 
-      this.formService
-        .updateFormConfig(Number(this.currentConfig.id), updateDto)
-        .subscribe({
-          next: (updatedConfig) => {
-            const index = this.formConfigs.findIndex(
-              (c) => c.id === this.currentConfig!.id,
-            );
-            if (index >= 0) {
-              this.formConfigs[index] = updatedConfig;
-            }
-            this.currentConfig = updatedConfig;
-            const action = this.editingFieldIndex >= 0 ? '更新' : '添加';
-            this.message.success(`字段已${action}`);
-            this.isFieldModalVisible = false;
-            this.cdr.markForCheck();
-          },
-          error: (error) => {
-            console.error('保存字段失败:', error);
-            this.message.error(error.error?.message || '保存字段失败');
-          },
-        });
+      try {
+        const updatedConfig = await firstValueFrom(
+          this.formService.updateFormConfig(
+            Number(this.currentConfig.id),
+            updateDto,
+          ),
+        );
+        const index = this.formConfigs.findIndex(
+          (c) => c.id === this.currentConfig!.id,
+        );
+        if (index >= 0) {
+          this.formConfigs[index] = updatedConfig;
+        }
+        this.currentConfig = updatedConfig;
+        const action = this.editingFieldIndex >= 0 ? '更新' : '添加';
+        this.message.success(`字段已${action}`);
+        this.isFieldModalVisible = false;
+        this.cdr.markForCheck();
+      } catch (error: any) {
+        console.error('保存字段失败:', error);
+        this.message.error(error.error?.message || '保存字段失败');
+      }
     }
   }
 
-  deleteField(config: DynamicFormConfig, index: number): void {
+  async deleteField(config: DynamicFormConfig, index: number): Promise<void> {
     const fields = this.getConfigFields(config);
     fields.splice(index, 1);
     fields.forEach((f: DynamicFormField, i: number) => (f.order = i + 1));
@@ -468,24 +469,22 @@ export class FormBuilderComponent implements OnInit {
       fields: config.fields,
     };
 
-    this.formService.updateFormConfig(Number(config.id), updateDto).subscribe({
-      next: (updatedConfig) => {
-        const configIndex = this.formConfigs.findIndex(
-          (c) => c.id === config.id,
-        );
-        if (configIndex >= 0) {
-          this.formConfigs[configIndex] = updatedConfig;
-        }
-        this.message.success('字段已删除');
-        this.cdr.markForCheck();
-      },
-      error: (error) => {
-        console.error('删除字段失败:', error);
-        this.message.error(error.error?.message || '删除字段失败');
-        // 恢复字段
-        this.loadFormConfigs();
-      },
-    });
+    try {
+      const updatedConfig = await firstValueFrom(
+        this.formService.updateFormConfig(Number(config.id), updateDto),
+      );
+      const configIndex = this.formConfigs.findIndex((c) => c.id === config.id);
+      if (configIndex >= 0) {
+        this.formConfigs[configIndex] = updatedConfig;
+      }
+      this.message.success('字段已删除');
+      this.cdr.markForCheck();
+    } catch (error: any) {
+      console.error('删除字段失败:', error);
+      this.message.error(error.error?.message || '删除字段失败');
+      // 恢复字段
+      await this.loadFormConfigs();
+    }
   }
 
   moveField(
@@ -518,18 +517,16 @@ export class FormBuilderComponent implements OnInit {
     this.isPreviewModalVisible = false;
   }
 
-  deleteConfig(id: number): void {
-    this.formService.deleteFormConfig(id).subscribe({
-      next: () => {
-        this.formConfigs = this.formConfigs.filter((c) => c.id !== id);
-        this.message.success('表单配置已删除');
-        this.cdr.markForCheck();
-      },
-      error: (error) => {
-        console.error('删除表单配置失败:', error);
-        this.message.error(error.error?.message || '删除表单配置失败');
-      },
-    });
+  async deleteConfig(id: number): Promise<void> {
+    try {
+      await firstValueFrom(this.formService.deleteFormConfig(id));
+      this.formConfigs = this.formConfigs.filter((c) => c.id !== id);
+      this.message.success('表单配置已删除');
+      this.cdr.markForCheck();
+    } catch (error: any) {
+      console.error('删除表单配置失败:', error);
+      this.message.error(error.error?.message || '删除表单配置失败');
+    }
   }
 
   needsOptions(type: FieldType): boolean {

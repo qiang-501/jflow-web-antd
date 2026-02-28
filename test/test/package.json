@@ -1,0 +1,23 @@
+{
+  "name": "jflow-web-antd-e2e",
+  "version": "1.0.0",
+  "description": "End-to-end testing for jflow-web-antd using Playwright",
+  "main": "index.js",
+  "scripts": {
+    "check-app": "node check-app.js",
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:report": "playwright show-report",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:auth": "playwright test e2e/auth.spec.ts",
+    "test:codegen": "playwright codegen http://localhost:4200",
+    "test:failed": "playwright test --last-failed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0"
+  },
+  "keywords": [],
+  "author": "qiang-501",
+  "license": "MIT"
+}

@@ -1,5 +1,5 @@
 // role-management.component.ts
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   ReactiveFormsModule,
@@ -7,9 +7,7 @@ import {
   FormGroup,
   Validators,
 } from '@angular/forms';
-import { Store } from '@ngrx/store';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { firstValueFrom } from 'rxjs';
 
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzButtonModule } from 'ng-zorro-antd/button';
@@ -25,6 +23,7 @@ import { NzTreeSelectModule } from 'ng-zorro-antd/tree-select';
 import { NzSpaceModule } from 'ng-zorro-antd/space';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
+import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 
 import {
   Role,
@@ -32,15 +31,13 @@ import {
   CreateRoleDto,
   UpdateRoleDto,
 } from '../../models/role.model';
-import { Permission } from '../../models/permission.model';
-import { RoleActions } from '../../store/actions/role.actions';
-import { PermissionActions } from '../../store/actions/permission.actions';
 import {
-  selectAllRoles,
-  selectRoleTree,
-  selectRoleLoading,
-} from '../../store/selectors/role.selectors';
-import { selectAllPermissions } from '../../store/selectors/permission.selectors';
+  Permission,
+  MenuPermission,
+  PermissionType,
+} from '../../models/permission.model';
+import { RoleService } from '../../core/services/role.service';
+import { PermissionService } from '../../core/services/permission.service';
 
 @Component({
   selector: 'app-role-management',
@@ -61,46 +58,106 @@ import { selectAllPermissions } from '../../store/selectors/permission.selectors
     NzSpaceModule,
     NzTagModule,
     NzAlertModule,
+    NzCheckboxModule,
   ],
   templateUrl: './role-management.component.html',
   styleUrls: ['./role-management.component.css'],
 })
 export class RoleManagementComponent implements OnInit {
-  private store = inject(Store);
+  private roleService = inject(RoleService);
+  private permissionService = inject(PermissionService);
   private fb = inject(FormBuilder);
   private message = inject(NzMessageService);
-
-  roles$: Observable<Role[]>;
-  roleTree$: Observable<RoleTree[]>;
-  roleTreeNodes$: Observable<NzTreeNodeOptions[]>;
-  permissions$: Observable<Permission[]>;
-  loading$: Observable<boolean>;
+  private cdr = inject(ChangeDetectorRef);
+  roles: Role[] = [];
+  roleTree: RoleTree[] = [];
+  roleTreeNodes: NzTreeNodeOptions[] = [];
+  permissions: Permission[] = [];
+  menuPermissions: MenuPermission[] = [];
+  permissionTreeNodes: NzTreeNodeOptions[] = [];
+  checkedPermissionKeys: string[] = [];
+  loading = false;
 
   roleForm!: FormGroup;
-  permissionForm!: FormGroup;
   isModalVisible = false;
   isPermissionModalVisible = false;
   isEditMode = false;
   currentRoleId: string | null = null;
   selectedRole: Role | null = null;
 
-  constructor() {
-    this.roles$ = this.store.select(selectAllRoles);
-    this.roleTree$ = this.store.select(selectRoleTree);
-    this.permissions$ = this.store.select(selectAllPermissions);
-    this.loading$ = this.store.select(selectRoleLoading);
-
-    // 转换 RoleTree 为 NzTreeNodeOptions
-    this.roleTreeNodes$ = this.roleTree$.pipe(
-      map((tree) => this.convertToTreeNodes(tree)),
-    );
+  ngOnInit(): void {
+    this.loadRoles();
+    this.loadRoleTree();
+    this.loadPermissions();
+    this.loadMenuPermissions();
+    this.initForm();
   }
 
-  ngOnInit(): void {
-    this.store.dispatch(RoleActions.loadRoles({}));
-    this.store.dispatch(RoleActions.loadRoleTree());
-    this.store.dispatch(PermissionActions.loadPermissions({}));
-    this.initForm();
+  async loadRoles(): Promise<void> {
+    this.loading = true;
+    try {
+      const roles = await firstValueFrom(this.roleService.getRoles());
+      this.roles = roles;
+      this.loading = false;
+    } catch (error) {
+      console.error('Failed to load roles:', error);
+      this.message.error('加载角色列表失败');
+      this.loading = false;
+    }
+    this.cdr.markForCheck();
+  }
+
+  async loadRoleTree(): Promise<void> {
+    try {
+      const tree = await firstValueFrom(this.roleService.getRoleTree());
+      this.roleTree = tree;
+      this.roleTreeNodes = this.convertToTreeNodes(tree);
+    } catch (error) {
+      console.error('Failed to load role tree:', error);
+      this.message.error('加载角色树失败');
+    }
+    this.cdr.markForCheck();
+  }
+
+  async loadPermissions(): Promise<void> {
+    try {
+      const permissions = await firstValueFrom(
+        this.permissionService.getPermissions(),
+      );
+      this.permissions = permissions;
+    } catch (error) {
+      console.error('Failed to load permissions:', error);
+      this.message.error('加载权限列表失败');
+    }
+    this.cdr.markForCheck();
+  }
+
+  async loadMenuPermissions(): Promise<void> {
+    try {
+      // 加载所有权限
+      const permissions = await firstValueFrom(
+        this.permissionService.getPermissions(),
+      );
+
+      // 尝试加载菜单权限树（如果API支持）
+      try {
+        const menuPermissions = await firstValueFrom(
+          this.permissionService.getMenuPermissions(),
+        );
+        this.menuPermissions = menuPermissions;
+        // 将权限按菜单分组构建树
+        this.permissionTreeNodes = this.convertPermissionsToTree(
+          permissions,
+          menuPermissions,
+        );
+      } catch (error) {
+        // 如果菜单权限API不可用，按类型分组
+        this.permissionTreeNodes = this.groupPermissionsByType(permissions);
+      }
+    } catch (error) {
+      console.error('Failed to load menu permissions:', error);
+      this.message.error('加载权限树失败');
+    }
   }
 
   initForm(): void {
@@ -109,10 +166,6 @@ export class RoleManagementComponent implements OnInit {
       code: ['', [Validators.required]],
       description: [''],
       parentId: [null],
-    });
-
-    this.permissionForm = this.fb.group({
-      permissionIds: [[], [Validators.required]],
     });
   }
 
@@ -137,12 +190,10 @@ export class RoleManagementComponent implements OnInit {
 
   showPermissionModal(role: Role): void {
     this.selectedRole = role;
-    // 支持两种格式：permissionIds 数组或 permissions 对象数组
+    // 获取角色已有的权限ID列表
     const permissionIds =
       role.permissionIds || role.permissions?.map((p) => String(p.id)) || [];
-    this.permissionForm.patchValue({
-      permissionIds: permissionIds,
-    });
+    this.checkedPermissionKeys = permissionIds;
     this.isPermissionModalVisible = true;
   }
 
@@ -153,38 +204,47 @@ export class RoleManagementComponent implements OnInit {
 
   handlePermissionCancel(): void {
     this.isPermissionModalVisible = false;
-    this.permissionForm.reset();
+    this.checkedPermissionKeys = [];
     this.selectedRole = null;
   }
 
-  handleSubmit(): void {
+  async handleSubmit(): Promise<void> {
     if (this.roleForm.valid) {
       const formValue = this.roleForm.value;
+      this.loading = true;
 
-      if (this.isEditMode && this.currentRoleId) {
-        const updateDto: UpdateRoleDto = {
-          name: formValue.name,
-          code: formValue.code,
-          description: formValue.description,
-          parentId: formValue.parentId,
-        };
-        this.store.dispatch(
-          RoleActions.updateRole({ id: this.currentRoleId, role: updateDto }),
-        );
-        this.message.success('角色更新成功');
-      } else {
-        const createDto: CreateRoleDto = {
-          name: formValue.name,
-          code: formValue.code,
-          description: formValue.description,
-          parentId: formValue.parentId,
-          permissionIds: [],
-        };
-        this.store.dispatch(RoleActions.createRole({ role: createDto }));
-        this.message.success('角色创建成功');
+      try {
+        if (this.isEditMode && this.currentRoleId) {
+          const updateDto: UpdateRoleDto = {
+            name: formValue.name,
+            code: formValue.code,
+            description: formValue.description,
+            parentId: formValue.parentId,
+          };
+          await firstValueFrom(
+            this.roleService.updateRole(this.currentRoleId, updateDto),
+          );
+          this.message.success('角色更新成功');
+        } else {
+          const createDto: CreateRoleDto = {
+            name: formValue.name,
+            code: formValue.code,
+            description: formValue.description,
+            parentId: formValue.parentId,
+            permissionIds: [],
+          };
+          await firstValueFrom(this.roleService.createRole(createDto));
+          this.message.success('角色创建成功');
+        }
+        this.handleCancel();
+        await this.loadRoles();
+        await this.loadRoleTree();
+        this.loading = false;
+      } catch (error) {
+        console.error('Failed to create/update role:', error);
+        this.message.error(this.isEditMode ? '角色更新失败' : '角色创建失败');
+        this.loading = false;
       }
-
-      this.handleCancel();
     } else {
       Object.values(this.roleForm.controls).forEach((control) => {
         if (control.invalid) {
@@ -195,23 +255,43 @@ export class RoleManagementComponent implements OnInit {
     }
   }
 
-  handlePermissionSubmit(): void {
-    if (this.permissionForm.valid && this.selectedRole) {
-      const permissionIds = this.permissionForm.value.permissionIds;
-      this.store.dispatch(
-        RoleActions.assignPermissions({
-          roleId: this.selectedRole.id,
-          permissionIds,
-        }),
-      );
-      this.message.success('权限分配成功');
-      this.handlePermissionCancel();
+  async handlePermissionSubmit(): Promise<void> {
+    if (this.selectedRole && this.checkedPermissionKeys.length > 0) {
+      this.loading = true;
+      try {
+        await firstValueFrom(
+          this.roleService.updateRolePermissions(
+            this.selectedRole.id,
+            this.checkedPermissionKeys,
+          ),
+        );
+        this.message.success('权限分配成功');
+        this.handlePermissionCancel();
+        await this.loadRoles();
+        this.loading = false;
+      } catch (error) {
+        console.error('Failed to assign permissions:', error);
+        this.message.error('权限分配失败');
+        this.loading = false;
+      }
+    } else if (this.checkedPermissionKeys.length === 0) {
+      this.message.warning('请至少选择一个权限');
     }
   }
 
-  deleteRole(id: string): void {
-    this.store.dispatch(RoleActions.deleteRole({ id }));
-    this.message.success('角色删除成功');
+  async deleteRole(id: string): Promise<void> {
+    this.loading = true;
+    try {
+      await firstValueFrom(this.roleService.deleteRole(id));
+      this.message.success('角色删除成功');
+      await this.loadRoles();
+      await this.loadRoleTree();
+      this.loading = false;
+    } catch (error) {
+      console.error('Failed to delete role:', error);
+      this.message.error('角色删除失败');
+      this.loading = false;
+    }
   }
 
   getRoleHierarchy(role: Role, allRoles: Role[]): string {
@@ -239,5 +319,211 @@ export class RoleManagementComponent implements OnInit {
       children: role.children ? this.convertToTreeNodes(role.children) : [],
       isLeaf: !role.children || role.children.length === 0,
     }));
+  }
+
+  /**
+   * 将权限按类型分组构建树形结构
+   */
+  private groupPermissionsByType(
+    permissions: Permission[],
+  ): NzTreeNodeOptions[] {
+    const menuPermissions = permissions.filter(
+      (p) => p.type === PermissionType.Menu,
+    );
+    const actionPermissions = permissions.filter(
+      (p) => p.type === PermissionType.Action,
+    );
+    const dataPermissions = permissions.filter(
+      (p) => p.type === PermissionType.Data,
+    );
+
+    const nodes: NzTreeNodeOptions[] = [];
+
+    if (menuPermissions.length > 0) {
+      nodes.push({
+        title: '菜单权限',
+        key: 'menu-group',
+        selectable: false,
+        children: menuPermissions.map((p) => ({
+          title: `${p.name} (${p.code})`,
+          key: String(p.id),
+          isLeaf: true,
+          icon: 'menu',
+        })),
+        expanded: true,
+        icon: 'folder',
+      });
+    }
+
+    if (actionPermissions.length > 0) {
+      nodes.push({
+        title: '操作权限',
+        key: 'action-group',
+        selectable: false,
+        children: actionPermissions.map((p) => ({
+          title: `${p.name} (${p.code})`,
+          key: String(p.id),
+          isLeaf: true,
+          icon: 'check-circle',
+        })),
+        expanded: true,
+        icon: 'folder',
+      });
+    }
+
+    if (dataPermissions.length > 0) {
+      nodes.push({
+        title: '数据权限',
+        key: 'data-group',
+        selectable: false,
+        children: dataPermissions.map((p) => ({
+          title: `${p.name} (${p.code})`,
+          key: String(p.id),
+          isLeaf: true,
+          icon: 'database',
+        })),
+        expanded: true,
+        icon: 'folder',
+      });
+    }
+
+    return nodes;
+  }
+
+  /**
+   * 结合菜单信息构建权限树
+   */
+  private convertPermissionsToTree(
+    permissions: Permission[],
+    menuPermissions: MenuPermission[],
+  ): NzTreeNodeOptions[] {
+    // 如果有菜单信息，按菜单分组
+    const rootMenus = menuPermissions.filter((menu) => !menu.parentId);
+
+    if (rootMenus.length === 0) {
+      // 降级到按类型分组
+      return this.groupPermissionsByType(permissions);
+    }
+
+    return rootMenus.map((menu) =>
+      this.buildMenuPermissionNode(menu, menuPermissions, permissions),
+    );
+  }
+
+  /**
+   * 递归构建菜单权限节点
+   */
+  private buildMenuPermissionNode(
+    menu: MenuPermission,
+    allMenus: MenuPermission[],
+    permissions: Permission[],
+  ): NzTreeNodeOptions {
+    const children: NzTreeNodeOptions[] = [];
+
+    // 添加子菜单
+    const childMenus = allMenus.filter((m) => m.parentId === menu.menuId);
+    childMenus.forEach((childMenu) => {
+      children.push(
+        this.buildMenuPermissionNode(childMenu, allMenus, permissions),
+      );
+    });
+
+    // 添加该菜单对应的菜单权限
+    const menuPerms = permissions.filter(
+      (p) => p.type === PermissionType.Menu && p.menuId === menu.menuId,
+    );
+    menuPerms.forEach((perm) => {
+      children.push({
+        title: `${perm.name} (${perm.code})`,
+        key: String(perm.id),
+        isLeaf: true,
+        icon: 'check-circle',
+      });
+    });
+
+    // 添加该菜单的操作权限
+    const actionPerms = permissions.filter(
+      (p) => p.type === PermissionType.Action && p.menuId === menu.menuId,
+    );
+    actionPerms.forEach((perm) => {
+      children.push({
+        title: `${perm.name} (${perm.code})`,
+        key: String(perm.id),
+        isLeaf: true,
+        icon: 'check-circle',
+      });
+    });
+
+    return {
+      title: `${menu.menuName} (${menu.path})`,
+      key: `menu-${menu.menuId}`,
+      selectable: false,
+      children: children,
+      expanded: false,
+      icon: menu.icon || 'folder',
+    };
+  }
+
+  /**
+   * 将菜单权限转换为树形节点（旧方法，已弃用）
+   */
+  private convertToPermissionTree(
+    menuPermissions: MenuPermission[],
+  ): NzTreeNodeOptions[] {
+    // 构建根节点
+    const rootMenus = menuPermissions.filter((menu) => !menu.parentId);
+
+    return rootMenus.map((menu) =>
+      this.buildPermissionNode(menu, menuPermissions),
+    );
+  }
+
+  /**
+   * 递归构建权限节点（旧方法，已弃用）
+   */
+  private buildPermissionNode(
+    menu: MenuPermission,
+    allMenus: MenuPermission[],
+  ): NzTreeNodeOptions {
+    const children: NzTreeNodeOptions[] = [];
+
+    // 添加子菜单
+    const childMenus = allMenus.filter((m) => m.parentId === menu.menuId);
+    childMenus.forEach((childMenu) => {
+      children.push(this.buildPermissionNode(childMenu, allMenus));
+    });
+
+    // 添加操作权限
+    if (menu.actions && menu.actions.length > 0) {
+      menu.actions.forEach((action) => {
+        children.push({
+          title: `${action.name} (${action.code})`,
+          key: action.id,
+          isLeaf: true,
+          icon: 'check-circle',
+        });
+      });
+    }
+
+    return {
+      title: `${menu.menuName} (${menu.path})`,
+      key: menu.menuId,
+      children: children,
+      expanded: false,
+      icon: menu.icon || 'folder',
+    };
+  }
+
+  /**
+   * 权限树checkbox变化事件
+   */
+  onPermissionCheck(event: any): void {
+    debugger;
+    // event 可能是 NzFormatEmitEvent，包含 checkedKeys 属性
+    if (event && event.checkedKeys) {
+      this.checkedPermissionKeys = event.checkedKeys;
+    } else if (Array.isArray(event)) {
+      this.checkedPermissionKeys = event;
+    }
   }
 }

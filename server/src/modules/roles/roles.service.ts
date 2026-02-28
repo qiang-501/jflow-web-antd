@@ -3,12 +3,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Role } from './role.entity';
 import { CreateRoleDto, UpdateRoleDto } from './role.dto';
+import { Permission } from '../permissions/permission.entity';
 
 @Injectable()
 export class RolesService {
   constructor(
     @InjectRepository(Role)
     private rolesRepository: Repository<Role>,
+    @InjectRepository(Permission)
+    private permissionsRepository: Repository<Permission>,
   ) {}
 
   async findAll(
@@ -107,5 +110,111 @@ export class RolesService {
     });
 
     return rootRoles;
+  }
+
+  // Role Permissions Management
+
+  /**
+   * Get all permissions for a role
+   */
+  async getRolePermissions(roleId: number): Promise<Permission[]> {
+    const role = await this.findOne(roleId);
+    return role.permissions || [];
+  }
+
+  /**
+   * Add permissions to a role (without removing existing ones)
+   */
+  async addPermissionsToRole(
+    roleId: number,
+    permissionIds: number[],
+  ): Promise<Role> {
+    const role = await this.findOne(roleId);
+
+    // Verify all permissions exist
+    const permissions =
+      await this.permissionsRepository.findByIds(permissionIds);
+
+    if (permissions.length !== permissionIds.length) {
+      throw new NotFoundException('One or more permissions not found');
+    }
+
+    // Get current permission IDs
+    const currentPermissionIds = role.permissions.map((p) => p.id);
+
+    // Add only new permissions (avoid duplicates)
+    const newPermissionIds = permissionIds.filter(
+      (id) => !currentPermissionIds.includes(id),
+    );
+
+    if (newPermissionIds.length > 0) {
+      await this.rolesRepository
+        .createQueryBuilder()
+        .relation(Role, 'permissions')
+        .of(role)
+        .add(newPermissionIds);
+    }
+
+    return this.findOne(roleId);
+  }
+
+  /**
+   * Update role permissions (replace all existing permissions)
+   */
+  async updateRolePermissions(
+    roleId: number,
+    permissionIds: number[],
+  ): Promise<Role> {
+    const role = await this.findOne(roleId);
+
+    // Verify all permissions exist
+    if (permissionIds.length > 0) {
+      const permissions =
+        await this.permissionsRepository.findByIds(permissionIds);
+
+      if (permissions.length !== permissionIds.length) {
+        throw new NotFoundException('One or more permissions not found');
+      }
+    }
+
+    // Get current permission IDs
+    const currentPermissionIds = role.permissions.map((p) => p.id);
+
+    // Replace all permissions
+    await this.rolesRepository
+      .createQueryBuilder()
+      .relation(Role, 'permissions')
+      .of(role)
+      .addAndRemove(permissionIds, currentPermissionIds);
+
+    return this.findOne(roleId);
+  }
+
+  /**
+   * Remove a specific permission from a role
+   */
+  async removePermissionFromRole(
+    roleId: number,
+    permissionId: number,
+  ): Promise<Role> {
+    const role = await this.findOne(roleId);
+
+    // Check if the role has this permission
+    const hasPermission = role.permissions.some((p) => p.id === permissionId);
+
+    if (!hasPermission) {
+      throw new NotFoundException(
+        `Permission ${permissionId} not found in role ${roleId}`,
+      );
+    }
+
+    // Remove the permission
+    await this.rolesRepository
+      .createQueryBuilder()
+      .relation(Role, 'permissions')
+      .of(role)
+      .remove(permissionId);
+
+    return this.findOne(roleId);
   }
 }

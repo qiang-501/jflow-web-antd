@@ -11,7 +11,8 @@ import { UsersModule } from '../users/users.module';
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'your-secret-key',
-      signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },
+      // JWT 有效期默认 2 小时，可通过环境变量配置
+      signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '2h' },
     }),
   ],
   controllers: [AuthController],

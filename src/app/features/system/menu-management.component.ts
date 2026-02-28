@@ -25,6 +25,7 @@ import {
   CreateMenuDto,
   UpdateMenuDto,
 } from '../../core/services/menu.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-menu-management',
@@ -92,27 +93,25 @@ export class MenuManagementComponent implements OnInit {
     });
   }
 
-  loadMenuTree(): void {
+  async loadMenuTree(): Promise<void> {
     this.loading = true;
-    this.menuService.getMenuTree().subscribe({
-      next: (tree) => {
-        setTimeout(() => {
-          this.menuTree = this.initializeExpandState(tree);
-          this.parentMenuNodes = this.buildTreeSelectData(tree);
-          this.loading = false;
-          this.updateDisplayData();
-          this.cdr.detectChanges();
-        });
-      },
-      error: (error) => {
-        console.error('Load menu tree error:', error);
-        setTimeout(() => {
-          this.messageService.error('加载菜单树失败');
-          this.loading = false;
-          this.cdr.detectChanges();
-        });
-      },
-    });
+    try {
+      const tree = await firstValueFrom(this.menuService.getMenuTree());
+      setTimeout(() => {
+        this.menuTree = this.initializeExpandState(tree);
+        this.parentMenuNodes = this.buildTreeSelectData(tree);
+        this.loading = false;
+        this.updateDisplayData();
+        this.cdr.detectChanges();
+      });
+    } catch (error) {
+      console.error('Load menu tree error:', error);
+      setTimeout(() => {
+        this.messageService.error('加载菜单树失败');
+        this.loading = false;
+        this.cdr.detectChanges();
+      });
+    }
   }
 
   /**
@@ -187,7 +186,7 @@ export class MenuManagementComponent implements OnInit {
     }
   }
 
-  createMenu(): void {
+  async createMenu(): Promise<void> {
     const dto: CreateMenuDto = {
       name: this.currentMenu.name!,
       title: this.currentMenu.title,
@@ -204,20 +203,18 @@ export class MenuManagementComponent implements OnInit {
       externalLink: this.currentMenu.externalLink || false,
     };
 
-    this.menuService.createMenu(dto).subscribe({
-      next: () => {
-        this.messageService.success('创建成功');
-        this.isModalVisible = false;
-        this.loadMenuTree();
-      },
-      error: (error) => {
-        this.messageService.error(error?.error?.message || '创建失败');
-        console.error('Create menu error:', error);
-      },
-    });
+    try {
+      await firstValueFrom(this.menuService.createMenu(dto));
+      this.messageService.success('创建成功');
+      this.isModalVisible = false;
+      await this.loadMenuTree();
+    } catch (error: any) {
+      this.messageService.error(error?.error?.message || '创建失败');
+      console.error('Create menu error:', error);
+    }
   }
 
-  updateMenu(): void {
+  async updateMenu(): Promise<void> {
     const id = this.currentMenu.id!;
     const dto: UpdateMenuDto = {
       name: this.currentMenu.name,
@@ -235,72 +232,64 @@ export class MenuManagementComponent implements OnInit {
       externalLink: this.currentMenu.externalLink,
     };
 
-    this.menuService.updateMenu(id, dto).subscribe({
-      next: () => {
-        this.messageService.success('更新成功');
-        this.isModalVisible = false;
-        this.loadMenuTree();
-      },
-      error: (error) => {
-        this.messageService.error(error?.error?.message || '更新失败');
-        console.error('Update menu error:', error);
-      },
-    });
+    try {
+      await firstValueFrom(this.menuService.updateMenu(id, dto));
+      this.messageService.success('更新成功');
+      this.isModalVisible = false;
+      await this.loadMenuTree();
+    } catch (error: any) {
+      this.messageService.error(error?.error?.message || '更新失败');
+      console.error('Update menu error:', error);
+    }
   }
 
-  deleteMenu(id: number): void {
-    this.menuService.deleteMenu(id).subscribe({
-      next: () => {
-        this.messageService.success('删除成功');
-        this.loadMenuTree();
-      },
-      error: (error) => {
-        this.messageService.error(
-          error?.error?.message || '删除失败，请先删除子菜单',
-        );
-        console.error('Delete menu error:', error);
-      },
-    });
+  async deleteMenu(id: number): Promise<void> {
+    try {
+      await firstValueFrom(this.menuService.deleteMenu(id));
+      this.messageService.success('删除成功');
+      await this.loadMenuTree();
+    } catch (error: any) {
+      this.messageService.error(
+        error?.error?.message || '删除失败，请先删除子菜单',
+      );
+      console.error('Delete menu error:', error);
+    }
   }
 
-  toggleStatus(menu: Menu): void {
+  async toggleStatus(menu: Menu): Promise<void> {
     const dto: UpdateMenuDto = {
       status: menu.status === 'active' ? 'inactive' : 'active',
     };
 
-    this.menuService.updateMenu(menu.id, dto).subscribe({
-      next: () => {
-        setTimeout(() => {
-          menu.status = dto.status as any;
-          this.messageService.success('状态更新成功');
-          this.cdr.detectChanges();
-        });
-      },
-      error: (error) => {
-        this.messageService.error('状态更新失败');
-        console.error('Toggle status error:', error);
-      },
-    });
+    try {
+      await firstValueFrom(this.menuService.updateMenu(menu.id, dto));
+      setTimeout(() => {
+        menu.status = dto.status as any;
+        this.messageService.success('状态更新成功');
+        this.cdr.detectChanges();
+      });
+    } catch (error) {
+      this.messageService.error('状态更新失败');
+      console.error('Toggle status error:', error);
+    }
   }
 
-  toggleVisible(menu: Menu): void {
+  async toggleVisible(menu: Menu): Promise<void> {
     const dto: UpdateMenuDto = {
       isVisible: !menu.isVisible,
     };
 
-    this.menuService.updateMenu(menu.id, dto).subscribe({
-      next: () => {
-        setTimeout(() => {
-          menu.isVisible = dto.isVisible!;
-          this.messageService.success('可见性更新成功');
-          this.cdr.detectChanges();
-        });
-      },
-      error: (error) => {
-        this.messageService.error('可见性更新失败');
-        console.error('Toggle visible error:', error);
-      },
-    });
+    try {
+      await firstValueFrom(this.menuService.updateMenu(menu.id, dto));
+      setTimeout(() => {
+        menu.isVisible = dto.isVisible!;
+        this.messageService.success('可见性更新成功');
+        this.cdr.detectChanges();
+      });
+    } catch (error) {
+      this.messageService.error('可见性更新失败');
+      console.error('Toggle visible error:', error);
+    }
   }
 
   getTypeText(type: string): string {

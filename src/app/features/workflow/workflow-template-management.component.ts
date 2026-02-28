@@ -21,6 +21,7 @@ import {
   UpdateWorkflowTemplateDto,
 } from '../../models/workflow-template.model';
 import { WorkflowPriority } from '../../models/work-flow';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-workflow-template-management',
@@ -71,25 +72,23 @@ export class WorkflowTemplateManagementComponent implements OnInit {
     this.loadTemplates();
   }
 
-  loadTemplates(): void {
+  async loadTemplates(): Promise<void> {
     this.loading = true;
-    this.templateService
-      .getTemplates({
-        page: this.pageIndex,
-        limit: this.pageSize,
-      })
-      .subscribe({
-        next: (response) => {
-          this.templates = response.data;
-          this.total = response.total;
-          this.loading = false;
-        },
-        error: (error) => {
-          this.messageService.error('加载模板列表失败');
-          this.loading = false;
-          console.error('Load templates error:', error);
-        },
-      });
+    try {
+      const response = await firstValueFrom(
+        this.templateService.getTemplates({
+          page: this.pageIndex,
+          limit: this.pageSize,
+        }),
+      );
+      this.templates = response.data;
+      this.total = response.total;
+      this.loading = false;
+    } catch (error) {
+      this.messageService.error('加载模板列表失败');
+      this.loading = false;
+      console.error('Load templates error:', error);
+    }
   }
 
   onPageIndexChange(pageIndex: number): void {
@@ -138,7 +137,7 @@ export class WorkflowTemplateManagementComponent implements OnInit {
     }
   }
 
-  createTemplate(): void {
+  async createTemplate(): Promise<void> {
     const dto: CreateWorkflowTemplateDto = {
       code: this.currentTemplate.code!,
       name: this.currentTemplate.name!,
@@ -149,20 +148,18 @@ export class WorkflowTemplateManagementComponent implements OnInit {
       active: this.currentTemplate.active !== false,
     };
 
-    this.templateService.createTemplate(dto).subscribe({
-      next: () => {
-        this.messageService.success('创建成功');
-        this.isModalVisible = false;
-        this.loadTemplates();
-      },
-      error: (error) => {
-        this.messageService.error('创建失败');
-        console.error('Create template error:', error);
-      },
-    });
+    try {
+      await firstValueFrom(this.templateService.createTemplate(dto));
+      this.messageService.success('创建成功');
+      this.isModalVisible = false;
+      await this.loadTemplates();
+    } catch (error) {
+      this.messageService.error('创建失败');
+      console.error('Create template error:', error);
+    }
   }
 
-  updateTemplate(): void {
+  async updateTemplate(): Promise<void> {
     const id = this.currentTemplate.id!;
     const dto: UpdateWorkflowTemplateDto = {
       name: this.currentTemplate.name,
@@ -172,47 +169,43 @@ export class WorkflowTemplateManagementComponent implements OnInit {
       active: this.currentTemplate.active,
     };
 
-    this.templateService.updateTemplate(id, dto).subscribe({
-      next: () => {
-        this.messageService.success('更新成功');
-        this.isModalVisible = false;
-        this.loadTemplates();
-      },
-      error: (error) => {
-        this.messageService.error('更新失败');
-        console.error('Update template error:', error);
-      },
-    });
+    try {
+      await firstValueFrom(this.templateService.updateTemplate(id, dto));
+      this.messageService.success('更新成功');
+      this.isModalVisible = false;
+      await this.loadTemplates();
+    } catch (error) {
+      this.messageService.error('更新失败');
+      console.error('Update template error:', error);
+    }
   }
 
-  deleteTemplate(id: number): void {
-    this.templateService.deleteTemplate(id).subscribe({
-      next: () => {
-        this.messageService.success('删除成功');
-        this.loadTemplates();
-      },
-      error: (error) => {
-        this.messageService.error('删除失败');
-        console.error('Delete template error:', error);
-      },
-    });
+  async deleteTemplate(id: number): Promise<void> {
+    try {
+      await firstValueFrom(this.templateService.deleteTemplate(id));
+      this.messageService.success('删除成功');
+      await this.loadTemplates();
+    } catch (error) {
+      this.messageService.error('删除失败');
+      console.error('Delete template error:', error);
+    }
   }
 
-  toggleActive(template: WorkflowTemplate): void {
+  async toggleActive(template: WorkflowTemplate): Promise<void> {
     const dto: UpdateWorkflowTemplateDto = {
       active: !template.active,
     };
 
-    this.templateService.updateTemplate(template.id, dto).subscribe({
-      next: () => {
-        template.active = !template.active;
-        this.messageService.success('状态更新成功');
-      },
-      error: (error) => {
-        this.messageService.error('状态更新失败');
-        console.error('Toggle active error:', error);
-      },
-    });
+    try {
+      await firstValueFrom(
+        this.templateService.updateTemplate(template.id, dto),
+      );
+      template.active = !template.active;
+      this.messageService.success('状态更新成功');
+    } catch (error) {
+      this.messageService.error('状态更新失败');
+      console.error('Toggle active error:', error);
+    }
   }
 
   getPriorityColor(priority: string): string {

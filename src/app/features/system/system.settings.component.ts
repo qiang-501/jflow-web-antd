@@ -27,9 +27,7 @@ import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzModalModule } from 'ng-zorro-antd/modal';
 import { getData } from './data';
 import { TranslateModule } from '@ngx-translate/core';
-import { selectAllMenus } from '../../store/selectors/menu.selectors';
-import { MenuState } from '../../store/reducers/menu.reducer';
-import { Store } from '@ngrx/store';
+import { MenuService } from '../../core/services/menu.service';
 ModuleRegistry.registerModules([
   ClientSideRowModelModule,
   ColumnsToolPanelModule,
@@ -60,7 +58,7 @@ ModuleRegistry.registerModules([
 })
 export class SystemSettingsComponent implements OnInit {
   private gridApi!: GridApi;
-  constructor(private menuStore: Store<{ menus: MenuState }>) {}
+  constructor(private menuService: MenuService) {}
   columnDefs: ColDef[] = [
     { field: 'created', editable: true },
     { field: 'modified' },
@@ -106,11 +104,9 @@ export class SystemSettingsComponent implements OnInit {
   getDataPath: GetDataPath = (data) => data.path;
   onGridReady(params: GridReadyEvent<any>) {
     this.gridApi = params.api;
-    this.menuStore.dispatch({
-      type: 'LoadMenuActions',
-    });
-    this.menuStore.select(selectAllMenus).subscribe((menus) => {
-      debugger;
-    });
+    // 如果需要加载菜单数据，可以使用 MenuService
+    // this.menuService.getMenus().subscribe((menus) => {
+    //   console.log('Loaded menus:', menus);
+    // });
   }
 }

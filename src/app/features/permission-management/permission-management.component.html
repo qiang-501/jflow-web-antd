@@ -114,7 +114,7 @@
     [nzBodyStyle]="{ maxHeight: '60vh', overflowY: 'auto' }"
     (nzOnCancel)="handleActionCancel()"
     (nzOnOk)="handleActionSubmit()"
-    [nzOkLoading]="(loading$ | async) || false"
+    [nzOkLoading]="loading"
   >
     <ng-container *nzModalContent>
       @if (selectedMenu) {

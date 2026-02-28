@@ -1,5 +1,5 @@
 // permission-management.component.ts
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   ReactiveFormsModule,
@@ -7,8 +7,7 @@ import {
   FormGroup,
   Validators,
 } from '@angular/forms';
-import { Store } from '@ngrx/store';
-import { Observable, take } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzButtonModule } from 'ng-zorro-antd/button';
@@ -34,12 +33,7 @@ import {
   ActionPermission,
   PermissionType,
 } from '../../models/permission.model';
-import { PermissionActions } from '../../store/actions/permission.actions';
-import {
-  selectMenuPermissions,
-  selectPermissionLoading,
-} from '../../store/selectors/permission.selectors';
-import { MenuService } from '../../core/services/menu.service';
+import { Menu, MenuService } from '../../core/services/menu.service';
 import { PermissionService } from '../../core/services/permission.service';
 
 @Component({
@@ -66,14 +60,14 @@ import { PermissionService } from '../../core/services/permission.service';
   styleUrls: ['./permission-management.component.css'],
 })
 export class PermissionManagementComponent implements OnInit {
-  private store = inject(Store);
   private fb = inject(FormBuilder);
   private message = inject(NzMessageService);
   private menuService = inject(MenuService);
   private permissionService = inject(PermissionService);
+  private cdr = inject(ChangeDetectorRef);
 
-  menuPermissions$: Observable<MenuPermission[]>;
-  loading$: Observable<boolean>;
+  menuPermissions: MenuPermission[] = [];
+  loading = false;
 
   menuForm!: FormGroup;
   actionForm!: FormGroup;
@@ -84,43 +78,33 @@ export class PermissionManagementComponent implements OnInit {
   selectedAction: ActionPermission | null = null;
 
   treeNodes: NzTreeNodeOptions[] = [];
-  menuPermissions: MenuPermission[] = [];
 
   PermissionType = PermissionType;
 
-  constructor() {
-    this.menuPermissions$ = this.store.select(selectMenuPermissions);
-    this.loading$ = this.store.select(selectPermissionLoading);
+  ngOnInit(): void {
+    this.loadMenuTree();
+    this.initForms();
   }
 
-  ngOnInit(): void {
-    // 先加载菜单权限数据
-    this.store.dispatch(PermissionActions.loadMenuPermissions());
+  async loadMenuPermissions(menuId: string): Promise<void> {
+    try {
+      const menuPermission = await firstValueFrom(
+        this.permissionService.getMenuPermissionByMenuId(menuId),
+      );
+      console.log('API Response - Found menu permission:', menuPermission);
+      console.log('Actions count:', menuPermission.actions?.length || 0);
+      this.selectedMenu = menuPermission;
+    } catch (error: any) {
+      console.error('API Error - Failed to load menu permission:', error);
+    }
+    this.cdr.markForCheck();
+  }
 
-    // 订阅菜单权限数据
-    this.menuPermissions$.subscribe((permissions) => {
-      console.log('Loaded menu permissions:', permissions);
-      this.menuPermissions = permissions;
-
-      // 如果当前有选中的菜单，更新其权限数据
-      if (this.selectedMenu) {
-        const updated = permissions.find(
-          (p) => p.menuId === this.selectedMenu!.menuId,
-        );
-        if (updated) {
-          this.selectedMenu = updated;
-          console.log('Updated selectedMenu with new data:', this.selectedMenu);
-        }
-      }
-    });
-
-    // 加载菜单树用于显示
-    this.menuService.getMenuTree().subscribe((menus) => {
-      console.log('Loaded menu tree:', menus);
-      this.treeNodes = this.convertMenusToTreeNodes(menus);
-    });
-
-    this.initForms();
+  async loadMenuTree(): Promise<void> {
+    const menuTree = await firstValueFrom(this.menuService.getMenuTree());
+    this.treeNodes = this.convertMenusToTreeNodes(menuTree);
+    this.cdr.markForCheck();
+    console.log('Loaded menu tree:', this.treeNodes);
   }
 
   initForms(): void {
@@ -200,7 +184,7 @@ export class PermissionManagementComponent implements OnInit {
     return roots;
   }
 
-  onTreeClick(event: NzFormatEmitEvent): void {
+  async onTreeClick(event: NzFormatEmitEvent): Promise<void> {
     const node = event.node;
     if (node && node.origin['data']) {
       const nodeData = node.origin['data'] as any;
@@ -208,39 +192,8 @@ export class PermissionManagementComponent implements OnInit {
 
       console.log('Tree node clicked, menuId:', menuId);
       console.log('Node data:', nodeData);
-
+      this.loadMenuPermissions(menuId);
       // 发送 API 请求获取菜单权限数据
-      this.permissionService.getMenuPermissionByMenuId(menuId).subscribe({
-        next: (menuPermission) => {
-          console.log('API Response - Found menu permission:', menuPermission);
-          console.log('Actions count:', menuPermission.actions?.length || 0);
-          this.selectedMenu = menuPermission;
-        },
-        error: (error) => {
-          console.error('API Error - Failed to load menu permission:', error);
-
-          if (error.status === 404) {
-            // 没有找到权限数据，创建一个默认的菜单权限对象
-            console.log(
-              'No permission found for menuId:',
-              menuId,
-              'creating default',
-            );
-            this.selectedMenu = {
-              id: nodeData.id || menuId,
-              menuId: menuId,
-              menuName: nodeData.menuName || nodeData.title,
-              path: nodeData.path || '',
-              icon: nodeData.icon,
-              orderNum: nodeData.orderNum || 0,
-              visible: nodeData.visible !== false,
-              actions: [],
-            };
-          } else {
-            this.message.error('加载菜单权限失败');
-          }
-        },
-      });
     }
   }
 
@@ -272,30 +225,40 @@ export class PermissionManagementComponent implements OnInit {
     this.selectedAction = null;
   }
 
-  handleActionSubmit(): void {
+  async handleActionSubmit(): Promise<void> {
     if (this.actionForm.valid && this.selectedMenu) {
-      const formValue = this.actionForm.value;
-
-      if (this.isEditMode && this.selectedAction) {
-        this.store.dispatch(
-          PermissionActions.updateMenuAction({
-            menuId: this.selectedMenu.menuId,
-            actionId: this.selectedAction.id,
-            action: formValue,
-          }),
+      let formValue = this.actionForm.value;
+      formValue.menuName = this.selectedMenu.menuName;
+      this.loading = true;
+      try {
+        if (this.isEditMode && this.selectedAction) {
+          await firstValueFrom(
+            this.permissionService.updateMenuAction(
+              this.selectedMenu.menuId,
+              this.selectedAction.id,
+              formValue,
+            ),
+          );
+          this.message.success('操作权限更新成功');
+        } else {
+          await firstValueFrom(
+            this.permissionService.createMenuAction(
+              this.selectedMenu.menuId,
+              formValue,
+            ),
+          );
+          this.message.success('操作权限创建成功');
+        }
+        this.handleActionCancel();
+        await this.loadMenuPermissions(this.selectedMenu.menuId);
+        this.loading = false;
+      } catch (error) {
+        console.error('Failed to create/update action:', error);
+        this.message.error(
+          this.isEditMode ? '操作权限更新失败' : '操作权限创建失败',
         );
-        this.message.success('操作权限更新成功');
-      } else {
-        this.store.dispatch(
-          PermissionActions.createMenuAction({
-            menuId: this.selectedMenu.menuId,
-            action: formValue,
-          }),
-        );
-        this.message.success('操作权限创建成功');
+        this.loading = false;
       }
-
-      this.handleActionCancel();
     } else {
       Object.values(this.actionForm.controls).forEach((control) => {
         if (control.invalid) {
@@ -306,15 +269,24 @@ export class PermissionManagementComponent implements OnInit {
     }
   }
 
-  deleteAction(action: ActionPermission): void {
+  async deleteAction(action: ActionPermission): Promise<void> {
     if (this.selectedMenu) {
-      this.store.dispatch(
-        PermissionActions.deleteMenuAction({
-          menuId: this.selectedMenu.menuId,
-          actionId: action.id,
-        }),
-      );
-      this.message.success('操作权限删除成功');
+      this.loading = true;
+      try {
+        await firstValueFrom(
+          this.permissionService.deleteMenuAction(
+            this.selectedMenu.menuId,
+            action.id,
+          ),
+        );
+        this.message.success('操作权限删除成功');
+        await this.loadMenuPermissions(this.selectedMenu.menuId);
+        this.loading = false;
+      } catch (error) {
+        console.error('Failed to delete action:', error);
+        this.message.error('操作权限删除失败');
+        this.loading = false;
+      }
     }
   }
 

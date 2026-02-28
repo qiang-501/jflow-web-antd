@@ -10,8 +10,8 @@
 
   <nz-table
     #userTable
-    [nzData]="(users$ | async) || []"
-    [nzLoading]="(loading$ | async) || false"
+    [nzData]="users"
+    [nzLoading]="loading"
     [nzPageSize]="10"
     [nzShowPagination]="true"
   >
@@ -99,7 +99,7 @@
     [nzBodyStyle]="{ maxHeight: '60vh', overflowY: 'auto' }"
     (nzOnCancel)="handleCancel()"
     (nzOnOk)="handleSubmit()"
-    [nzOkLoading]="(loading$ | async) || false"
+    [nzOkLoading]="loading"
   >
     <ng-container *nzModalContent>
       <form nz-form [formGroup]="userForm" nzLayout="vertical">
@@ -167,7 +167,7 @@
               nzPlaceHolder="请选择角色"
               nzShowSearch
             >
-              @for (role of roles$ | async; track role.id) {
+              @for (role of roles; track role.id) {
                 <nz-option
                   [nzLabel]="role.name"
                   [nzValue]="role.id"

@@ -63,10 +63,22 @@ export class RoleService {
   }
 
   /**
-   * 为角色分配权限
+   * 为角色分配权限（添加权限，保留现有）
    */
   assignPermissions(roleId: string, permissionIds: string[]): Observable<Role> {
     return this.http.post<Role>(`${this.apiUrl}/${roleId}/permissions`, {
+      permissionIds,
+    });
+  }
+
+  /**
+   * 更新角色的所有权限（替换所有权限）
+   */
+  updateRolePermissions(
+    roleId: string,
+    permissionIds: string[],
+  ): Observable<Role> {
+    return this.http.put<Role>(`${this.apiUrl}/${roleId}/permissions`, {
       permissionIds,
     });
   }

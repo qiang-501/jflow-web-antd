@@ -1,14 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { MenuItem } from '../../models/menu.model';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Store } from '@ngrx/store';
-import { MenuState } from '../../store/reducers/menu.reducer';
-import { selectAllMenus } from '../../store/selectors/menu.selectors';
-import { MenuActions } from '../../store/actions/menu.actions';
+import { MenuService } from '../../core/services/menu.service';
+import { firstValueFrom } from 'rxjs';
+
 @Component({
   selector: 'app-sidenav',
   standalone: true,
@@ -23,16 +22,29 @@ import { MenuActions } from '../../store/actions/menu.actions';
   styleUrl: './sidenav.component.css',
 })
 export class SidenavComponent implements OnInit {
-  constructor(private menuStore: Store<{ menus: MenuState }>) {}
+  constructor(
+    private menuService: MenuService,
+    private cdr: ChangeDetectorRef,
+  ) {}
   isCollapsed = false;
   menus: MenuItem[] = [];
+
   ngOnInit() {
-    this.menuStore.dispatch(MenuActions.loadMenus({ page: 1 }));
-    this.menuStore.select(selectAllMenus).subscribe((menus) => {
-      console.log('Loaded menus from store:', menus);
-      // API现在直接返回带children的树形结构，不需要再构建树
-      this.menus = this.convertToMenuItem(menus);
-    });
+    this.loadMenus();
+  }
+
+  async loadMenus() {
+    try {
+      const response = await firstValueFrom(
+        this.menuService.getMenus({ page: 1 }),
+      );
+      console.log('Loaded menus:', response.data);
+      // 使用 setTimeout 避免 ExpressionChangedAfterItHasBeenCheckedError
+      this.menus = this.convertToMenuItem(response.data);
+      this.cdr.markForCheck();
+    } catch (error) {
+      console.error('Error loading menus:', error);
+    }
   }
 
   // 将API返回的菜单数据转换为MenuItem格式

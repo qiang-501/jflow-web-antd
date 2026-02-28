@@ -139,4 +139,9 @@ export class PermissionService {
   getCurrentUserPermissions(): Observable<string[]> {
     return this.http.get<string[]>(`${this.apiUrl}/current-user`);
   }
+  private handleError(err: any) {
+    return new Promise((resove) => {
+      resove(err);
+    });
+  }
 }

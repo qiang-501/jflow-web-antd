@@ -1,6 +1,4 @@
 // user.model.ts
-import { EntityState } from '@ngrx/entity';
-import { ApiError } from './store.model';
 
 export interface User {
   id: string;
@@ -38,11 +36,4 @@ export interface UpdateUserDto {
   fullName?: string;
   status?: UserStatus;
   roleIds?: number[];
-}
-
-// 使用 EntityState 替代手动管理数组
-export interface UserState extends EntityState<User> {
-  selectedUserId: string | null;
-  loading: boolean;
-  error: ApiError | null;
 }

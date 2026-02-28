@@ -10,8 +10,8 @@
 
   <nz-table
     #roleTable
-    [nzData]="(roles$ | async) || []"
-    [nzLoading]="(loading$ | async) || false"
+    [nzData]="roles"
+    [nzLoading]="loading"
     [nzPageSize]="10"
     [nzShowPagination]="true"
   >
@@ -34,7 +34,7 @@
             <nz-tag nzColor="purple">{{ role.code }}</nz-tag>
           </td>
           <td>{{ role.description || "-" }}</td>
-          <td>{{ getRoleHierarchy(role, (roles$ | async) || []) }}</td>
+          <td>{{ getRoleHierarchy(role, roles) }}</td>
           <td>
             <nz-tag nzColor="blue">{{
               (role.permissionIds || role.permissions || []).length
@@ -91,7 +91,7 @@
     [nzBodyStyle]="{ maxHeight: '60vh', overflowY: 'auto' }"
     (nzOnCancel)="handleCancel()"
     (nzOnOk)="handleSubmit()"
-    [nzOkLoading]="(loading$ | async) || false"
+    [nzOkLoading]="loading"
   >
     <ng-container *nzModalContent>
       <form nz-form [formGroup]="roleForm" nzLayout="vertical">
@@ -135,7 +135,7 @@
             <nz-tree-select
               formControlName="parentId"
               nzPlaceHolder="请选择父角色"
-              [nzNodes]="(roleTreeNodes$ | async) || []"
+              [nzNodes]="roleTreeNodes"
               nzShowSearch
               nzAllowClear
               [nzExpandedKeys]="[]"
@@ -149,46 +149,47 @@
   <!-- 分配权限模态框 -->
   <nz-modal
     [(nzVisible)]="isPermissionModalVisible"
-    nzTitle="分配权限"
+    nzTitle="为角色({{ selectedRole?.name }})分配权限"
     [nzMaskClosable]="false"
-    [nzBodyStyle]="{ maxHeight: '60vh', overflowY: 'auto' }"
+    [nzBodyStyle]="{ overflowY: 'auto' }"
     (nzOnCancel)="handlePermissionCancel()"
     (nzOnOk)="handlePermissionSubmit()"
-    [nzOkLoading]="(loading$ | async) || false"
-    nzWidth="600px"
+    [nzOkLoading]="loading"
+    [nzOkDisabled]="checkedPermissionKeys.length === 0"
+    nzWidth="700px"
   >
     <ng-container *nzModalContent>
-      @if (selectedRole) {
-        <div class="permission-info">
-          <p><strong>角色：</strong>{{ selectedRole.name }}</p>
-          <p><strong>编码：</strong>{{ selectedRole.code }}</p>
-        </div>
-      }
+      <div class="permission-tree-container">
+        <h4>请选择权限（支持多选）</h4>
+        @if (permissionTreeNodes.length > 0) {
+          <nz-tree
+            [nzData]="permissionTreeNodes"
+            nzCheckable
+            [nzCheckedKeys]="checkedPermissionKeys"
+            (nzCheckBoxChange)="onPermissionCheck($event)"
+            [nzExpandedKeys]="[]"
+            nzShowIcon
+          >
+          </nz-tree>
+        } @else {
+          <nz-alert
+            nzType="warning"
+            nzMessage="暂无可分配的权限"
+            nzShowIcon
+          ></nz-alert>
+        }
+      </div>
 
-      <form nz-form [formGroup]="permissionForm" nzLayout="vertical">
-        <nz-form-item>
-          <nz-form-label nzRequired>权限列表</nz-form-label>
-          <nz-form-control nzErrorTip="请选择至少一个权限">
-            <nz-select
-              formControlName="permissionIds"
-              nzMode="multiple"
-              nzPlaceHolder="请选择权限"
-              nzShowSearch
-              [nzMaxTagCount]="3"
-            >
-              @for (permission of permissions$ | async; track permission.id) {
-                <nz-option
-                  [nzLabel]="permission.name + ' (' + permission.code + ')'"
-                  [nzValue]="permission.id"
-                ></nz-option>
-              }
-            </nz-select>
-          </nz-form-control>
-        </nz-form-item>
-      </form>
+      <div class="permission-summary" style="margin-top: 16px">
+        <nz-alert
+          nzType="success"
+          [nzMessage]="'已选择 ' + checkedPermissionKeys.length + ' 个权限'"
+          nzShowIcon
+        ></nz-alert>
+      </div>
 
       @if (selectedRole?.parentId) {
-        <div class="inheritance-info">
+        <div class="inheritance-info" style="margin-top: 16px">
           <nz-alert
             nzType="info"
             nzMessage="此角色将继承父角色的所有权限"

@@ -11,7 +11,12 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { RolesService } from './roles.service';
-import { CreateRoleDto, UpdateRoleDto } from './role.dto';
+import {
+  CreateRoleDto,
+  UpdateRoleDto,
+  AddPermissionsDto,
+  UpdateRolePermissionsDto,
+} from './role.dto';
 
 @ApiTags('roles')
 @Controller('roles')
@@ -66,5 +71,69 @@ export class RolesController {
   @ApiResponse({ status: 404, description: 'Role not found.' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.rolesService.remove(id);
+  }
+
+  // Role Permissions Management Endpoints
+
+  @Get(':id/permissions')
+  @ApiOperation({ summary: 'Get all permissions for a role' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return all permissions for the role.',
+  })
+  @ApiResponse({ status: 404, description: 'Role not found.' })
+  getRolePermissions(@Param('id', ParseIntPipe) id: number) {
+    return this.rolesService.getRolePermissions(id);
+  }
+
+  @Post(':id/permissions')
+  @ApiOperation({ summary: 'Add permissions to a role' })
+  @ApiResponse({
+    status: 200,
+    description: 'Permissions added to role successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'Role or permissions not found.' })
+  addPermissionsToRole(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() addPermissionsDto: AddPermissionsDto,
+  ) {
+    return this.rolesService.addPermissionsToRole(
+      id,
+      addPermissionsDto.permissionIds,
+    );
+  }
+
+  @Put(':id/permissions')
+  @ApiOperation({ summary: 'Update role permissions (replace all)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Role permissions updated successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'Role or permissions not found.' })
+  updateRolePermissions(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updatePermissionsDto: UpdateRolePermissionsDto,
+  ) {
+    return this.rolesService.updateRolePermissions(
+      id,
+      updatePermissionsDto.permissionIds,
+    );
+  }
+
+  @Delete(':id/permissions/:permissionId')
+  @ApiOperation({ summary: 'Remove a permission from a role' })
+  @ApiResponse({
+    status: 200,
+    description: 'Permission removed from role successfully.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Role or permission not found.',
+  })
+  removePermissionFromRole(
+    @Param('id', ParseIntPipe) roleId: number,
+    @Param('permissionId', ParseIntPipe) permissionId: number,
+  ) {
+    return this.rolesService.removePermissionFromRole(roleId, permissionId);
   }
 }

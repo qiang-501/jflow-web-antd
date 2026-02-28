@@ -1,6 +1,4 @@
 // role.model.ts
-import { EntityState } from '@ngrx/entity';
-import { ApiError } from './store.model';
 import { Permission } from './permission.model';
 
 export interface Role {
@@ -36,14 +34,6 @@ export interface UpdateRoleDto {
   parentId?: number;
   level?: number;
   permissionIds?: number[];
-}
-
-// 使用 EntityState 管理角色集合
-export interface RoleState extends EntityState<Role> {
-  roleTree: RoleTree[];
-  selectedRoleId: string | null;
-  loading: boolean;
-  error: ApiError | null;
 }
 
 // 角色继承关系

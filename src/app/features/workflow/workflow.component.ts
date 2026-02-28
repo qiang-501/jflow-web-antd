@@ -7,6 +7,7 @@ import {
   FormGroup,
   Validators,
 } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzFormModule } from 'ng-zorro-antd/form';
 import { NzInputModule } from 'ng-zorro-antd/input';
@@ -205,137 +206,148 @@ export class WorkflowComponent implements OnInit {
     // 监听模板选择变化，自动填充表单
     this.createForm.get('templateId')?.valueChanges.subscribe((templateId) => {
       if (templateId) {
-        this.onTemplateSelected(templateId);
+        // 使用 setTimeout 避免 ExpressionChangedAfterItHasBeenCheckedError
+        setTimeout(() => {
+          this.onTemplateSelected(templateId);
+        });
       }
     });
   }
 
-  checkPermissions(): void {
-    // 检查工作流相关权限
-    this.permissionService
-      .checkPermission({
-        resource: 'workflow',
-        action: 'create',
-      })
-      .subscribe((result) => {
-        this.canCreate = result.hasPermission;
+  async checkPermissions(): Promise<void> {
+    try {
+      // 检查工作流相关权限
+      const createResult = await firstValueFrom(
+        this.permissionService.checkPermission({
+          resource: 'workflow',
+          action: 'create',
+        }),
+      );
+      setTimeout(() => {
+        this.canCreate = createResult.hasPermission;
       });
 
-    this.permissionService
-      .checkPermission({
-        resource: 'workflow',
-        action: 'update',
-      })
-      .subscribe((result) => {
-        this.canEdit = result.hasPermission;
+      const updateResult = await firstValueFrom(
+        this.permissionService.checkPermission({
+          resource: 'workflow',
+          action: 'update',
+        }),
+      );
+      setTimeout(() => {
+        this.canEdit = updateResult.hasPermission;
       });
 
-    this.permissionService
-      .checkPermission({
-        resource: 'workflow',
-        action: 'delete',
-      })
-      .subscribe((result) => {
-        this.canDelete = result.hasPermission;
+      const deleteResult = await firstValueFrom(
+        this.permissionService.checkPermission({
+          resource: 'workflow',
+          action: 'delete',
+        }),
+      );
+      setTimeout(() => {
+        this.canDelete = deleteResult.hasPermission;
       });
 
-    this.permissionService
-      .checkPermission({
-        resource: 'workflow',
-        action: 'change_status',
-      })
-      .subscribe((result) => {
-        this.canChangeStatus = result.hasPermission;
-        console.log('workflow:change_status permission:', result.hasPermission);
+      const changeStatusResult = await firstValueFrom(
+        this.permissionService.checkPermission({
+          resource: 'workflow',
+          action: 'change_status',
+        }),
+      );
+      setTimeout(() => {
+        this.canChangeStatus = changeStatusResult.hasPermission;
+        console.log(
+          'workflow:change_status permission:',
+          changeStatusResult.hasPermission,
+        );
       });
 
-    // 检查是否是管理员（可以编辑动态表单）
-    this.permissionService
-      .checkPermission({
-        resource: 'form',
-        action: 'manage',
-      })
-      .subscribe((result) => {
-        this.canEditForm = result.hasPermission;
-        this.canManageForms = result.hasPermission; // 使用相同的权限
-        console.log('form:manage permission:', result.hasPermission);
+      // 检查是否是管理员（可以编辑动态表单）
+      const formManageResult = await firstValueFrom(
+        this.permissionService.checkPermission({
+          resource: 'form',
+          action: 'manage',
+        }),
+      );
+      setTimeout(() => {
+        this.canEditForm = formManageResult.hasPermission;
+        this.canManageForms = formManageResult.hasPermission; // 使用相同的权限
+        console.log('form:manage permission:', formManageResult.hasPermission);
         console.log('canEditForm is now:', this.canEditForm);
         console.log('canManageForms is now:', this.canManageForms);
-        this.cdr.markForCheck(); // 手动触发变更检测
       });
+    } catch (error) {
+      console.error('Failed to check permissions:', error);
+    }
   }
 
-  loadWorkflows(): void {
+  async loadWorkflows(): Promise<void> {
     this.loading = true;
-    // 从API加载工作流数据
-    this.workflowService.getWorkflows().subscribe({
-      next: (response) => {
-        this.workflows = response.data;
-        this.filteredWorkflows = [...this.workflows];
-        this.total = response.total;
-        this.applyFilters();
-        this.updateStatistics();
-        this.loading = false;
-        this.cdr.markForCheck();
-      },
-      error: (error) => {
-        console.error('加载工作流失败:', error);
-        this.message.error('加载工作流数据失败');
-        this.loading = false;
-        this.cdr.markForCheck();
-      },
-    });
+    try {
+      const response = await firstValueFrom(
+        this.workflowService.getWorkflows(),
+      );
+      this.workflows = response.data;
+      this.filteredWorkflows = [...this.workflows];
+      this.total = response.total;
+      this.applyFilters();
+      this.updateStatistics();
+      this.loading = false;
+      this.cdr.markForCheck();
+    } catch (error) {
+      console.error('加载工作流失败:', error);
+      this.message.error('加载工作流数据失败');
+      this.loading = false;
+      this.cdr.markForCheck();
+    }
   }
 
-  loadUsers(): void {
+  async loadUsers(): Promise<void> {
     this.usersLoading = true;
-    this.userService.getUsers().subscribe({
-      next: (response) => {
-        this.users = response.data;
-        this.usersLoading = false;
-        this.cdr.markForCheck();
-      },
-      error: (error) => {
-        console.error('加载用户列表失败:', error);
-        this.message.error('加载用户列表失败');
-        this.usersLoading = false;
-        this.cdr.markForCheck();
-      },
-    });
+    try {
+      const response = await firstValueFrom(this.userService.getUsers());
+      this.users = response.data;
+      this.usersLoading = false;
+      this.cdr.markForCheck();
+    } catch (error) {
+      console.error('加载用户列表失败:', error);
+      this.message.error('加载用户列表失败');
+      this.usersLoading = false;
+      this.cdr.markForCheck();
+    }
   }
 
-  loadFormConfigs(): void {
+  async loadFormConfigs(): Promise<void> {
     this.formConfigsLoading = true;
-    this.dynamicFormService.getFormConfigs().subscribe({
-      next: (response) => {
-        this.formConfigs = response.data;
-        this.formConfigsLoading = false;
-        this.cdr.markForCheck();
-      },
-      error: (error) => {
-        console.error('加载表单配置失败:', error);
-        this.formConfigsLoading = false;
-        this.cdr.markForCheck();
-      },
-    });
+    try {
+      const response = await firstValueFrom(
+        this.dynamicFormService.getFormConfigs(),
+      );
+      this.formConfigs = response.data;
+      this.formConfigsLoading = false;
+      this.cdr.markForCheck();
+    } catch (error) {
+      console.error('加载表单配置失败:', error);
+      this.formConfigsLoading = false;
+      this.cdr.markForCheck();
+    }
   }
 
   // 加载工作流模板
-  loadWorkflowTemplates(): void {
+  async loadWorkflowTemplates(): Promise<void> {
     this.templatesLoading = true;
-    this.workflowTemplateService.getActiveTemplates().subscribe({
-      next: (templates) => {
-        this.workflowTemplates = templates;
-        this.templatesLoading = false;
-        this.cdr.markForCheck();
-      },
-      error: (error) => {
-        console.error('加载工作流模板失败:', error);
-        this.message.error('加载工作流模板失败');
-        this.templatesLoading = false;
-        this.cdr.markForCheck();
-      },
-    });
+    try {
+      const templates = await firstValueFrom(
+        this.workflowTemplateService.getActiveTemplates(),
+      );
+      this.workflowTemplates = templates;
+      this.templatesLoading = false;
+      this.cdr.markForCheck();
+    } catch (error) {
+      console.error('加载工作流模板失败:', error);
+      this.message.error('加载工作流模板失败');
+      this.templatesLoading = false;
+      this.cdr.markForCheck();
+    }
   }
 
   // 当选择模板时，自动填充表单
@@ -462,7 +474,7 @@ export class WorkflowComponent implements OnInit {
   }
 
   // 直接创建工作流（不使用模板）
-  private createWorkflowDirectly(formValue: any): void {
+  private async createWorkflowDirectly(formValue: any): Promise<void> {
     const newWorkflow: CreateWorkflowDto = {
       dWorkflowId: formValue.dWorkflowId,
       name: formValue.name,
@@ -474,29 +486,23 @@ export class WorkflowComponent implements OnInit {
     };
 
     this.loading = true;
-    this.workflowService.createWorkflow(newWorkflow).subscribe({
-      next: (workflow) => {
-        this.message.success('工作流创建成功');
-        this.isCreateModalVisible = false;
-        this.createForm.reset();
-        this.selectedTemplateId = null;
-        this.loadWorkflows();
-      },
-      error: (error) => {
-        console.error('创建工作流失败:', error);
-        this.message.error(
-          error.error?.message || '创建工作流失败，请稍后重试',
-        );
-        this.loading = false;
-      },
-      complete: () => {
-        this.loading = false;
-      },
-    });
+    try {
+      await firstValueFrom(this.workflowService.createWorkflow(newWorkflow));
+      this.message.success('工作流创建成功');
+      this.isCreateModalVisible = false;
+      this.createForm.reset();
+      this.selectedTemplateId = null;
+      await this.loadWorkflows();
+      this.loading = false;
+    } catch (error: any) {
+      console.error('创建工作流失败:', error);
+      this.message.error(error.error?.message || '创建工作流失败，请稍后重试');
+      this.loading = false;
+    }
   }
 
   // 从模板创建工作流
-  private createFromTemplate(formValue: any): void {
+  private async createFromTemplate(formValue: any): Promise<void> {
     const overrides: Partial<CreateWorkflowDto> = {
       dWorkflowId: formValue.dWorkflowId,
       name: formValue.name,
@@ -512,27 +518,26 @@ export class WorkflowComponent implements OnInit {
     }
 
     this.loading = true;
-    this.workflowService
-      .createFromTemplate(formValue.templateId, overrides)
-      .subscribe({
-        next: (workflow) => {
-          this.message.success('从模板创建工作流成功');
-          this.isCreateModalVisible = false;
-          this.createForm.reset();
-          this.selectedTemplateId = null;
-          this.loadWorkflows();
-        },
-        error: (error) => {
-          console.error('从模板创建工作流失败:', error);
-          this.message.error(
-            error.error?.message || '从模板创建工作流失败，请稍后重试',
-          );
-          this.loading = false;
-        },
-        complete: () => {
-          this.loading = false;
-        },
-      });
+    try {
+      await firstValueFrom(
+        this.workflowService.createFromTemplate(
+          formValue.templateId,
+          overrides,
+        ),
+      );
+      this.message.success('从模板创建工作流成功');
+      this.isCreateModalVisible = false;
+      this.createForm.reset();
+      this.selectedTemplateId = null;
+      await this.loadWorkflows();
+      this.loading = false;
+    } catch (error: any) {
+      console.error('从模板创建工作流失败:', error);
+      this.message.error(
+        error.error?.message || '从模板创建工作流失败，请稍后重试',
+      );
+      this.loading = false;
+    }
   }
 
   handleCreateCancel(): void {
@@ -557,7 +562,7 @@ export class WorkflowComponent implements OnInit {
     this.isEditModalVisible = true;
   }
 
-  handleEditOk(): void {
+  async handleEditOk(): Promise<void> {
     if (this.editForm.valid && this.selectedWorkflow) {
       const formValue = this.editForm.value;
       const updateData: UpdateWorkflowDto = {
@@ -569,27 +574,26 @@ export class WorkflowComponent implements OnInit {
       };
 
       this.loading = true;
-      this.workflowService
-        .updateWorkflow(this.selectedWorkflow.id, updateData)
-        .subscribe({
-          next: (workflow) => {
-            this.message.success('工作流更新成功');
-            this.isEditModalVisible = false;
-            this.selectedWorkflow = null;
-            this.editForm.reset();
-            this.loadWorkflows();
-          },
-          error: (error) => {
-            console.error('更新工作流失败:', error);
-            this.message.error(
-              error.error?.message || '更新工作流失败，请稍后重试',
-            );
-            this.loading = false;
-          },
-          complete: () => {
-            this.loading = false;
-          },
-        });
+      try {
+        await firstValueFrom(
+          this.workflowService.updateWorkflow(
+            this.selectedWorkflow.id,
+            updateData,
+          ),
+        );
+        this.message.success('工作流更新成功');
+        this.isEditModalVisible = false;
+        this.selectedWorkflow = null;
+        this.editForm.reset();
+        await this.loadWorkflows();
+        this.loading = false;
+      } catch (error: any) {
+        console.error('更新工作流失败:', error);
+        this.message.error(
+          error.error?.message || '更新工作流失败，请稍后重试',
+        );
+        this.loading = false;
+      }
     }
   }
 
@@ -599,49 +603,47 @@ export class WorkflowComponent implements OnInit {
   }
 
   // 修改状态
-  changeStatus(workflow: WorkFlow, newStatus: WorkflowStatus): void {
+  async changeStatus(
+    workflow: WorkFlow,
+    newStatus: WorkflowStatus,
+  ): Promise<void> {
     if (!this.canChangeStatus) {
       this.message.warning('您没有修改工作流状态的权限');
       return;
     }
 
     this.loading = true;
-    this.workflowService
-      .changeWorkflowStatus(workflow.id, newStatus)
-      .subscribe({
-        next: (updatedWorkflow) => {
-          workflow.status = updatedWorkflow.status;
-          this.updateStatistics();
-          this.cdr.markForCheck();
-          this.message.success('状态修改成功');
-          this.loading = false;
-        },
-        error: (error) => {
-          console.error('修改状态失败:', error);
-          this.message.error(
-            error.error?.message || '修改状态失败，请稍后重试',
-          );
-          this.loading = false;
-        },
-      });
+    try {
+      const updatedWorkflow = await firstValueFrom(
+        this.workflowService.changeWorkflowStatus(workflow.id, newStatus),
+      );
+      workflow.status = updatedWorkflow.status;
+      this.updateStatistics();
+      this.cdr.markForCheck();
+      this.message.success('状态修改成功');
+      this.loading = false;
+    } catch (error: any) {
+      console.error('修改状态失败:', error);
+      this.message.error(error.error?.message || '修改状态失败，请稍后重试');
+      this.loading = false;
+    }
   }
 
   // 查看历史
-  showHistory(workflow: WorkFlow): void {
+  async showHistory(workflow: WorkFlow): Promise<void> {
     this.selectedWorkflow = workflow;
     this.isHistoryModalVisible = true;
 
-    // 从API加载工作流历史
-    this.workflowService.getWorkflowHistory(workflow.id).subscribe({
-      next: (history) => {
-        this.workflowHistory = history;
-      },
-      error: (error) => {
-        console.error('加载历史记录失败:', error);
-        this.message.error('加载历史记录失败');
-        this.workflowHistory = [];
-      },
-    });
+    // 从 API 加载工作流历史
+    try {
+      this.workflowHistory = await firstValueFrom(
+        this.workflowService.getWorkflowHistory(workflow.id),
+      );
+    } catch (error) {
+      console.error('加载历史记录失败:', error);
+      this.message.error('加载历史记录失败');
+      this.workflowHistory = [];
+    }
   }
 
   handleHistoryCancel(): void {
@@ -650,26 +652,22 @@ export class WorkflowComponent implements OnInit {
   }
 
   // 删除工作流
-  deleteWorkflow(id: number): void {
+  async deleteWorkflow(id: number): Promise<void> {
     if (!this.canDelete) {
       this.message.warning('您没有删除工作流的权限');
       return;
     }
 
     this.loading = true;
-    this.workflowService.deleteWorkflow(id).subscribe({
-      next: () => {
-        this.message.success('工作流删除成功');
-        this.loadWorkflows();
-      },
-      error: (error) => {
-        console.error('删除工作流失败:', error);
-        this.message.error(
-          error.error?.message || '删除工作流失败，请稍后重试',
-        );
-        this.loading = false;
-      },
-    });
+    try {
+      await firstValueFrom(this.workflowService.deleteWorkflow(id));
+      this.message.success('工作流删除成功');
+      await this.loadWorkflows();
+    } catch (error: any) {
+      console.error('删除工作流失败:', error);
+      this.message.error(error.error?.message || '删除工作流失败，请稍后重试');
+      this.loading = false;
+    }
   }
 
   // 获取状态配置
@@ -689,58 +687,60 @@ export class WorkflowComponent implements OnInit {
   }
 
   // 打开动态表单
-  openDynamicForm(workflow: WorkFlow): void {
+  async openDynamicForm(workflow: WorkFlow): Promise<void> {
     this.selectedWorkflow = workflow;
     this.currentFormData = undefined; // 清空之前的数据
 
     if (workflow.formConfigId) {
-      // 加载表单配置
-      this.dynamicFormService.getFormConfig(workflow.formConfigId).subscribe({
-        next: (config) => {
-          this.currentFormConfig = config;
+      try {
+        // 加载表单配置
+        const config = await firstValueFrom(
+          this.dynamicFormService.getFormConfig(workflow.formConfigId),
+        );
+        this.currentFormConfig = config;
 
-          // 尝试加载已保存的表单数据
-          this.workflowService.getWorkflowFormData(workflow.id).subscribe({
-            next: (savedData) => {
-              console.log('Loaded saved form data:', savedData);
+        // 尝试加载已保存的表单数据
+        try {
+          const savedData = await firstValueFrom(
+            this.workflowService.getWorkflowFormData(workflow.id),
+          );
+          console.log('Loaded saved form data:', savedData);
 
-              // 如果有保存的数据，将其设置为初始值
-              if (savedData && savedData.formData) {
-                this.currentFormData = savedData.formData;
-                this.message.info('已加载之前保存的表单数据');
-              }
+          // 如果有保存的数据，将其设置为初始值
+          if (savedData && savedData.formData) {
+            this.currentFormData = savedData.formData;
+            this.message.info('已加载之前保存的表单数据');
+          }
 
-              this.isDynamicFormModalVisible = true;
-              this.cdr.detectChanges();
-            },
-            error: (error) => {
-              // 如果没有保存的数据（404），这是正常情况
-              if (error.status === 404) {
-                console.log('No saved form data found, showing empty form');
-                this.currentFormData = undefined;
-              } else {
-                console.error('Error loading saved form data:', error);
-                this.message.warning('无法加载已保存的表单数据，显示空白表单');
-                this.currentFormData = undefined;
-              }
+          // 使用 setTimeout 避免 ExpressionChangedAfterItHasBeenCheckedError
+          this.isDynamicFormModalVisible = true;
+          this.cdr.markForCheck();
+        } catch (error: any) {
+          // 如果没有保存的数据（404），这是正常情况
+          if (error.status === 404) {
+            console.log('No saved form data found, showing empty form');
+            this.currentFormData = undefined;
+          } else {
+            console.error('Error loading saved form data:', error);
+            this.message.warning('无法加载已保存的表单数据，显示空白表单');
+            this.currentFormData = undefined;
+          }
 
-              this.isDynamicFormModalVisible = true;
-              this.cdr.detectChanges();
-            },
-          });
-        },
-        error: (error) => {
-          console.error('Failed to load form config:', error);
-          this.message.error('加载表单配置失败');
-        },
-      });
+          // 使用 setTimeout 避免 ExpressionChangedAfterItHasBeenCheckedError
+          this.isDynamicFormModalVisible = true;
+          this.cdr.markForCheck();
+        }
+      } catch (error) {
+        console.error('Failed to load form config:', error);
+        this.message.error('加载表单配置失败');
+      }
     } else {
       this.message.warning('此工作流未关联动态表单');
     }
   }
 
   // 处理动态表单提交
-  handleFormSubmit(formData: any): void {
+  async handleFormSubmit(formData: any): Promise<void> {
     console.log('Form submitted with data:', formData);
     console.log('Selected workflow:', this.selectedWorkflow);
 
@@ -769,41 +769,41 @@ export class WorkflowComponent implements OnInit {
 
     console.log('Saving form data:', saveData);
 
-    this.workflowService
-      .saveWorkflowFormData(this.selectedWorkflow.id, saveData)
-      .subscribe({
-        next: (result) => {
-          console.log('Form data saved successfully:', result);
+    try {
+      const result = await firstValueFrom(
+        this.workflowService.saveWorkflowFormData(
+          this.selectedWorkflow.id,
+          saveData,
+        ),
+      );
+      console.log('Form data saved successfully:', result);
 
-          // 关闭加载提示
-          this.message.remove(loadingMessage);
+      // 关闭加载提示
+      this.message.remove(loadingMessage);
 
-          // 显示成功消息
-          this.message.success('表单数据保存成功！');
+      // 显示成功消息
+      this.message.success('表单数据保存成功！');
 
-          // 使用 setTimeout 避免 ExpressionChangedAfterItHasBeenCheckedError
-          setTimeout(() => {
-            // 关闭表单模态框
-            this.isDynamicFormModalVisible = false;
-            this.currentFormConfig = null;
-            this.currentFormData = undefined; // 清空表单数据
+      // 使用 setTimeout 避免 ExpressionChangedAfterItHasBeenCheckedError
+      setTimeout(() => {
+        // 关闭表单模态框
+        this.isDynamicFormModalVisible = false;
+        this.currentFormConfig = null;
+        this.currentFormData = undefined; // 清空表单数据
 
-            // 刷新工作流列表以显示最新状态
-            this.loadWorkflows();
-          }, 0);
-        },
-        error: (error) => {
-          console.error('Failed to save form data:', error);
+        // 刷新工作流列表以显示最新状态
+        this.loadWorkflows();
+      }, 0);
+    } catch (error: any) {
+      console.error('Failed to save form data:', error);
 
-          // 关闭加载提示
-          this.message.remove(loadingMessage);
+      // 关闭加载提示
+      this.message.remove(loadingMessage);
 
-          // 显示详细的错误信息
-          const errorMessage =
-            error.error?.message || error.message || '未知错误';
-          this.message.error(`表单数据保存失败：${errorMessage}`);
-        },
-      });
+      // 显示详细的错误信息
+      const errorMessage = error.error?.message || error.message || '未知错误';
+      this.message.error(`表单数据保存失败：${errorMessage}`);
+    }
   }
 
   // 取消动态表单

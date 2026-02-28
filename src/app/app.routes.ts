@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: '/system' },
@@ -11,12 +12,14 @@ export const routes: Routes = [
     path: 'main',
     loadComponent: () =>
       import('./layout/shell/shell.component').then((m) => m.ShellComponent),
+    canActivate: [authGuard], // 添加认证守卫
   },
 
   {
     path: 'system',
     loadComponent: () =>
       import('./layout/shell/shell.component').then((m) => m.ShellComponent),
+    canActivate: [authGuard], // 添加认证守卫
     children: [
       {
         path: '',

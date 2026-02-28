@@ -140,14 +140,68 @@ export class PermissionsService {
     return menuPermissions;
   }
 
+  async getMenuPermissionByMenuId(menuId: string): Promise<any> {
+    // Try to find menu by path (menuId is usually the path like 'users', 'roles')
+    let menu = await this.menusRepository.findOne({
+      where: { path: menuId },
+    });
+
+    // If not found by path, try by name
+    if (!menu) {
+      menu = await this.menusRepository.findOne({
+        where: { name: menuId },
+      });
+    }
+
+    // If still not found, try to treat menuId as numeric id
+    if (!menu && !isNaN(Number(menuId))) {
+      menu = await this.menusRepository.findOne({
+        where: { id: Number(menuId) },
+      });
+    }
+
+    if (!menu) {
+      throw new NotFoundException(`Menu with identifier '${menuId}' not found`);
+    }
+
+    // Get all action permissions for this menu
+    const actionPermissions = await this.permissionsRepository.find({
+      where: {
+        resource: String(menu.name),
+        type: 'action' as any,
+      },
+    });
+
+    // Transform to menu permission format
+    const actions = actionPermissions.map((permission) => ({
+      id: String(permission.id),
+      name: permission.name,
+      code:
+        permission.action || permission.code.split(':')[1] || permission.code,
+      menuId: String(menu.id),
+      description: permission.description,
+    }));
+
+    return {
+      menuId: String(menu.id),
+      menuName: menu.name,
+      menuTitle: menu.title,
+      path: menu.path || '',
+      icon: menu.icon,
+      orderNum: menu.sortOrder || 0,
+      visible: menu.isVisible,
+      actions: actions,
+    };
+  }
+
   async createMenuAction(menuId: number, createActionDto: any): Promise<any> {
     // Create permission with type ACTION
     const permission = this.permissionsRepository.create({
-      code: `${menuId}:${createActionDto.code}`,
+      code: `${createActionDto.menuName}:${createActionDto.code}`,
       name: createActionDto.name,
       type: 'action' as any,
       description: createActionDto.description,
-      resource: String(menuId),
+      resource: createActionDto.menuName,
       action: createActionDto.code,
     });
 

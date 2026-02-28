@@ -7,13 +7,13 @@ import {
   ReactiveFormsModule,
 } from '@angular/forms';
 import { Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
 import { NzFormModule } from 'ng-zorro-antd/form';
 import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzMessageService } from 'ng-zorro-antd/message';
-import { environment } from '../../../environments/environment';
+import { AuthService } from '../../core/services/auth.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -36,7 +36,7 @@ export class LoginComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private router: Router,
-    private http: HttpClient,
+    private authService: AuthService,
     private message: NzMessageService,
   ) {}
 
@@ -47,40 +47,35 @@ export class LoginComponent implements OnInit {
     });
   }
 
-  submitForm(): void {
+  async submitForm(): Promise<void> {
     if (this.loginForm.valid) {
       this.loading = true;
       const loginData = this.loginForm.value;
 
-      this.http
-        .post<any>(`${environment.apiUrl}/auth/login`, loginData)
-        .subscribe({
-          next: (response) => {
-            this.loading = false;
-            // 存储 token 和用户信息
-            localStorage.setItem('token', response.access_token);
-            localStorage.setItem('user', JSON.stringify(response.user));
+      try {
+        const response = await firstValueFrom(
+          this.authService.login(loginData),
+        );
 
-            this.message.success('登录成功');
+        // 将 token 和用户信息保存到 cookie
+        this.authService.saveAuth(response.access_token, response.user);
 
-            // 跳转到首页或之前想访问的页面
-            const returnUrl = localStorage.getItem('returnUrl') || '/';
-            localStorage.removeItem('returnUrl');
-            this.router.navigate([returnUrl]);
-          },
-          error: (error) => {
-            this.loading = false;
-            console.error('Login error:', error);
+        this.message.success('登录成功');
 
-            if (error.status === 401) {
-              this.message.error('用户名或密码错误');
-            } else {
-              this.message.error(
-                error.error?.message || '登录失败，请稍后重试',
-              );
-            }
-          },
-        });
+        // 跳转到首页或之前想访问的页面
+        const returnUrl = this.authService.getReturnUrl();
+        this.router.navigate([returnUrl]);
+      } catch (error: any) {
+        console.error('Login error:', error);
+
+        if (error.status === 401) {
+          this.message.error('用户名或密码错误');
+        } else {
+          this.message.error(error.error?.message || '登录失败，请稍后重试');
+        }
+      } finally {
+        this.loading = false;
+      }
     } else {
       Object.values(this.loginForm.controls).forEach((control) => {
         if (control.invalid) {

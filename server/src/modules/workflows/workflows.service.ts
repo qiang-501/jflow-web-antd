@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Workflow } from './workflow.entity';
-import { WorkflowHistory } from './workflow-history.entity';
+import { WorkflowHistory, ChangeType } from './workflow-history.entity';
 import { WorkflowTemplate } from './workflow-template.entity';
 import { WorkflowFormData } from './workflow-form-data.entity';
 import { CreateWorkflowDto, UpdateWorkflowDto } from './workflow.dto';
@@ -73,7 +73,19 @@ export class WorkflowsService {
     }
 
     const workflow = this.workflowsRepository.create(createWorkflowDto);
-    return this.workflowsRepository.save(workflow);
+    const savedWorkflow = await this.workflowsRepository.save(workflow);
+
+    // Record workflow creation in history
+    await this.recordHistory({
+      workflowId: savedWorkflow.id,
+      changeType: ChangeType.WORKFLOW_CREATE,
+      action: 'Workflow Created',
+      comment: `Workflow created: ${savedWorkflow.name}`,
+      newData: this.sanitizeData(savedWorkflow),
+      performedBy: createWorkflowDto.createdBy || 1,
+    });
+
+    return savedWorkflow;
   }
 
   async createFromTemplate(
@@ -110,27 +122,49 @@ export class WorkflowsService {
     updateWorkflowDto: UpdateWorkflowDto,
   ): Promise<Workflow> {
     const workflow = await this.findOne(id);
+    const oldData = this.sanitizeData(workflow);
 
-    // Record status change in history
-    if (
-      updateWorkflowDto.status &&
-      updateWorkflowDto.status !== workflow.status
-    ) {
-      await this.historyRepository.save({
+    // Compute field-level changes
+    const fieldChanges = this.computeFieldChanges(workflow, updateWorkflowDto);
+
+    // Record workflow update in history if there are changes
+    if (fieldChanges.length > 0) {
+      Object.assign(workflow, updateWorkflowDto);
+      const newData = this.sanitizeData(workflow);
+
+      await this.recordHistory({
         workflowId: id,
-        action: 'Status Changed',
-        oldStatus: workflow.status,
-        newStatus: updateWorkflowDto.status,
+        changeType: ChangeType.WORKFLOW_UPDATE,
+        action: 'Workflow Updated',
+        comment: `Updated ${fieldChanges.length} field(s): ${fieldChanges.map((c) => c.field).join(', ')}`,
+        oldStatus: oldData.status,
+        newStatus: newData.status,
+        fieldChanges,
+        oldData,
+        newData,
         performedBy: workflow.createdBy || 1,
       });
+
+      return this.workflowsRepository.save(workflow);
     }
 
-    Object.assign(workflow, updateWorkflowDto);
-    return this.workflowsRepository.save(workflow);
+    return workflow; // No changes
   }
 
   async remove(id: number): Promise<void> {
     const workflow = await this.findOne(id);
+    const oldData = this.sanitizeData(workflow);
+
+    // Record workflow deletion in history
+    await this.recordHistory({
+      workflowId: id,
+      changeType: ChangeType.WORKFLOW_DELETE,
+      action: 'Workflow Deleted',
+      comment: `Workflow deleted: ${workflow.name}`,
+      oldData,
+      performedBy: workflow.createdBy || 1,
+    });
+
     await this.workflowsRepository.remove(workflow);
   }
 
@@ -159,16 +193,53 @@ export class WorkflowsService {
 
     if (existingFormData) {
       // Update existing form data
+      const oldData = this.sanitizeData(existingFormData);
+      const fieldChanges = this.computeFormDataChanges(
+        existingFormData.formData,
+        createFormDataDto.formData,
+      );
+
       Object.assign(existingFormData, {
         formConfigId: createFormDataDto.formConfigId,
         formData: createFormDataDto.formData,
         submittedBy: createFormDataDto.submittedBy,
       });
-      return this.formDataRepository.save(existingFormData);
+
+      const savedFormData =
+        await this.formDataRepository.save(existingFormData);
+      const newData = this.sanitizeData(savedFormData);
+
+      // Record form data update in history
+      if (fieldChanges.length > 0) {
+        await this.recordHistory({
+          workflowId: createFormDataDto.workflowId,
+          changeType: ChangeType.FORM_DATA_UPDATE,
+          action: 'Form Data Updated',
+          comment: `Updated ${fieldChanges.length} field(s): ${fieldChanges.map((c) => c.field).join(', ')}`,
+          fieldChanges,
+          oldData,
+          newData,
+          performedBy: createFormDataDto.submittedBy || 1,
+        });
+      }
+
+      return savedFormData;
     } else {
       // Create new form data
       const formData = this.formDataRepository.create(createFormDataDto);
-      return this.formDataRepository.save(formData);
+      const savedFormData = await this.formDataRepository.save(formData);
+
+      // Record form data creation in history
+      await this.recordHistory({
+        workflowId: createFormDataDto.workflowId,
+        changeType: ChangeType.FORM_DATA_CREATE,
+        action: 'Form Data Created',
+        comment: 'Initial form data submitted',
+        newData: this.sanitizeData(savedFormData),
+        performedBy: createFormDataDto.submittedBy || 1,
+      });
+
+      return savedFormData;
     }
   }
 
@@ -198,16 +269,193 @@ export class WorkflowsService {
     updateFormDataDto: UpdateWorkflowFormDataDto,
   ): Promise<WorkflowFormData> {
     const formData = await this.getFormData(workflowId);
+    const oldData = this.sanitizeData(formData);
+
+    // Compute field-level changes
+    const fieldChanges = this.computeFormDataChanges(
+      formData.formData,
+      updateFormDataDto.formData || formData.formData,
+    );
 
     Object.assign(formData, updateFormDataDto);
-    return this.formDataRepository.save(formData);
+    const savedFormData = await this.formDataRepository.save(formData);
+    const newData = this.sanitizeData(savedFormData);
+
+    // Record form data update in history if there are changes
+    if (fieldChanges.length > 0) {
+      await this.recordHistory({
+        workflowId,
+        changeType: ChangeType.FORM_DATA_UPDATE,
+        action: 'Form Data Updated',
+        comment: `Updated ${fieldChanges.length} field(s): ${fieldChanges.map((c) => c.field).join(', ')}`,
+        fieldChanges,
+        oldData,
+        newData,
+        performedBy: updateFormDataDto.submittedBy || 1,
+      });
+    }
+
+    return savedFormData;
   }
 
   /**
    * Delete workflow form data
    */
-  async deleteFormData(workflowId: number): Promise<void> {
+  async deleteFormData(
+    workflowId: number,
+    performedBy?: number,
+  ): Promise<void> {
     const formData = await this.getFormData(workflowId);
+    const oldData = this.sanitizeData(formData);
+
+    // Record form data deletion in history
+    await this.recordHistory({
+      workflowId,
+      changeType: ChangeType.FORM_DATA_UPDATE,
+      action: 'Form Data Deleted',
+      comment: 'Form data removed',
+      oldData,
+      performedBy: performedBy || 1,
+    });
+
     await this.formDataRepository.remove(formData);
+  }
+
+  // Helper methods for change tracking
+
+  /**
+   * Record a change in workflow history
+   */
+  private async recordHistory(data: {
+    workflowId: number;
+    changeType: ChangeType;
+    action: string;
+    comment?: string;
+    oldStatus?: string;
+    newStatus?: string;
+    fieldChanges?: {
+      field: string;
+      oldValue: any;
+      newValue: any;
+      fieldLabel?: string;
+    }[];
+    oldData?: Record<string, any>;
+    newData?: Record<string, any>;
+    performedBy: number;
+  }): Promise<void> {
+    await this.historyRepository.save({
+      workflowId: data.workflowId,
+      changeType: data.changeType,
+      action: data.action,
+      comment: data.comment,
+      oldStatus: data.oldStatus,
+      newStatus: data.newStatus,
+      fieldChanges: data.fieldChanges,
+      oldData: data.oldData,
+      newData: data.newData,
+      performedBy: data.performedBy,
+    });
+  }
+
+  /**
+   * Compute field-level changes for workflow entity updates
+   */
+  private computeFieldChanges(
+    oldEntity: any,
+    updates: any,
+  ): { field: string; oldValue: any; newValue: any; fieldLabel?: string }[] {
+    const changes = [];
+
+    for (const [field, newValue] of Object.entries(updates)) {
+      const oldValue = oldEntity[field];
+      if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+        changes.push({
+          field,
+          oldValue,
+          newValue,
+          fieldLabel: this.getFieldLabel(field),
+        });
+      }
+    }
+
+    return changes;
+  }
+
+  /**
+   * Compute field-level changes for form data (jsonb)
+   */
+  private computeFormDataChanges(
+    oldFormData: Record<string, any>,
+    newFormData: Record<string, any>,
+  ): { field: string; oldValue: any; newValue: any; fieldLabel?: string }[] {
+    const changes = [];
+    const allKeys = new Set([
+      ...Object.keys(oldFormData || {}),
+      ...Object.keys(newFormData || {}),
+    ]);
+
+    for (const key of allKeys) {
+      const oldValue = oldFormData?.[key];
+      const newValue = newFormData?.[key];
+
+      if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+        changes.push({
+          field: key,
+          oldValue,
+          newValue,
+          fieldLabel: key, // Could be enhanced with form config lookup
+        });
+      }
+    }
+
+    return changes;
+  }
+
+  /**
+   * Get human-readable field label
+   */
+  private getFieldLabel(field: string): string {
+    const labelMap: Record<string, string> = {
+      name: 'Name',
+      description: 'Description',
+      status: 'Status',
+      priority: 'Priority',
+      dueDate: 'Due Date',
+      assignedTo: 'Assigned To',
+      formConfigId: 'Form Configuration',
+      templateId: 'Template',
+      dWorkflowId: 'Workflow ID',
+    };
+
+    return labelMap[field] || field;
+  }
+
+  /**
+   * Sanitize entity data for storage (remove circular references, etc.)
+   */
+  private sanitizeData(entity: any): Record<string, any> {
+    if (!entity) return {};
+
+    const sanitized: Record<string, any> = {};
+    const excludeFields = ['__proto__', 'constructor'];
+
+    for (const [key, value] of Object.entries(entity)) {
+      if (excludeFields.includes(key)) continue;
+
+      // Skip relations to avoid circular references
+      if (
+        value &&
+        typeof value === 'object' &&
+        value.constructor.name !== 'Date' &&
+        value.constructor.name !== 'Array'
+      ) {
+        // Only include simple values, not related entities
+        continue;
+      }
+
+      sanitized[key] = value;
+    }
+
+    return sanitized;
   }
 }
