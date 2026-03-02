@@ -8,6 +8,7 @@ import { WorkflowsModule } from './modules/workflows/workflows.module';
 import { FormsModule } from './modules/forms/forms.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { MenusModule } from './modules/menus/menus.module';
+import { DebugModule } from './modules/debug/debug.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { MenusModule } from './modules/menus/menus.module';
     WorkflowsModule,
     FormsModule,
     MenusModule,
+    DebugModule,
   ],
 })
 export class AppModule {}

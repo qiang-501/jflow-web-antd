@@ -8,17 +8,30 @@ import {
   Param,
   Query,
   ParseIntPipe,
+  Headers,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiQuery,
+  ApiHeader,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { PermissionsService } from './permissions.service';
 import {
   CreatePermissionDto,
   UpdatePermissionDto,
   CheckPermissionDto,
 } from './permission.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('permissions')
 @Controller('permissions')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class PermissionsController {
   constructor(private readonly permissionsService: PermissionsService) {}
 
@@ -88,6 +101,36 @@ export class PermissionsController {
     @Param('actionId', ParseIntPipe) actionId: number,
   ) {
     return this.permissionsService.deleteMenuAction(menuId, actionId);
+  }
+
+  @Get('current-user')
+  @ApiOperation({ summary: 'Get current user permissions' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return array of permission codes for current user.',
+    schema: {
+      type: 'array',
+      items: { type: 'string' },
+      example: [
+        'workflow:create',
+        'workflow:update',
+        'workflow:delete',
+        'user:view',
+        'user:create',
+      ],
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token.',
+  })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  getCurrentUserPermissions(@Request() req: any) {
+    // 从 JWT token 中获取用户 ID（已通过 JwtStrategy 验证）
+    const userId = req.user.userId;
+    console.log('📌 从 JWT token 获取的用户 ID:', userId);
+
+    return this.permissionsService.getCurrentUserPermissions(userId);
   }
 
   @Get(':id')

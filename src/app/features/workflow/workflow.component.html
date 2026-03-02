@@ -2,10 +2,10 @@
   <div class="header">
     <h2>工作流管理</h2>
     <button
+      *appHasPermission="'workflow:create'"
       nz-button
       nzType="primary"
       (click)="showCreateModal()"
-      [disabled]="!canCreate"
     >
       <span nz-icon nzType="plus"></span>
       创建工作流
@@ -77,27 +77,29 @@
                 <span nz-icon nzType="form"></span>
                 打开表单
               </button>
-              <button
-                *nzSpaceItem
-                nz-button
-                nzType="link"
-                nzSize="small"
-                (click)="showEditModal(workflow)"
-                [disabled]="!canEdit"
-              >
-                编辑
-              </button>
-              <button
-                *nzSpaceItem
-                nz-button
-                nzType="link"
-                nzSize="small"
-                nz-dropdown
-                [nzDropdownMenu]="statusMenu"
-                [disabled]="!canChangeStatus"
-              >
-                修改状态
-              </button>
+              <ng-container *nzSpaceItem>
+                <button
+                  *appHasPermission="'workflow:update'"
+                  nz-button
+                  nzType="link"
+                  nzSize="small"
+                  (click)="showEditModal(workflow)"
+                >
+                  编辑
+                </button>
+              </ng-container>
+              <ng-container *nzSpaceItem>
+                <button
+                  *appHasPermission="'workflow:change_status'"
+                  nz-button
+                  nzType="link"
+                  nzSize="small"
+                  nz-dropdown
+                  [nzDropdownMenu]="statusMenu"
+                >
+                  修改状态
+                </button>
+              </ng-container>
               <nz-dropdown-menu #statusMenu="nzDropdownMenu">
                 <ul nz-menu>
                   @for (status of statusOptions; track status.value) {
@@ -121,19 +123,20 @@
               >
                 历史记录
               </button>
-              <button
-                *nzSpaceItem
-                nz-button
-                nzType="link"
-                nzSize="small"
-                nzDanger
-                nz-popconfirm
-                nzPopconfirmTitle="确定要删除此工作流吗？"
-                (nzOnConfirm)="deleteWorkflow(workflow.id)"
-                [disabled]="!canDelete"
-              >
-                删除
-              </button>
+              <ng-container *nzSpaceItem>
+                <button
+                  *appHasPermission="'workflow:delete'"
+                  nz-button
+                  nzType="link"
+                  nzSize="small"
+                  nzDanger
+                  nz-popconfirm
+                  nzPopconfirmTitle="确定要删除此工作流吗？"
+                  (nzOnConfirm)="deleteWorkflow(workflow.id)"
+                >
+                  删除
+                </button>
+              </ng-container>
             </nz-space>
           </td>
         </tr>
@@ -287,31 +290,29 @@
             </nz-select>
           </nz-input-group>
           <ng-template #suffixTemplate>
-            @if (canManageForms) {
-              <button
-                nz-button
-                nzType="link"
-                nzSize="small"
-                (click)="createNewFormConfig()"
-              >
-                <span nz-icon nzType="plus"></span>
-                新建表单
-              </button>
-            }
+            <button
+              *appHasPermission="'workflow:form_manage'"
+              nz-button
+              nzType="link"
+              nzSize="small"
+              (click)="createNewFormConfig()"
+            >
+              <span nz-icon nzType="plus"></span>
+              新建表单
+            </button>
           </ng-template>
           <div style="margin-top: 8px">
-            @if (canManageForms) {
-              <button
-                nz-button
-                nzType="link"
-                nzSize="small"
-                (click)="editFormConfigInCreate()"
-                [disabled]="!createForm.get('formConfigId')?.value"
-              >
-                <span nz-icon nzType="edit"></span>
-                编辑选中表单
-              </button>
-            }
+            <button
+              *appHasPermission="'workflow:form_manage'"
+              nz-button
+              nzType="link"
+              nzSize="small"
+              (click)="editFormConfigInCreate()"
+              [disabled]="!createForm.get('formConfigId')?.value"
+            >
+              <span nz-icon nzType="edit"></span>
+              编辑选中表单
+            </button>
           </div>
         </nz-form-control>
       </nz-form-item>
@@ -479,34 +480,29 @@
         align-items: center;
       "
     >
-      <div>
-        <strong>工作流ID:</strong> {{ selectedWorkflow?.dWorkflowId }}
-        <span style="margin-left: 16px; color: #999; font-size: 12px">
-          (权限: canEditForm={{ canEditForm }})
-        </span>
-      </div>
-      @if (canEditForm) {
-        <button
-          nz-button
-          nzType="default"
-          (click)="openFormBuilder(selectedWorkflow || undefined)"
-        >
-          <span nz-icon nzType="edit"></span>
-          编辑表单配置
-        </button>
-      }
-      @if (!canEditForm) {
+      <div><strong>工作流ID:</strong> {{ selectedWorkflow?.dWorkflowId }}</div>
+      <button
+        *appHasPermission="'workflow:form_manage'; else noPermission"
+        nz-button
+        nzType="default"
+        (click)="openFormBuilder(selectedWorkflow || undefined)"
+      >
+        <span nz-icon nzType="edit"></span>
+        编辑表单配置
+      </button>
+      <ng-template #noPermission>
         <button
           nz-button
           nzType="default"
           nzDanger
           nz-tooltip
-          nzTooltipTitle="当前用户没有编辑表单的权限 (form:manage)"
+          nzTooltipTitle="当前用户没有编辑表单的权限 (workflow:form_manage)"
+          disabled
         >
           <span nz-icon nzType="lock"></span>
           无权限编辑
         </button>
-      }
+      </ng-template>
     </div>
     @if (currentFormConfig) {
       <app-dynamic-form-renderer

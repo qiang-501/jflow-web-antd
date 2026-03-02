@@ -258,11 +258,14 @@ export class RoleManagementComponent implements OnInit {
   async handlePermissionSubmit(): Promise<void> {
     if (this.selectedRole && this.checkedPermissionKeys.length > 0) {
       this.loading = true;
+      let permissionIds: Number[] = this.checkedPermissionKeys.map((key) =>
+        Number(key),
+      );
       try {
         await firstValueFrom(
           this.roleService.updateRolePermissions(
             this.selectedRole.id,
-            this.checkedPermissionKeys,
+            permissionIds,
           ),
         );
         this.message.success('权限分配成功');
@@ -518,7 +521,6 @@ export class RoleManagementComponent implements OnInit {
    * 权限树checkbox变化事件
    */
   onPermissionCheck(event: any): void {
-    debugger;
     // event 可能是 NzFormatEmitEvent，包含 checkedKeys 属性
     if (event && event.checkedKeys) {
       this.checkedPermissionKeys = event.checkedKeys;

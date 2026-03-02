@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
+import { JWT_SECRET } from './jwt.config';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -43,8 +44,17 @@ export class AuthService {
       permissions,
     };
 
+    console.log('🔑 [AuthService.login] JWT_SECRET 使用的密钥:', JWT_SECRET);
+    console.log('📦 [AuthService.login] Token payload:', payload);
+
+    const token = this.jwtService.sign(payload);
+    console.log(
+      '✅ [AuthService.login] Token 生成成功:',
+      token.substring(0, 50) + '...',
+    );
+
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: token,
       user: {
         id: user.id,
         username: user.username,

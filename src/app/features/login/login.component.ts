@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormBuilder,
@@ -13,6 +13,7 @@ import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { AuthService } from '../../core/services/auth.service';
+import { PermissionService } from '../../core/services/permission.service';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -30,15 +31,14 @@ import { firstValueFrom } from 'rxjs';
   styleUrls: ['./login.component.css'],
 })
 export class LoginComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private router = inject(Router);
+  private authService = inject(AuthService);
+  private permissionService = inject(PermissionService);
+  private message = inject(NzMessageService);
+
   loginForm!: FormGroup;
   loading = false;
-
-  constructor(
-    private fb: FormBuilder,
-    private router: Router,
-    private authService: AuthService,
-    private message: NzMessageService,
-  ) {}
 
   ngOnInit(): void {
     this.loginForm = this.fb.group({
@@ -59,6 +59,17 @@ export class LoginComponent implements OnInit {
 
         // 将 token 和用户信息保存到 cookie
         this.authService.saveAuth(response.access_token, response.user);
+
+        console.log('✅ 登录成功，开始加载用户权限...');
+
+        // 立即加载用户权限到缓存
+        try {
+          await firstValueFrom(this.permissionService.loadUserPermissions());
+          console.log('✅ 用户权限加载成功');
+        } catch (permError) {
+          console.error('⚠️ 权限加载失败（不影响登录）:', permError);
+          // 权限加载失败不阻止登录流程
+        }
 
         this.message.success('登录成功');
 

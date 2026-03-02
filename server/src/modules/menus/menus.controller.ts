@@ -8,13 +8,23 @@ import {
   Param,
   Query,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiQuery,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { MenusService } from './menus.service';
 import { CreateMenuDto, UpdateMenuDto } from './menu.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('menus')
 @Controller('menus')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class MenusController {
   constructor(private readonly menusService: MenusService) {}
 
@@ -71,7 +81,10 @@ export class MenusController {
   @ApiOperation({ summary: 'Delete menu' })
   @ApiResponse({ status: 200, description: 'Menu deleted successfully.' })
   @ApiResponse({ status: 404, description: 'Menu not found.' })
-  @ApiResponse({ status: 400, description: 'Cannot delete menu with children.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Cannot delete menu with children.',
+  })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.menusService.remove(id);
   }
@@ -79,8 +92,9 @@ export class MenusController {
   @Put('sort/update')
   @ApiOperation({ summary: 'Update menu sort order' })
   @ApiResponse({ status: 200, description: 'Sort order updated successfully.' })
-  updateSortOrder(@Body() menuOrders: Array<{ id: number; sortOrder: number }>) {
+  updateSortOrder(
+    @Body() menuOrders: Array<{ id: number; sortOrder: number }>,
+  ) {
     return this.menusService.updateSortOrder(menuOrders);
   }
 }
-

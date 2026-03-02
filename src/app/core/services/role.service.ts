@@ -76,7 +76,7 @@ export class RoleService {
    */
   updateRolePermissions(
     roleId: string,
-    permissionIds: string[],
+    permissionIds: Number[],
   ): Observable<Role> {
     return this.http.put<Role>(`${this.apiUrl}/${roleId}/permissions`, {
       permissionIds,

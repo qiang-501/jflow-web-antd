@@ -8,13 +8,23 @@ import {
   Param,
   Query,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiQuery,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { FormsService } from './forms.service';
 import { CreateFormConfigDto, UpdateFormConfigDto } from './form-config.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('forms')
 @Controller('forms')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class FormsController {
   constructor(private readonly formsService: FormsService) {}
 

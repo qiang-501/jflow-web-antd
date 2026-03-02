@@ -47,6 +47,7 @@ import { DynamicFormConfig } from '../../models/dynamic-form.model';
 import { DynamicFormRendererComponent } from '../../shared/components/dynamic-form-renderer/dynamic-form-renderer.component';
 import { FormBuilderComponent } from '../../shared/components/form-builder/form-builder.component';
 import { DynamicFormService } from '../../core/services/dynamic-form.service';
+import { HasPermissionDirective } from '../../shared/directives/has-permission.directive';
 
 @Component({
   selector: 'app-workflow',
@@ -77,6 +78,7 @@ import { DynamicFormService } from '../../core/services/dynamic-form.service';
     NzTypographyModule,
     DynamicFormRendererComponent,
     FormBuilderComponent,
+    HasPermissionDirective,
   ],
   templateUrl: './workflow.component.html',
   styleUrl: './workflow.component.css',
@@ -90,14 +92,6 @@ export class WorkflowComponent implements OnInit {
   private userService = inject(UserService);
   private dynamicFormService = inject(DynamicFormService);
   private cdr = inject(ChangeDetectorRef);
-
-  // 权限控制
-  canCreate = false;
-  canEdit = false;
-  canDelete = false;
-  canChangeStatus = false;
-  canEditForm = false; // 编辑动态表单权限（仅管理员）
-  canManageForms = false; // 管理表单权限（创建、编辑、删除表单）
 
   // 表格数据
   workflows: WorkFlow[] = [];
@@ -176,7 +170,6 @@ export class WorkflowComponent implements OnInit {
 
   ngOnInit(): void {
     this.initForms();
-    this.checkPermissions();
     this.loadWorkflows();
     this.loadUsers();
     this.loadFormConfigs();
@@ -214,69 +207,22 @@ export class WorkflowComponent implements OnInit {
     });
   }
 
-  async checkPermissions(): Promise<void> {
+  /**
+   * 检查权限的辅助方法（用于业务逻辑）
+   * 从缓存中检查，不发送网络请求
+   * @param resource 资源名称
+   * @param action 操作名称
+   * @returns Promise<boolean> 是否有权限
+   */
+  async hasPermission(resource: string, action: string): Promise<boolean> {
     try {
-      // 检查工作流相关权限
-      const createResult = await firstValueFrom(
-        this.permissionService.checkPermission({
-          resource: 'workflow',
-          action: 'create',
-        }),
+      const hasPermission = await firstValueFrom(
+        this.permissionService.hasPermission({ resource, action }),
       );
-      setTimeout(() => {
-        this.canCreate = createResult.hasPermission;
-      });
-
-      const updateResult = await firstValueFrom(
-        this.permissionService.checkPermission({
-          resource: 'workflow',
-          action: 'update',
-        }),
-      );
-      setTimeout(() => {
-        this.canEdit = updateResult.hasPermission;
-      });
-
-      const deleteResult = await firstValueFrom(
-        this.permissionService.checkPermission({
-          resource: 'workflow',
-          action: 'delete',
-        }),
-      );
-      setTimeout(() => {
-        this.canDelete = deleteResult.hasPermission;
-      });
-
-      const changeStatusResult = await firstValueFrom(
-        this.permissionService.checkPermission({
-          resource: 'workflow',
-          action: 'change_status',
-        }),
-      );
-      setTimeout(() => {
-        this.canChangeStatus = changeStatusResult.hasPermission;
-        console.log(
-          'workflow:change_status permission:',
-          changeStatusResult.hasPermission,
-        );
-      });
-
-      // 检查是否是管理员（可以编辑动态表单）
-      const formManageResult = await firstValueFrom(
-        this.permissionService.checkPermission({
-          resource: 'form',
-          action: 'manage',
-        }),
-      );
-      setTimeout(() => {
-        this.canEditForm = formManageResult.hasPermission;
-        this.canManageForms = formManageResult.hasPermission; // 使用相同的权限
-        console.log('form:manage permission:', formManageResult.hasPermission);
-        console.log('canEditForm is now:', this.canEditForm);
-        console.log('canManageForms is now:', this.canManageForms);
-      });
+      return hasPermission;
     } catch (error) {
-      console.error('Failed to check permissions:', error);
+      console.error('Permission check failed:', error);
+      return false;
     }
   }
 
@@ -442,8 +388,8 @@ export class WorkflowComponent implements OnInit {
   }
 
   // 创建工作流
-  showCreateModal(): void {
-    if (!this.canCreate) {
+  async showCreateModal(): Promise<void> {
+    if (!(await this.hasPermission('workflow', 'create'))) {
       this.message.warning('您没有创建工作流的权限');
       return;
     }
@@ -546,8 +492,8 @@ export class WorkflowComponent implements OnInit {
   }
 
   // 编辑工作流
-  showEditModal(workflow: WorkFlow): void {
-    if (!this.canEdit) {
+  async showEditModal(workflow: WorkFlow): Promise<void> {
+    if (!(await this.hasPermission('workflow', 'update'))) {
       this.message.warning('您没有编辑工作流的权限');
       return;
     }
@@ -607,7 +553,7 @@ export class WorkflowComponent implements OnInit {
     workflow: WorkFlow,
     newStatus: WorkflowStatus,
   ): Promise<void> {
-    if (!this.canChangeStatus) {
+    if (!(await this.hasPermission('workflow', 'change_status'))) {
       this.message.warning('您没有修改工作流状态的权限');
       return;
     }
@@ -653,7 +599,7 @@ export class WorkflowComponent implements OnInit {
 
   // 删除工作流
   async deleteWorkflow(id: number): Promise<void> {
-    if (!this.canDelete) {
+    if (!(await this.hasPermission('workflow', 'delete'))) {
       this.message.warning('您没有删除工作流的权限');
       return;
     }
@@ -814,13 +760,9 @@ export class WorkflowComponent implements OnInit {
   }
 
   // 打开表单构建器（仅管理员）
-  openFormBuilder(workflow?: WorkFlow): void {
-    console.log('openFormBuilder called');
-    console.log('canEditForm:', this.canEditForm);
-
-    if (!this.canEditForm) {
+  async openFormBuilder(workflow?: WorkFlow): Promise<void> {
+    if (!(await this.hasPermission('workflow', 'form_manage'))) {
       this.message.warning('您没有编辑动态表单的权限');
-      console.warn('Permission denied: canEditForm is false');
       return;
     }
 
@@ -829,15 +771,14 @@ export class WorkflowComponent implements OnInit {
       return;
     }
 
-    console.log('Opening form builder...');
     this.selectedWorkflow = workflow || null;
     this.isCreatingNewForm = false; // 不是创建模式
     this.isFormBuilderModalVisible = true;
   }
 
   // 创建新表单配置（在创建工作流时）
-  createNewFormConfig(): void {
-    if (!this.canManageForms) {
+  async createNewFormConfig(): Promise<void> {
+    if (!(await this.hasPermission('form', 'manage'))) {
       this.message.warning('您没有创建表单的权限');
       return;
     }
@@ -849,8 +790,8 @@ export class WorkflowComponent implements OnInit {
   }
 
   // 编辑选中的表单配置（在创建工作流时）
-  editFormConfigInCreate(): void {
-    if (!this.canManageForms) {
+  async editFormConfigInCreate(): Promise<void> {
+    if (!(await this.hasPermission('form', 'manage'))) {
       this.message.warning('您没有编辑表单的权限');
       return;
     }

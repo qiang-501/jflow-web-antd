@@ -11,14 +11,14 @@
 在创建工作流的模态框中，新增了"关联表单"字段：
 
 - **表单选择下拉框**: 从现有表单配置中选择
-- **新建表单按钮**: 打开表单构建器创建新表单（需要 `form:manage` 权限）
-- **编辑选中表单按钮**: 编辑已选中的表单配置（需要 `form:manage` 权限）
+- **新建表单按钮**: 打开表单构建器创建新表单（需要 `workflow:form_manage` 权限）
+- **编辑选中表单按钮**: 编辑已选中的表单配置（需要 `workflow:form_manage` 权限）
 
 ### 2. 权限控制
 
 新增权限标识：
 
-- `canManageForms`: 控制创建和编辑表单的权限，基于 `form:manage` 权限
+- `canManageForms`: 控制创建和编辑表单的权限，基于 `workflow:form_manage` 权限
 
 ### 3. 表单生命周期
 
@@ -145,8 +145,8 @@ createForm = this.fb.group({
 ## 权限要求
 
 - **查看表单列表**: 所有有创建工作流权限的用户
-- **新建表单**: 需要 `form:manage` 权限
-- **编辑表单**: 需要 `form:manage` 权限
+- **新建表单**: 需要 `workflow:form_manage` 权限
+- **编辑表单**: 需要 `workflow:form_manage` 权限
 
 ## API 调用
 

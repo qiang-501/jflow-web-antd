@@ -724,7 +724,7 @@ export function FakeBackendInterceptor(
 
     // 权限检查API
     if (url.endsWith('api/permissions/check') && method === 'POST') {
-      // 开发模式下，所有权限检查都返回true（包括form:manage等管理员权限）
+      // 开发模式下，所有权限检查都返回true（包括workflow:form_manage等管理员权限）
       return of(
         new HttpResponse({
           status: 200,
@@ -773,7 +773,7 @@ export function FakeBackendInterceptor(
             'workflow:view',
             'workflow:change_status',
             // 动态表单管理权限（仅管理员）
-            'form:manage',
+            'workflow:form_manage',
             'form:create',
             'form:edit',
             'form:delete',

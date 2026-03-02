@@ -1,8 +1,9 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject, Injector } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import type { PermissionService } from './permission.service';
 
 export interface LoginRequest {
   username: string;
@@ -26,13 +27,14 @@ export interface LoginResponse {
   providedIn: 'root',
 })
 export class AuthService {
+  private http = inject(HttpClient);
+  private router = inject(Router);
+  private injector = inject(Injector);
+
   private currentUserSubject = new BehaviorSubject<any>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
-  constructor(
-    private http: HttpClient,
-    private router: Router,
-  ) {
+  constructor() {
     // 初始化时从 cookie 中恢复用户信息
     const user = this.getUserFromStorage();
     if (user) {
@@ -54,6 +56,10 @@ export class AuthService {
    * 保存认证信息到 cookie
    */
   saveAuth(token: string, user: any): void {
+    console.log(
+      '🔑 [AuthService] 保存 token 到 cookie:',
+      token.substring(0, 20) + '...',
+    );
     // 保存 token 到 cookie（2小时过期）
     this.setCookie('token', token, 2);
 
@@ -62,6 +68,19 @@ export class AuthService {
 
     // 更新当前用户
     this.currentUserSubject.next(user);
+
+    // 验证 token 是否被正确保存
+    const savedToken = this.getToken();
+    console.log(
+      '✅ [AuthService] Token 保存验证:',
+      savedToken ? '成功' : '失败',
+    );
+    if (savedToken) {
+      console.log(
+        '📝 [AuthService] 保存的 token:',
+        savedToken.substring(0, 20) + '...',
+      );
+    }
   }
 
   /**
@@ -137,6 +156,17 @@ export class AuthService {
 
     // 清除当前用户
     this.currentUserSubject.next(null);
+
+    // 清除权限缓存
+    try {
+      // 动态导入 PermissionService 类并使用 injector 获取实例
+      import('./permission.service').then(({ PermissionService }) => {
+        const permissionService = this.injector.get(PermissionService);
+        permissionService.clearPermissionsCache();
+      });
+    } catch (error) {
+      console.error('Failed to clear permissions cache:', error);
+    }
 
     // 跳转到登录页
     this.router.navigate(['/login']);

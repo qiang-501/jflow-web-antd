@@ -233,7 +233,7 @@ export class PermissionsService {
 
     Object.assign(permission, {
       name: updateActionDto.name,
-      code: `${menuId}:${updateActionDto.code}`,
+      code: `${updateActionDto.menuName}:${updateActionDto.code}`,
       description: updateActionDto.description,
       action: updateActionDto.code,
     });
@@ -261,5 +261,45 @@ export class PermissionsService {
     }
 
     await this.permissionsRepository.remove(permission);
+  }
+
+  /**
+   * 获取当前用户的所有权限代码列表
+   * @param userId 用户ID
+   * @returns 权限代码数组，如 ['workflow:create', 'user:view', 'role:update']
+   */
+  async getCurrentUserPermissions(userId: number): Promise<string[]> {
+    // 查找用户及其角色和权限
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+      relations: ['roles', 'roles.permissions'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    // 收集所有权限代码，使用 Set 去重
+    const permissionCodes = new Set<string>();
+
+    // 遍历用户的所有角色
+    for (const role of user.roles) {
+      // 遍历角色的所有权限
+      for (const permission of role.permissions) {
+        if (permission.code) {
+          permissionCodes.add(permission.code);
+        }
+      }
+    }
+
+    // 转换为数组并返回
+    const permissions = Array.from(permissionCodes);
+
+    console.log(
+      `User ${userId} has ${permissions.length} permissions:`,
+      permissions,
+    );
+
+    return permissions;
   }
 }

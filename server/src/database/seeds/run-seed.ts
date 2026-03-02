@@ -350,7 +350,7 @@ async function runSeed() {
       action: 'view',
     },
     {
-      code: 'form:manage',
+      code: 'workflow:form_manage',
       name: '表单管理',
       type: PermissionType.ACTION,
       resource: 'forms',

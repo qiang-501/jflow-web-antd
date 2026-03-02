@@ -8,17 +8,27 @@ import {
   Param,
   Query,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiQuery,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { WorkflowsService } from './workflows.service';
 import { CreateWorkflowDto, UpdateWorkflowDto } from './workflow.dto';
 import {
   CreateWorkflowFormDataDto,
   UpdateWorkflowFormDataDto,
 } from './workflow-form-data.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('workflows')
 @Controller('workflows')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class WorkflowsController {
   constructor(private readonly workflowsService: WorkflowsService) {}
 
