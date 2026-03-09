@@ -636,46 +636,39 @@ export class WorkflowComponent implements OnInit {
   async openDynamicForm(workflow: WorkFlow): Promise<void> {
     this.selectedWorkflow = workflow;
     this.currentFormData = undefined; // 清空之前的数据
+    this.currentFormConfig = null;
 
     if (workflow.formConfigId) {
       try {
-        // 加载表单配置
-        const config = await firstValueFrom(
-          this.dynamicFormService.getFormConfig(workflow.formConfigId),
+        // 先获取最新的 workflow 详情（包含表单配置和表单数据）
+        const updatedWorkflow = await firstValueFrom(
+          this.workflowService.getWorkflowById(workflow.id),
         );
-        this.currentFormConfig = config;
+        console.log('Loaded workflow with form data:', updatedWorkflow);
 
-        // 尝试加载已保存的表单数据
-        try {
-          const savedData = await firstValueFrom(
-            this.workflowService.getWorkflowFormData(workflow.id),
-          );
-          console.log('Loaded saved form data:', savedData);
-
-          // 如果有保存的数据，将其设置为初始值
-          if (savedData && savedData.formData) {
-            this.currentFormData = savedData.formData;
-            this.message.info('已加载之前保存的表单数据');
-          }
-
-          // 使用 setTimeout 避免 ExpressionChangedAfterItHasBeenCheckedError
-          this.isDynamicFormModalVisible = true;
-          this.cdr.markForCheck();
-        } catch (error: any) {
-          // 如果没有保存的数据（404），这是正常情况
-          if (error.status === 404) {
-            console.log('No saved form data found, showing empty form');
-            this.currentFormData = undefined;
-          } else {
-            console.error('Error loading saved form data:', error);
-            this.message.warning('无法加载已保存的表单数据，显示空白表单');
-            this.currentFormData = undefined;
-          }
-
-          // 使用 setTimeout 避免 ExpressionChangedAfterItHasBeenCheckedError
-          this.isDynamicFormModalVisible = true;
-          this.cdr.markForCheck();
+        // 从 workflow 中提取表单配置
+        if (updatedWorkflow.formConfig) {
+          this.currentFormConfig = updatedWorkflow.formConfig;
         }
+
+        // 从 workflow 中提取表单数据
+        if (updatedWorkflow.formData) {
+          this.currentFormData = updatedWorkflow.formData;
+          this.message.info('已加载之前保存的表单数据');
+        }
+
+        // 如果没有获取到表单配置，fallback 到单独加载
+        if (!this.currentFormConfig) {
+          console.log('No form config in workflow, loading separately');
+          const config = await firstValueFrom(
+            this.dynamicFormService.getFormConfig(workflow.formConfigId),
+          );
+          this.currentFormConfig = config;
+        }
+
+        // 使用 setTimeout 避免 ExpressionChangedAfterItHasBeenCheckedError
+        this.isDynamicFormModalVisible = true;
+        this.cdr.markForCheck();
       } catch (error) {
         console.error('Failed to load form config:', error);
         this.message.error('加载表单配置失败');
@@ -791,7 +784,7 @@ export class WorkflowComponent implements OnInit {
 
   // 编辑选中的表单配置（在创建工作流时）
   async editFormConfigInCreate(): Promise<void> {
-    if (!(await this.hasPermission('form', 'manage'))) {
+    if (!(await this.hasPermission('workflow', 'form_manage'))) {
       this.message.warning('您没有编辑表单的权限');
       return;
     }

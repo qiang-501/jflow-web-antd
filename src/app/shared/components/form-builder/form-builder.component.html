@@ -101,28 +101,34 @@
               @for (field of fieldTable.data; track field; let i = $index) {
                 <tr>
                   <td>
-                    <code>{{ field.name }}</code>
+                    <code>{{ field.fieldKey || field.name }}</code>
                   </td>
                   <td>{{ field.label }}</td>
                   <td>
                     <nz-tag [nzColor]="'blue'">
-                      {{ getFieldTypeLabel(field.type) }}
+                      {{ getFieldTypeLabel(field.fieldType || field.type) }}
                     </nz-tag>
                   </td>
                   <td>
                     <span
                       nz-icon
                       [nzType]="
-                        field.validation?.required
+                        field.required ||
+                        field.validation?.required ||
+                        field.validators?.required
                           ? 'check-circle'
                           : 'close-circle'
                       "
                       [style.color]="
-                        field.validation?.required ? '#52c41a' : '#ccc'
+                        field.required ||
+                        field.validation?.required ||
+                        field.validators?.required
+                          ? '#52c41a'
+                          : '#ccc'
                       "
                     ></span>
                   </td>
-                  <td>{{ field.width || 24 }}/24</td>
+                  <td>{{ field.span || field.width || 24 }}/24</td>
                   <td>
                     <button
                       nz-button
@@ -232,7 +238,7 @@
             <nz-form-control nzErrorTip="请输入字段名">
               <input
                 nz-input
-                formControlName="name"
+                formControlName="fieldKey"
                 placeholder="请输入字段名（英文）"
               />
             </nz-form-control>
@@ -257,7 +263,7 @@
             <nz-form-label nzRequired>字段类型</nz-form-label>
             <nz-form-control>
               <nz-select
-                formControlName="type"
+                formControlName="fieldType"
                 placeholder="请选择字段类型"
                 style="width: 100%"
               >

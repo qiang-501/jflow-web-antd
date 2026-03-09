@@ -89,19 +89,21 @@ export class FormsService {
       // Delete existing fields and create new ones
       await this.fieldsRepository.delete({ formConfigId: id });
 
-      const formFields = fields.map((field, index) =>
-        this.fieldsRepository.create({
-          ...field,
+      const formFields = fields.map((field, index) => {
+        // Remove id from field to ensure we create new records, not update
+        const { id: fieldId, ...fieldWithoutId } = field;
+        return this.fieldsRepository.create({
+          ...fieldWithoutId,
           formConfigId: id,
           orderIndex: field.orderIndex ?? index,
-        }),
-      );
+        });
+      });
       await this.fieldsRepository.save(formFields);
     }
 
-    // Update form config
-    Object.assign(form, formData);
-    await this.formsRepository.save(form);
+    // Update form config directly (avoids cascade re-saving the in-memory old fields
+    // that were already deleted above, which would violate the form_config_id NOT NULL constraint)
+    await this.formsRepository.update(id, formData);
 
     return this.findOne(id);
   }

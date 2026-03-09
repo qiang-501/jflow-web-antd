@@ -133,9 +133,9 @@ export class FormBuilderComponent implements OnInit {
     });
 
     this.fieldForm = this.fb.group({
-      name: ['', [Validators.required]],
+      fieldKey: ['', [Validators.required]],
       label: ['', [Validators.required]],
-      type: [FieldType.TEXT, [Validators.required]],
+      fieldType: [FieldType.TEXT, [Validators.required]],
       defaultValue: [''],
       placeholder: [''],
       helpText: [''],
@@ -255,11 +255,18 @@ export class FormBuilderComponent implements OnInit {
       const formValue = this.configForm.value;
       if (this.currentConfig) {
         // 更新现有配置
+        // 准备发送到服务器的数据，移除不必要的字段
+        const cleanedFields = this.currentConfig.fields.map((field: any) => {
+          const { id, formConfigId, createdAt, updatedAt, ...cleanField } =
+            field;
+          return cleanField;
+        });
+
         const updateDto = {
           name: formValue.name,
           description: formValue.description,
           layout: formValue.layout,
-          fields: this.currentConfig.fields,
+          fields: cleanedFields,
         };
 
         try {
@@ -317,23 +324,27 @@ export class FormBuilderComponent implements OnInit {
     if (fieldIndex !== undefined && fields[fieldIndex]) {
       const field = fields[fieldIndex];
       this.fieldForm.patchValue({
-        name: field.name,
+        fieldKey: field.fieldKey || field.name,
         label: field.label,
-        type: field.type,
+        fieldType: field.fieldType || field.type,
         defaultValue: field.defaultValue,
         placeholder: field.placeholder,
         helpText: field.helpText,
-        width: field.width || 24,
+        width: field.span || field.width || 24,
         disabled: field.disabled || false,
         hidden: field.hidden || false,
-        required: field.validation?.required || false,
-        min: field.validation?.min,
-        max: field.validation?.max,
-        minLength: field.validation?.minLength,
-        maxLength: field.validation?.maxLength,
-        pattern: field.validation?.pattern,
-        email: field.validation?.email || false,
-        url: field.validation?.url || false,
+        required:
+          field.required ||
+          field.validation?.required ||
+          field.validators?.required ||
+          false,
+        min: field.validators?.min || field.validation?.min,
+        max: field.validators?.max || field.validation?.max,
+        minLength: field.validators?.minLength || field.validation?.minLength,
+        maxLength: field.validators?.maxLength || field.validation?.maxLength,
+        pattern: field.validators?.pattern || field.validation?.pattern,
+        email: field.validators?.email || field.validation?.email || false,
+        url: field.validators?.url || field.validation?.url || false,
       });
 
       // 加载选项
@@ -348,7 +359,7 @@ export class FormBuilderComponent implements OnInit {
       });
     } else {
       this.fieldForm.reset({
-        type: FieldType.TEXT,
+        fieldType: FieldType.TEXT,
         width: 24,
         disabled: false,
         hidden: false,
@@ -378,25 +389,30 @@ export class FormBuilderComponent implements OnInit {
       const formValue = this.fieldForm.value;
       const fields = this.getConfigFields(this.currentConfig);
 
-      const field: DynamicFormField = {
+      // 构造符合后端 FormField 接口的字段对象
+      const field: any = {
         id:
           this.editingFieldIndex >= 0 && fields[this.editingFieldIndex]
             ? fields[this.editingFieldIndex].id
-            : `f${Date.now()}`,
-        name: formValue.name,
+            : undefined,
+        fieldKey: formValue.fieldKey,
+        fieldType: formValue.fieldType,
         label: formValue.label,
-        type: formValue.type,
-        defaultValue: formValue.defaultValue,
         placeholder: formValue.placeholder,
-        helpText: formValue.helpText,
-        width: formValue.width,
+        defaultValue: formValue.defaultValue,
+        required: formValue.required,
         disabled: formValue.disabled,
-        hidden: formValue.hidden,
-        order:
+        readonly: false,
+        orderIndex:
           this.editingFieldIndex >= 0 && fields[this.editingFieldIndex]
-            ? fields[this.editingFieldIndex].order
-            : fields.length + 1,
-        validation: {
+            ? fields[this.editingFieldIndex].orderIndex
+            : fields.length,
+        span: formValue.width || 24,
+        options:
+          this.optionsFormArray.value.length > 0
+            ? this.optionsFormArray.value
+            : null,
+        validators: {
           required: formValue.required,
           min: formValue.min,
           max: formValue.max,
@@ -406,10 +422,6 @@ export class FormBuilderComponent implements OnInit {
           email: formValue.email,
           url: formValue.url,
         },
-        options:
-          this.optionsFormArray.value.length > 0
-            ? this.optionsFormArray.value
-            : undefined,
       };
 
       if (this.editingFieldIndex >= 0) {
@@ -421,12 +433,18 @@ export class FormBuilderComponent implements OnInit {
       // 更新 config.fields
       this.currentConfig.fields = fields;
 
+      // 准备发送到服务器的数据，移除不必要的字段
+      const cleanedFields = fields.map((field: any) => {
+        const { id, formConfigId, createdAt, updatedAt, ...cleanField } = field;
+        return cleanField;
+      });
+
       // 更新到服务器
       const updateDto = {
         name: this.currentConfig.name,
         description: this.currentConfig.description,
         layout: this.currentConfig.layout,
-        fields: this.currentConfig.fields,
+        fields: cleanedFields,
       };
 
       try {
@@ -457,16 +475,23 @@ export class FormBuilderComponent implements OnInit {
   async deleteField(config: DynamicFormConfig, index: number): Promise<void> {
     const fields = this.getConfigFields(config);
     fields.splice(index, 1);
-    fields.forEach((f: DynamicFormField, i: number) => (f.order = i + 1));
+    fields.forEach((f: any, i: number) => (f.orderIndex = i));
 
     // 更新 config.fields
     config.fields = fields;
+
+    // 准备发送到服务器的数据，移除不必要的字段
+    const cleanedFields = fields.map((field: any) => {
+      const { id, formConfigId, createdAt, updatedAt, ...cleanField } = field;
+      return cleanField;
+    });
+
     // 更新到服务器
     const updateDto = {
       name: config.name,
       description: config.description,
       layout: config.layout,
-      fields: config.fields,
+      fields: cleanedFields,
     };
 
     try {
@@ -500,7 +525,7 @@ export class FormBuilderComponent implements OnInit {
     fields[index] = fields[newIndex];
     fields[newIndex] = temp;
 
-    fields.forEach((f: DynamicFormField, i: number) => (f.order = i + 1));
+    fields.forEach((f: any, i: number) => (f.orderIndex = i));
 
     // 更新 config.fields
     config.fields = fields;

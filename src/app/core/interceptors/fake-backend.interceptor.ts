@@ -418,7 +418,40 @@ export function FakeBackendInterceptor(
     if (url.match(/api\/workflows\/\w+$/) && method === 'GET') {
       const id = Number(url.split('/').pop());
       const workflow = mockWorkflows.find((w) => w.id === id);
-      return of(new HttpResponse({ status: 200, body: workflow }));
+
+      if (!workflow) {
+        return of(
+          new HttpResponse({
+            status: 404,
+            body: { message: `Workflow with ID ${id} not found` },
+          }),
+        );
+      }
+
+      // If workflow has a form configuration, include form config and form data
+      let enhancedWorkflow = { ...workflow };
+
+      if (workflow.formConfigId) {
+        // Find form configuration
+        const formConfig = mockFormConfigs.find(
+          (c) => c.id === workflow.formConfigId,
+        );
+
+        if (formConfig) {
+          enhancedWorkflow.formConfig = formConfig;
+        }
+
+        // Find form data if exists
+        const formDataRecord = mockWorkflowFormData.find(
+          (d) => d.workflowId === id,
+        );
+
+        if (formDataRecord) {
+          enhancedWorkflow.formData = formDataRecord.formData;
+        }
+      }
+
+      return of(new HttpResponse({ status: 200, body: enhancedWorkflow }));
     }
 
     if (url.endsWith('api/workflows') && method === 'POST') {
@@ -581,20 +614,55 @@ export function FakeBackendInterceptor(
       const urlParts = url.split('/');
       const workflowId = Number(urlParts[urlParts.length - 2]);
 
+      // 先查找 workflow，确保它存在且有 formConfigId
+      const workflow = mockWorkflows.find((w) => w.id === workflowId);
+
+      if (!workflow) {
+        return of(
+          new HttpResponse({
+            status: 404,
+            body: { message: `Workflow with ID ${workflowId} not found` },
+          }),
+        );
+      }
+
+      if (!workflow.formConfigId) {
+        return of(
+          new HttpResponse({
+            status: 404,
+            body: {
+              message: `Workflow ID ${workflowId} does not have a form configuration`,
+            },
+          }),
+        );
+      }
+
+      // 查找表单数据
       const formData = mockWorkflowFormData.find(
         (d) => d.workflowId === workflowId,
       );
 
-      if (formData) {
-        return of(new HttpResponse({ status: 200, body: formData }));
+      if (!formData) {
+        return of(
+          new HttpResponse({
+            status: 404,
+            body: { message: 'Form data not found' },
+          }),
+        );
       }
 
-      return of(
-        new HttpResponse({
-          status: 404,
-          body: { message: 'Form data not found' },
-        }),
+      // 查找表单配置（包括 fields）
+      const formConfig = mockFormConfigs.find(
+        (c) => c.id === formData.formConfigId,
       );
+
+      // 返回包含表单配置和表单数据的完整响应
+      const response = {
+        ...formData,
+        formConfig: formConfig || null,
+      };
+
+      return of(new HttpResponse({ status: 200, body: response }));
     }
 
     // PUT /api/workflows/:id/form-data - 更新表单数据
@@ -653,7 +721,12 @@ export function FakeBackendInterceptor(
 
     // 动态表单API
     if (url.endsWith('api/forms') && method === 'GET') {
-      return of(new HttpResponse({ status: 200, body: mockFormConfigs }));
+      return of(
+        new HttpResponse({
+          status: 200,
+          body: { data: mockFormConfigs, total: mockFormConfigs.length },
+        }),
+      );
     }
 
     if (url.match(/api\/forms\/[\w-]+$/) && method === 'GET') {

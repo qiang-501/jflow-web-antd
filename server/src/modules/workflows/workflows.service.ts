@@ -37,7 +37,7 @@ export class WorkflowsService {
     return { data, total };
   }
 
-  async findOne(id: number): Promise<Workflow> {
+  async findOne(id: number): Promise<Workflow & { formData?: any }> {
     const workflow = await this.workflowsRepository.findOne({
       where: { id },
       relations: ['formConfig', 'formConfig.fields', 'template'],
@@ -47,7 +47,25 @@ export class WorkflowsService {
       throw new NotFoundException(`Workflow with ID ${id} not found`);
     }
 
-    return workflow;
+    // If workflow has a form configuration, try to load the form data
+    let formDataRecord = null;
+    if (workflow.formConfigId) {
+      try {
+        formDataRecord = await this.formDataRepository.findOne({
+          where: { workflowId: id },
+          relations: ['formConfig', 'formConfig.fields'],
+        });
+      } catch (error) {
+        // Form data may not exist yet, which is normal
+        console.log(`No form data found for workflow ${id}`);
+      }
+    }
+
+    // Return workflow with form data if it exists
+    return {
+      ...workflow,
+      formData: formDataRecord?.formData || null,
+    };
   }
 
   async create(createWorkflowDto: CreateWorkflowDto): Promise<Workflow> {
@@ -247,9 +265,24 @@ export class WorkflowsService {
    * Get workflow form data by workflow ID
    */
   async getFormData(workflowId: number): Promise<WorkflowFormData> {
+    // First, get the workflow to ensure it exists and get its formConfigId
+    const workflow = await this.findOne(workflowId);
+
+    if (!workflow.formConfigId) {
+      throw new NotFoundException(
+        `Workflow ID ${workflowId} does not have a form configuration`,
+      );
+    }
+
+    // Then, find the form data for this workflow
     const formData = await this.formDataRepository.findOne({
-      where: { workflowId },
-      relations: ['workflow', 'formConfig', 'submittedByUser'],
+      where: { workflowId: workflow.formConfigId },
+      relations: [
+        'workflow',
+        'formConfig',
+        'formConfig.fields',
+        'submittedByUser',
+      ],
     });
 
     if (!formData) {

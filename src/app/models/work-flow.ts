@@ -7,6 +7,8 @@ export interface WorkFlow {
   status: WorkflowStatus;
   priority: WorkflowPriority;
   formConfigId?: number;
+  formConfig?: any; // 表单配置（包含 fields）
+  formData?: any; // 表单数据
   createdBy?: number;
   assignedTo?: number;
   dueDate?: string;
